@@ -23,12 +23,15 @@ import {
   IconLayoutDashboard,
   IconMoon,
   IconPlayerPlay,
+  IconPlus,
   IconSettings,
   IconStack2,
   IconSun,
 } from "@tabler/icons-react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useCategories } from "@/api/queries";
+import { CategoryModal } from "./CategoryModal";
 import { RawgAttribution } from "./MetadataModals";
 
 const MAIN_LINKS = [
@@ -48,6 +51,8 @@ const MORE_LINKS = [
 export function Layout() {
   const [opened, { toggle, close }] = useDisclosure();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [addingCategory, setAddingCategory] = useState(false);
   const categories = useCategories();
   const { setColorScheme } = useMantineColorScheme();
   const scheme = useComputedColorScheme("light");
@@ -92,9 +97,14 @@ export function Layout() {
         <AppShell.Section grow component={ScrollArea}>
           {MAIN_LINKS.map(link)}
           <Divider my="xs" />
-          <Text size="xs" c="dimmed" fw={600} tt="uppercase" px="sm" mb={4}>
-            Categories
-          </Text>
+          <Group justify="space-between" px="sm" mb={4}>
+            <Text size="xs" c="dimmed" fw={600} tt="uppercase">
+              Categories
+            </Text>
+            <ActionIcon variant="subtle" size="sm" aria-label="New category" onClick={() => setAddingCategory(true)}>
+              <IconPlus size={14} />
+            </ActionIcon>
+          </Group>
           {categories.data?.map((c) =>
             link({ to: `/categories/${c.id}`, label: c.name, icon: IconFolder }),
           )}
@@ -102,6 +112,17 @@ export function Layout() {
           {MORE_LINKS.map(link)}
         </AppShell.Section>
       </AppShell.Navbar>
+      {addingCategory && (
+        <CategoryModal
+          onClose={(saved) => {
+            setAddingCategory(false);
+            if (saved) {
+              close();
+              navigate(`/categories/${saved.id}`);
+            }
+          }}
+        />
+      )}
 
       <AppShell.Main>
         <Outlet />

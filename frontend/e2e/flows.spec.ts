@@ -171,3 +171,18 @@ test("add a console as a bundle with a game, then edit the bundle", async ({ pag
   await expect(page.getByText("Bundle saved")).toBeVisible();
   await expect(page.getByRole("cell", { name: "224,50 €" })).toBeVisible();
 });
+
+test("add a category from the sidebar", async ({ page }) => {
+  const name = `PlayStation ${Date.now()}`;
+  await page.goto("/");
+  await page.getByRole("navigation").getByRole("button", { name: "New category" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(name);
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Category saved")).toBeVisible();
+
+  // opens the new category and lists it in the sidebar
+  await expect(page).toHaveURL(/\/categories\/\d+$/);
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+  await expect(page.getByRole("navigation").getByRole("link", { name })).toBeVisible();
+});
