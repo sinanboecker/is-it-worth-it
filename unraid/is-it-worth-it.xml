@@ -1,10 +1,13 @@
 <?xml version="1.0"?>
-<!-- Unraid template for the locally built image (see scripts/deploy.sh / README). Copy to
-     /boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml, then Docker > Add Container > pick "is-it-worth-it". -->
+<!-- Unraid template. The image is published to ghcr.io by GitHub Actions for every release tag (see README).
+     Copy to /boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml, then Docker > Add Container > pick "is-it-worth-it".
+     Use :latest for automatic updates, or a fixed version (e.g. :0.2.0) to stay on / roll back to it. -->
 <Container version="2">
   <Name>is-it-worth-it</Name>
-  <Repository>is-it-worth-it:latest</Repository>
-  <Registry/>
+  <Repository>ghcr.io/sinanboecker/is-it-worth-it:latest</Repository>
+  <Registry>https://github.com/sinanboecker/is-it-worth-it/pkgs/container/is-it-worth-it</Registry>
+  <Support>https://github.com/sinanboecker/is-it-worth-it/issues</Support>
+  <Project>https://github.com/sinanboecker/is-it-worth-it</Project>
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>

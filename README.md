@@ -101,16 +101,28 @@ locally: see [Run locally](#with-a-container-same-as-on-unraid) (with Docker: `d
 Environment variables: `ALLOWED_NETWORKS` (comma-separated source networks, default = private ranges; loopback is
 always allowed), `RAWG_API_KEY`, `TZ` (default `Europe/Berlin`), `PUID`/`PGID` (owner of `/data`, default 99/100).
 
-**Unraid** (image built locally, no registry):
+**Releases:** every push to `main` runs the tests on GitHub Actions. A version tag also publishes the image to
+`ghcr.io/sinanboecker/is-it-worth-it` as `:<version>` and `:latest`:
 
-1. Once: copy `unraid/is-it-worth-it.xml` to `/boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml` and
-   set up SSH key login to Unraid.
-2. `UNRAID_HOST=root@<unraid-ip> scripts/deploy.sh` builds the image (version from `backend/pyproject.toml`) and loads it
-   on Unraid as `is-it-worth-it:<version>` and `:latest`.
-3. First time: *Docker → Add Container →* template `is-it-worth-it`, set *Allowed networks* (LAN + WireGuard subnet).
-   Updates: *Edit → Apply* recreates the container with the new image (a restart would keep the old one).
+```bash
+scripts/release.sh 0.2.0     # sets the version, commits "Release 0.2.0", tags v0.2.0 and pushes
+```
 
-Rollback: `docker tag is-it-worth-it:<old version> is-it-worth-it:latest` on Unraid, then *Edit → Apply*.
+Follow the build under *Actions* on GitHub. The tag must match the version in `backend/pyproject.toml` and
+`frontend/package.json`, which `release.sh` takes care of.
+
+**Unraid:**
+
+1. Once: copy `unraid/is-it-worth-it.xml` to `/boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml`, then
+   *Docker → Add Container →* template `is-it-worth-it`, set *Allowed networks* (LAN + WireGuard subnet) and *Apply*.
+2. Updates: Unraid shows "update ready" for a new release; *Update* recreates the container with it (data in `/data`
+   stays). For automatic updates install the **CA Auto Update Applications** plugin (Community Applications) and
+   schedule it, e.g. daily.
+3. Rollback: in *Edit*, set *Repository* to a fixed version, e.g. `ghcr.io/sinanboecker/is-it-worth-it:0.1.0`, and
+   *Apply*. Back to `:latest` to follow releases again.
+
+To try an unreleased build on Unraid: `UNRAID_HOST=root@<unraid-ip> scripts/deploy.sh` (needs SSH key login to Unraid)
+builds locally and loads it as `:latest`, then *Edit → Apply*. The next update check replaces it with the latest release.
 
 ## License
 
