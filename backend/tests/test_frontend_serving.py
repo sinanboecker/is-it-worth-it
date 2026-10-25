@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import main
+from tests.conftest import LAN_CLIENT
 
 
 @pytest.fixture
@@ -15,7 +16,7 @@ def spa_client(engine, tmp_path, monkeypatch):
     # drop a real frontend build that may have been mounted at import time
     main.app.router.routes[:] = [r for r in routes if getattr(r, "path", "") not in ("/assets", "/{path:path}")]
     main.mount_frontend(dist)
-    with TestClient(main.app) as client:
+    with TestClient(main.app, client=LAN_CLIENT) as client:
         yield client
     main.app.router.routes[:] = routes
 

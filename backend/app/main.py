@@ -8,6 +8,7 @@ from sqlmodel import Session
 from app import config
 from app.db import get_engine
 from app.migrations import upgrade_database
+from app.netguard import DEFAULT_NETWORKS, NetworkGuard, parse_networks
 from app.routers import bundles, categories, items, metadata, settings, stats, transfer
 from app.seed import seed
 
@@ -26,6 +27,7 @@ app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
 )
+app.add_middleware(NetworkGuard, networks=parse_networks(config.ALLOWED_NETWORKS or DEFAULT_NETWORKS))
 
 api = APIRouter(prefix="/api/v1")
 api.include_router(categories.router)

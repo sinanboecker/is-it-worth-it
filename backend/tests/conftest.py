@@ -14,6 +14,9 @@ from app.main import app
 from app.models import Category, CategoryType
 from app.seed import HANDHELDS_CATEGORY
 
+# Source address of test requests: inside the default allowed networks (see app/netguard.py).
+LAN_CLIENT = ("192.168.178.20", 50000)
+
 
 @pytest.fixture
 def engine(tmp_path, monkeypatch):
@@ -34,7 +37,7 @@ def session(engine) -> Iterator[Session]:
 @pytest.fixture
 def client(engine) -> Iterator[TestClient]:
     """API client; startup runs the real migrations and seeding."""
-    with TestClient(app) as client:
+    with TestClient(app, client=LAN_CLIENT) as client:
         yield client
 
 
