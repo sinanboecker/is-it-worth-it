@@ -252,3 +252,22 @@ test("settings show the version and the repository link", async ({ page }) => {
     "https://github.com/sinanboecker/is-it-worth-it",
   );
 });
+
+test("typed dates are read as day.month.year", async ({ page, request }) => {
+  const { category } = await setup(request);
+  await page.goto(`/categories/${category.id}`);
+  await page.getByRole("button", { name: "Game", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(`Date ${category.id}`);
+  const date = dialog.getByRole("textbox", { name: "Bought on" });
+  await date.fill("05.03.2024");
+  await date.press("Tab");
+  await expect(date).toHaveValue("05.03.2024");
+  await fillMoney(page, "Buy price", "10");
+  await dialog.getByRole("button", { name: "Add" }).click();
+  await expect(page.getByText(`Date ${category.id} added`)).toBeVisible();
+
+  const [game] = await (await request.get(`/api/v1/items?q=Date ${category.id}`)).json();
+  const detail = await (await request.get(`/api/v1/items/${game.id}`)).json();
+  expect(detail.copies[0].buy_date).toBe("2024-03-05");
+});

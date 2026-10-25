@@ -2,7 +2,7 @@ import { ActionIcon, Autocomplete, Group, NumberInput, Rating, Select, Text, Too
 import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
 import { DateInput, type DateInputProps } from "@mantine/dates";
 import { useCategories, useHardware, useStores } from "@/api/queries";
-import { fromCents, toCents } from "@/lib/format";
+import { fromCents, parseTypedDate, toCents } from "@/lib/format";
 import { STATUS_OPTIONS } from "@/lib/labels";
 import type { GameStatus } from "@/api/types";
 
@@ -58,6 +58,7 @@ export function DateField({ value, onChange, ...props }: DateFieldProps) {
   return (
     <DateInput
       valueFormat="DD.MM.YYYY"
+      dateParser={parseTypedDate}
       firstDayOfWeek={1}
       {...props}
       value={value ?? null}

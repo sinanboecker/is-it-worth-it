@@ -1,5 +1,10 @@
 /** Display formatting: EUR with German number formatting, dates as DD.MM.YYYY. */
 
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(customParseFormat);
+
 const euroFormat = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
 const numberFormat = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 const percentFormat = new Intl.NumberFormat("de-DE", { style: "percent", maximumFractionDigits: 0 });
@@ -41,3 +46,15 @@ export const toCents = (euroValue: number | string | null | undefined): number |
 
 export const fromCents = (cents: number | null | undefined): number | "" =>
   cents === null || cents === undefined ? "" : cents / 100;
+
+// day and month with or without leading zero, 4- or 2-digit year (strict parsing needs every variant)
+const TYPED_DATE_FORMATS = [
+  ...["D", "DD"].flatMap((d) => ["M", "MM"].flatMap((m) => ["YYYY", "YY"].map((y) => `${d}.${m}.${y}`))),
+  "YYYY-MM-DD",
+];
+
+/** Parse a typed date as German day.month.year (or ISO); null for anything else, incl. impossible dates like 31.02. */
+export function parseTypedDate(input: string): string | null {
+  const parsed = dayjs(input.trim(), TYPED_DATE_FORMATS, true);
+  return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
+}

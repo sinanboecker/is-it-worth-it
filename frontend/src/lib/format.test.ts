@@ -1,4 +1,4 @@
-import { day, euros, fromCents, hours, perHour, percent, toCents } from "./format";
+import { day, euros, fromCents, hours, parseTypedDate, perHour, percent, toCents } from "./format";
 
 const normalize = (s: string) => s.replace(/ | /g, " ");
 
@@ -29,4 +29,15 @@ test("euro inputs to cents and back", () => {
   expect(toCents(0.1 + 0.2)).toBe(30);
   expect(fromCents(1347)).toBe(13.47);
   expect(fromCents(null)).toBe("");
+});
+
+test("typed dates are day.month.year", () => {
+  expect(parseTypedDate("05.03.2024")).toBe("2024-03-05");
+  expect(parseTypedDate("5.3.2024")).toBe("2024-03-05");
+  expect(parseTypedDate(" 5.3.24 ")).toBe("2024-03-05");
+  expect(parseTypedDate("2024-03-05")).toBe("2024-03-05");
+  expect(parseTypedDate("31.12.2025")).toBe("2025-12-31");
+  expect(parseTypedDate("31.02.2024")).toBeNull();
+  expect(parseTypedDate("13/05/2024")).toBeNull();
+  expect(parseTypedDate("")).toBeNull();
 });
