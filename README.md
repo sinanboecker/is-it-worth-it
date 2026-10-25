@@ -71,7 +71,7 @@ from the public Steam store (no key needed).
 Command line tools (run from `backend/`):
 
 ```bash
-.venv/bin/python -m app.cli import-csv ../test_pc.csv --category PC --device "Gaming PC" --store Steam --dry-run
+.venv/bin/python -m app.cli import-csv tests/fixtures/test_pc.csv --category PC --device "Gaming PC" --store Steam --dry-run
 .venv/bin/python -m app.cli export -o backup.json          # add --images for a ZIP with covers/uploads
 .venv/bin/python -m app.cli import-json backup.json --mode replace
 ```

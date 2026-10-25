@@ -100,7 +100,7 @@ test("import games from a CSV file", async ({ page, request }) => {
   await page.goto(`/categories/${category.id}`);
   await page.getByRole("button", { name: "Import CSV" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.locator('input[type="file"]').setInputFiles(path.join(import.meta.dirname, "../../test_pc.csv"));
+  await dialog.locator('input[type="file"]').setInputFiles(path.join(import.meta.dirname, "../../backend/tests/fixtures/test_pc.csv"));
   await dialog.getByRole("button", { name: "Preview" }).click();
   await expect(dialog.getByText("24 new")).toBeVisible();
   await expect(dialog.getByText("Ignored columns: Stundenpreis")).toBeVisible();
