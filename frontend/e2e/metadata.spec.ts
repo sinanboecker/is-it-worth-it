@@ -47,9 +47,9 @@ test("pick a DLC from the Steam list", async ({ page, request }) => {
   await expect(page.getByText("DLC · 19,99 €")).toBeVisible();
 });
 
-test("fetch missing info for a category, with review", async ({ page, request }) => {
+test("fetch missing info for a category, with review and a search by hand", async ({ page, request }) => {
   const nintendo = await category(request, "Nintendo");
-  for (const name of ["The Legend of Zelda – Tears of the Kingdom", "Tetris"]) {
+  for (const name of ["The Legend of Zelda – Tears of the Kingdom", "Tetris", "Hadez"]) {
     await request.post("/api/v1/items", {
       data: { category_id: nintendo.id, kind: "game", name, first_copy: { buy_date: "2024-01-01", buy_price_cents: 1000 } },
     });
@@ -61,11 +61,20 @@ test("fetch missing info for a category, with review", async ({ page, request })
   await expect(dialog.getByText(/1 matched automatically/)).toBeVisible();
   await expect(dialog.getByText("Which game is “Tetris”?")).toBeVisible();
   await dialog.getByRole("button", { name: /^Tetris.*1989/ }).click();
+
+  // misspelled: nothing found until the name is corrected
+  await expect(dialog.getByText("Which game is “Hadez”?")).toBeVisible();
+  await expect(dialog.getByText("Nothing found on RAWG.")).toBeVisible();
+  await dialog.getByRole("textbox", { name: "Search RAWG" }).fill("Hades");
+  await dialog.getByLabel("Also use RAWG's name for this game").check();
+  await dialog.getByRole("button", { name: /^Hades.*2020/ }).click();
   await expect(dialog.getByText("Done. 1 games matched automatically.")).toBeVisible();
   await page.keyboard.press("Escape");
 
   const tetris = (await (await request.get(`/api/v1/items?category=${nintendo.id}&q=Tetris`)).json())[0];
   expect(tetris.cover_path).toMatch(/^covers\//);
+  const hades = (await (await request.get(`/api/v1/items?category=${nintendo.id}&q=Hades`)).json())[0];
+  expect(hades.name).toBe("Hades");
 });
 
 test("add a game bundle (Humble style): equal split, RAWG info and status for the first game", async ({ page, request }) => {

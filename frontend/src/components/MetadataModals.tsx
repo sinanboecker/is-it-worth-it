@@ -24,10 +24,13 @@ import { useApiMutation, useMetadataStatus, useRawgSearch } from "@/api/queries"
 import type { Candidate, ItemSummary, ReviewItem } from "@/api/types";
 import { day } from "@/lib/format";
 
-/** RAWG's image CDN can deliver smaller crops for thumbnails. */
-export function rawgThumb(url: string | null | undefined, width = 420, height = 236): string | null {
+/** Smaller thumbnails from RAWG's image CDN. It only serves some sizes: resized to a width of 80, 200, 420, 600, 640
+ * or 1280 px; anything else (e.g. a crop to 420 × 236) is a 404. */
+type RawgWidth = 80 | 200 | 420 | 600 | 640 | 1280;
+
+export function rawgThumb(url: string | null | undefined, width: RawgWidth = 420): string | null {
   if (!url) return null;
-  return url.replace("/media/games/", `/media/crop/${width}/${height}/games/`).replace("/media/screenshots/", `/media/crop/${width}/${height}/screenshots/`);
+  return url.replace(/\/media\/(games|screenshots)\//, `/media/resize/${width}/-/$1/`);
 }
 
 export function RawgAttribution() {
@@ -131,6 +134,63 @@ export function MetadataSearchModal({ game, onClose }: { game: ItemSummary; onCl
   );
 }
 
+/** One game to review: the candidates found for its name, or a search with a name you edit. */
+function ReviewStep({
+  item,
+  left,
+  onPick,
+  picking,
+  onSkip,
+}: {
+  item: ReviewItem;
+  left: number;
+  onPick: (rawgId: number, rename: boolean) => void;
+  picking: boolean;
+  onSkip: () => void;
+}) {
+  const [query, setQuery] = useState(item.name);
+  const [debounced] = useDebouncedValue(query, 350);
+  const [rename, setRename] = useState(false);
+  const edited = debounced.trim() !== item.name.trim();
+  const search = useRawgSearch(debounced, edited);
+  const candidates = edited ? (search.data ?? []) : item.candidates;
+  const searching = edited && (search.isFetching || debounced !== query);
+  return (
+    <Stack gap="xs">
+      <Text fw={600}>
+        Which game is “{item.name}”? <Text span c="dimmed" size="sm">({left} to review)</Text>
+      </Text>
+      <TextInput
+        aria-label="Search RAWG"
+        description="Not the right games? Change the name to search again."
+        value={query}
+        onChange={(e) => setQuery(e.currentTarget.value)}
+        leftSection={<IconSearch size={16} />}
+        rightSection={searching ? <Loader size="xs" /> : null}
+      />
+      <Checkbox label="Also use RAWG's name for this game" checked={rename} onChange={(e) => setRename(e.currentTarget.checked)} />
+      {search.isError && edited && <Alert color="red">{search.error.message}</Alert>}
+      <ScrollArea.Autosize mah={360}>
+        <Stack gap={2}>
+          {candidates.map((c) => (
+            <CandidateRow key={c.rawg_id} candidate={c} disabled={picking} onPick={() => onPick(c.rawg_id, rename)} />
+          ))}
+          {candidates.length === 0 && !searching && (
+            <Text c="dimmed" size="sm">
+              Nothing found on RAWG. Try another spelling or a shorter name, or skip the game.
+            </Text>
+          )}
+        </Stack>
+      </ScrollArea.Autosize>
+      <Group>
+        <Button variant="default" onClick={onSkip}>
+          Skip
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
 /**
  * Bulk matching for games without info: runs in small batches, applies confident matches automatically and asks
  * about the rest one by one.
@@ -171,9 +231,10 @@ export function FetchMissingModal({ categoryId, onClose }: { categoryId?: number
     }
   };
 
-  const pick = useApiMutation(({ itemId, rawgId }: { itemId: number; rawgId: number }) => applyMetadata(itemId, rawgId), {
-    onSuccess: () => setReview((r) => r.slice(1)),
-  });
+  const pick = useApiMutation(
+    ({ itemId, rawgId, rename }: { itemId: number; rawgId: number; rename: boolean }) => applyMetadata(itemId, rawgId, rename),
+    { onSuccess: () => setReview((r) => r.slice(1)) },
+  );
   const current = review[0];
   const total = remaining === null ? null : processed + remaining;
 
@@ -205,33 +266,14 @@ export function FetchMissingModal({ categoryId, onClose }: { categoryId?: number
             )}
             {error && <Alert color="red">{error}</Alert>}
             {current && (
-              <Stack gap="xs">
-                <Text fw={600}>
-                  Which game is “{current.name}”? <Text span c="dimmed" size="sm">({review.length} to review)</Text>
-                </Text>
-                <ScrollArea.Autosize mah={360}>
-                  <Stack gap={2}>
-                    {current.candidates.map((c) => (
-                      <CandidateRow
-                        key={c.rawg_id}
-                        candidate={c}
-                        disabled={pick.isPending}
-                        onPick={() => pick.mutate({ itemId: current.item_id, rawgId: c.rawg_id })}
-                      />
-                    ))}
-                    {current.candidates.length === 0 && (
-                      <Text c="dimmed" size="sm">
-                        Nothing found on RAWG. You can search by hand on the game's page later.
-                      </Text>
-                    )}
-                  </Stack>
-                </ScrollArea.Autosize>
-                <Group>
-                  <Button variant="default" onClick={() => setReview((r) => r.slice(1))}>
-                    Skip
-                  </Button>
-                </Group>
-              </Stack>
+              <ReviewStep
+                key={current.item_id}
+                item={current}
+                left={review.length}
+                picking={pick.isPending}
+                onPick={(rawgId, rename) => pick.mutate({ itemId: current.item_id, rawgId, rename })}
+                onSkip={() => setReview((r) => r.slice(1))}
+              />
             )}
             {done && !current && (
               <Alert color="green">
