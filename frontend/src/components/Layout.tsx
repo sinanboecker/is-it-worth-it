@@ -29,9 +29,10 @@ import {
   IconSun,
 } from "@tabler/icons-react";
 import { useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
 import { useCategories } from "@/api/queries";
 import { CategoryModal } from "./CategoryModal";
+import { NewItemModal } from "./ItemModals";
 import { RawgAttribution } from "./MetadataModals";
 import { SearchBar } from "./SearchBar";
 
@@ -54,6 +55,8 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [addingCategory, setAddingCategory] = useState(false);
+  const [addingGame, setAddingGame] = useState(false);
+  const categoryPage = useMatch("/categories/:id");
   const categories = useCategories();
   const { setColorScheme } = useMantineColorScheme();
   const scheme = useComputedColorScheme("light");
@@ -85,8 +88,11 @@ export function Layout() {
               Is It Worth It?
             </Title>
           </Group>
-          <Group flex={1} justify="center">
+          <Group flex={1} justify="center" gap="xs" wrap="nowrap">
             <SearchBar />
+            <ActionIcon variant="filled" size="lg" aria-label="Add game" title="Add game" onClick={() => setAddingGame(true)}>
+              <IconPlus size={18} />
+            </ActionIcon>
           </Group>
           <ActionIcon
             variant="default"
@@ -118,6 +124,14 @@ export function Layout() {
           {MORE_LINKS.map(link)}
         </AppShell.Section>
       </AppShell.Navbar>
+      {addingGame && (
+        <NewItemModal
+          opened
+          defaultCategoryId={categoryPage ? Number(categoryPage.params.id) : undefined}
+          onClose={() => setAddingGame(false)}
+          onCreated={(item) => navigate(`/items/${item.id}`)}
+        />
+      )}
       {addingCategory && (
         <CategoryModal
           onClose={(saved) => {

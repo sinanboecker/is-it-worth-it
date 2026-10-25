@@ -350,18 +350,21 @@ export function NewItemModal({
   opened,
   onClose,
   categoryId,
+  defaultCategoryId,
   kind: initialKind = "game",
   wishlist = false,
   onCreated,
 }: ModalProps & {
   categoryId?: number;
+  /** preselected in the category picker (shown when there is no fixed `categoryId`) */
+  defaultCategoryId?: number;
   kind?: ItemKind;
   wishlist?: boolean;
   onCreated?: (item: ItemRead) => void;
 }) {
   const categories = useCategories();
   const metadata = useMetadataStatus();
-  const [category, setCategory] = useState<number | null>(categoryId ?? null);
+  const [category, setCategory] = useState<number | null>(categoryId ?? defaultCategoryId ?? null);
   const [rawgPick, setRawgPick] = useState<Candidate | null>(null);
   const [kind, setKind] = useState<ItemKind>(initialKind);
   const [name, setName] = useState("");

@@ -520,6 +520,7 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 ## 8. Web app (frontend)
 
 **Search bar** in the header on every page (Ctrl+K): finds games and hardware by name across all categories, shows category + status, opens the item.
+Next to it a **+ button** to quickly add a game (category picker, preselected on a category page; opens the new game).
 
 Pages:
 1. **Dashboard** (start page, `/`; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),

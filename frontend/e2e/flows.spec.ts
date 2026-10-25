@@ -209,3 +209,25 @@ test("search from the header and open the result", async ({ page, request }) => 
   await search.fill("no such game xyz");
   await expect(page.getByText("Nothing found")).toBeVisible();
 });
+
+test("quick-add a game from the header", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const header = page.getByRole("banner");
+
+  // from the dashboard: pick the category in the dialog
+  await page.goto("/");
+  await header.getByRole("button", { name: "Add game" }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Category" }).click();
+  await page.getByRole("option", { name: category.name, exact: true }).click();
+  await dialog.getByLabel("Name").fill(`Kirby ${category.id}`);
+  await fillMoney(page, "Buy price", "49,99");
+  await dialog.getByRole("button", { name: "Add" }).click();
+  await expect(page.getByRole("heading", { name: `Kirby ${category.id}` })).toBeVisible();
+
+  // from a category page: that category is preselected
+  await page.goto(`/categories/${category.id}`);
+  await header.getByRole("button", { name: "Add game" }).click();
+  dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("textbox", { name: "Category" })).toHaveValue(category.name);
+});
