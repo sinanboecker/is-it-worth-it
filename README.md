@@ -52,3 +52,26 @@ npx playwright install chromium   # once
 npm run e2e          # builds, starts the backend (empty database, fake RAWG/Steam server), runs the browser tests
 npm run gen:api      # regenerate src/api/schema.d.ts after API changes
 ```
+
+## Docker / Unraid
+
+One image with the backend and the built frontend, port `8080`, data in the `/data` volume.
+
+```bash
+podman build --format docker -t is-it-worth-it:latest .     # or: docker build -t is-it-worth-it:latest .
+podman run --rm -p 8080:8080 -v ./compose-data:/data:Z is-it-worth-it:latest   # or: docker compose up --build
+```
+
+Environment variables: `ALLOWED_NETWORKS` (comma-separated source networks, default = private ranges; loopback is
+always allowed), `RAWG_API_KEY`, `TZ` (default `Europe/Berlin`), `PUID`/`PGID` (owner of `/data`, default 99/100).
+
+**Unraid** (image built locally, no registry):
+
+1. Once: copy `unraid/is-it-worth-it.xml` to `/boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml` and
+   set up SSH key login to Unraid.
+2. `UNRAID_HOST=root@<unraid-ip> scripts/deploy.sh` builds the image (version from `backend/pyproject.toml`) and loads it
+   on Unraid as `is-it-worth-it:<version>` and `:latest`.
+3. First time: *Docker → Add Container →* template `is-it-worth-it`, set *Allowed networks* (LAN + WireGuard subnet).
+   Updates: *Edit → Apply* recreates the container with the new image (a restart would keep the old one).
+
+Rollback: `docker tag is-it-worth-it:<old version> is-it-worth-it:latest` on Unraid, then *Edit → Apply*.

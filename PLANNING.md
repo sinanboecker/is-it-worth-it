@@ -649,9 +649,10 @@ is_it_worth_it/
 ├── frontend/           Vite + React + TS
 ├── android/            Gradle project
 ├── Dockerfile          multi-stage: build frontend → copy into python image
+├── docker/entrypoint.sh  hands /data to PUID:PGID, drops root
 ├── docker-compose.yml  for local dev / testing
 ├── unraid/is-it-worth-it.xml   Unraid container template (local image)
-└── scripts/            deploy.sh (build + copy image to Unraid + restart), build-apk.sh
+└── scripts/            deploy.sh (build + copy image to Unraid), build-apk.sh
 ```
 
 **Container contract**
@@ -666,11 +667,12 @@ is_it_worth_it/
 - `scripts/deploy.sh` on your PC:
   1. `docker build -t is-it-worth-it:<version> -t is-it-worth-it:latest .`
   2. `docker save is-it-worth-it:latest | ssh root@<unraid> docker load` (SSH key login to Unraid needed once)
-  3. restarts the container on Unraid (`ssh root@<unraid> docker restart is-it-worth-it`); migrations run on start.
+  3. retags podman's `localhost/` image names on Unraid. Then **recreate** the container in Unraid (*Docker → is-it-worth-it → Edit → Apply*);
+     a plain `docker restart` keeps running the old image. Migrations run on start.
 - Alternative without your PC: clone the repo on Unraid and run `docker build` there (Unraid has Docker built in).
 - The Unraid template points to the **local** image `is-it-worth-it:latest`. Unraid's "Check for updates" shows "not available" for local images, which is expected;
-  updating = running `deploy.sh` again.
-- Images are tagged with a version (e.g. `0.3.0`) besides `latest`, so rolling back = `docker tag is-it-worth-it:0.2.0 is-it-worth-it:latest` + restart.
+  updating = running `deploy.sh` again + *Edit → Apply*.
+- Images are tagged with a version (e.g. `0.3.0`) besides `latest`, so rolling back = `docker tag is-it-worth-it:0.2.0 is-it-worth-it:latest` + *Edit → Apply*.
 - The Android APK is also built locally (`scripts/build-apk.sh`, Gradle) and copied to the phone.
 
 **Backups:** nightly SQLite copy inside `/data/backups` (keep last N), plus your normal Unraid appdata backup (covers can always be re-downloaded).
@@ -687,12 +689,13 @@ is_it_worth_it/
 4. ✅ **Web frontend:** category pages with totals, game/hardware forms (copies, devices & hours table, DLC, rating), bundles, status, completions, Now Playing,
    journal + heatmap, wishlist/backlog, dashboard, stats.
 5. ✅ **Metadata + DLC lists:** RAWG search + apply (incl. Steam ID from store links, DLC names), RAWG attribution, cover caching, bulk "fetch missing" job, image upload; Steam Store DLC list with prices + cache.
-6. **Network guard + Docker:** `ALLOWED_NETWORKS`, Dockerfile, compose, Unraid template; deploy to Unraid; test over WireGuard.
+6. **Network guard + Docker:** ✅ `ALLOWED_NETWORKS` (loopback always allowed for the healthcheck), ✅ Dockerfile, ✅ compose, ✅ Unraid template, ✅ `deploy.sh`;
+   still to do on your side: deploy to Unraid; test over WireGuard.
    *(From here on, the app is usable day-to-day and replaces the spreadsheet.)*
 7. **gg.deals wishlist prices:** verify API fields with your key, linking (Steam ID / pasted URL), daily price sync, snapshots, official + keyshop display,
    gg.deals link, target price/deal badge, "Bought it" prefill.
 8. **Android app v1 (native):** setup, Now Playing, journal, category lists, detail/edit (devices & hours, DLC), quick actions, wishlist + deal notifications, dashboard, stats, export.
-9. **Polish:** backups, deploy/APK build scripts, versioned image tags.
+9. **Polish:** backups, APK build script.
 
 ---
 
