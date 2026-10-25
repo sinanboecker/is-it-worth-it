@@ -1,0 +1,36 @@
+[project]
+name = "is-it-worth-it"
+version = "0.1.0"
+description = "Self-hosted tracker for game and hardware purchases, playtime and value per hour"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "sqlmodel>=0.0.22",
+    "alembic>=1.14",
+    "uvicorn[standard]>=0.32",
+    "python-multipart>=0.0.18",
+    "httpx>=0.27",
+    "pillow>=11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "error::sqlalchemy.exc.SAWarning",
+]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["app/alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

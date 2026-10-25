@@ -1,0 +1,50 @@
+{
+  "name": "is-it-worth-it-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "test": "vitest run --dir src",
+    "gen:api": "cd ../backend && .venv/bin/python -m app.cli openapi -o ../frontend/openapi.json && cd ../frontend && openapi-typescript openapi.json -o src/api/schema.d.ts",
+    "e2e": "vite build && playwright test"
+  },
+  "dependencies": {
+    "@mantine/charts": "8.3.18",
+    "@mantine/core": "8.3.18",
+    "@mantine/dates": "8.3.18",
+    "@mantine/dropzone": "8.3.18",
+    "@mantine/hooks": "8.3.18",
+    "@mantine/modals": "8.3.18",
+    "@mantine/notifications": "8.3.18",
+    "@tabler/icons-react": "3.49.0",
+    "@tanstack/react-query": "5.104.5",
+    "dayjs": "1.11.23",
+    "openapi-fetch": "0.14.1",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-router-dom": "7.18.4",
+    "recharts": "2.15.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "@vitejs/plugin-react": "5.2.0",
+    "jsdom": "26.1.0",
+    "openapi-typescript": "7.13.0",
+    "postcss": "8.5.6",
+    "postcss-preset-mantine": "1.18.0",
+    "postcss-simple-vars": "7.0.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "3.2.7"
+  }
+}
