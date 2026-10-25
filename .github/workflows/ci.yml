@@ -1,0 +1,91 @@
+# Tests on every push to main and on pull requests.
+# A version tag (v1.2.3, see scripts/release.sh) additionally publishes the image to
+# ghcr.io/sinanboecker/is-it-worth-it as :1.2.3 and :latest, which Unraid picks up on its next update check.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Backend dependencies
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -e ".[dev]"
+      - name: Backend lint
+        working-directory: backend
+        run: .venv/bin/ruff check app tests && .venv/bin/ruff format --check app tests
+      - name: Backend tests
+        working-directory: backend
+        run: .venv/bin/python -m pytest
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Frontend typecheck and unit tests
+        working-directory: frontend
+        run: npm run typecheck && npm test
+      - name: Browser tests
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Tag matches the app version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          backend=$(sed -n 's/^version = "\(.*\)"/\1/p' backend/pyproject.toml)
+          frontend=$(node -p 'require("./frontend/package.json").version')
+          echo "tag $tag, backend $backend, frontend $frontend"
+          [ "$tag" = "$backend" ] && [ "$tag" = "$frontend" ] || { echo "::error::version mismatch, use scripts/release.sh"; exit 1; }
+
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/login-action@v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
