@@ -523,7 +523,7 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 Next to it a **+ button** to quickly add a game (category picker, preselected on a category page; opens the new game).
 
 Pages:
-1. **Dashboard** (start page, `/`; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),
+1. **Dashboard** (`/dashboard`, start page: `/` redirects there; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),
    game spending per year (bar, incl. DLC), hours per year (bar), cost/hour per year (line), games finished per year,
    status counts (backlog size, **backlog value** = money in games not started yet), a "Now Playing" tile (count + link to the page), "almost worth it" list, best/worst value items,
    **"Wishlist deals"** (games at or below their target price, official or keyshop).

@@ -37,7 +37,7 @@ import { RawgAttribution } from "./MetadataModals";
 import { SearchBar } from "./SearchBar";
 
 const MAIN_LINKS = [
-  { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard },
   { to: "/now-playing", label: "Now Playing", icon: IconPlayerPlay },
   { to: "/journal", label: "Journal", icon: IconBook },
   { to: "/favorites", label: "Favorites", icon: IconHeart },
@@ -68,7 +68,7 @@ export function Layout() {
       to={to}
       label={label}
       leftSection={<Icon size={18} />}
-      active={to === "/" ? location.pathname === "/" : location.pathname.startsWith(to)}
+      active={location.pathname.startsWith(to)}
       onClick={close}
     />
   );

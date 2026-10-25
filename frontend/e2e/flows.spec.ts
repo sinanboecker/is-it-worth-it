@@ -105,7 +105,7 @@ test("import games from a CSV file", async ({ page, request }) => {
 test("all pages load without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const url of ["/", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/stats", "/settings"]) {
+  for (const url of ["/", "/dashboard", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/stats", "/settings"]) {
     await page.goto(url);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
   }
@@ -230,4 +230,10 @@ test("quick-add a game from the header", async ({ page, request }) => {
   await header.getByRole("button", { name: "Add game" }).click();
   dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("textbox", { name: "Category" })).toHaveValue(category.name);
+});
+
+test("the start page is the dashboard", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 });
