@@ -115,18 +115,47 @@ scripts/release.sh 0.2.0     # sets the version, commits "Release 0.2.0", tags v
 Follow the build under *Actions* on GitHub. The tag must match the version in `backend/pyproject.toml` and
 `frontend/package.json`, which `release.sh` takes care of.
 
-**Unraid:**
+### Unraid
 
-1. Once: copy `unraid/is-it-worth-it.xml` to `/boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml`, then
-   *Docker → Add Container →* template `is-it-worth-it`, set *Allowed networks* (LAN + WireGuard subnet) and *Apply*.
-2. Updates: Unraid shows "update ready" for a new release; *Update* recreates the container with it (data in `/data`
-   stays). For automatic updates install the **CA Auto Update Applications** plugin (Community Applications) and
-   schedule it, e.g. daily.
-3. Rollback: in *Edit*, set *Repository* to a fixed version, e.g. `ghcr.io/sinanboecker/is-it-worth-it:0.1.0`, and
-   *Apply*. Back to `:latest` to follow releases again.
+**1. Get the template** (once): in the Unraid web UI, open the terminal (`>_` icon, top right) and run
 
-To try an unreleased build on Unraid: `UNRAID_HOST=root@<unraid-ip> scripts/deploy.sh` (needs SSH key login to Unraid)
-builds locally and loads it as `:latest`, then *Edit → Apply*. The next update check replaces it with the latest release.
+```bash
+wget -O /boot/config/plugins/dockerMan/templates-user/my-is-it-worth-it.xml \
+  https://raw.githubusercontent.com/sinanboecker/is-it-worth-it/main/unraid/is-it-worth-it.xml
+```
+
+`/boot` is the USB stick, so the template survives reboots. Run the command again to pick up template changes.
+
+**2. Apply the template** (create the container):
+
+1. *Docker* tab (enable Docker under *Settings → Docker* if it's missing) → **Add Container** at the bottom.
+2. *Template* dropdown at the top → under *User templates* pick **is-it-worth-it**. The form fills in.
+3. Check the fields:
+
+   | Field | Value |
+   |---|---|
+   | Repository | `ghcr.io/sinanboecker/is-it-worth-it:latest` (prefilled) |
+   | Network Type | `bridge` (prefilled) |
+   | Web UI port | `8080`; if another container uses it, change only this number, e.g. `8085` |
+   | Data | `/mnt/user/appdata/is-it-worth-it` (prefilled) |
+   | Allowed networks | home network + WireGuard subnet, e.g. `192.168.178.0/24,10.253.0.0/24`; empty = all private ranges |
+   | RAWG API key | optional, for game info and images |
+
+   Time zone, PUID and PGID are under *Show more settings*; the defaults fit Unraid.
+4. **Apply**: Unraid downloads the image (~225 MB) and starts the container. *Done* when it reports success.
+5. Open it via the container icon → *WebUI*, or `http://<unraid-ip>:8080`. The database starts empty; data lives in
+   `/mnt/user/appdata/is-it-worth-it`.
+
+To change settings later: container icon → *Edit*, change, *Apply* (recreates the container, data stays).
+
+**Updates:** after a release, *Docker* tab → *Check for Updates* → **Update** on the container ("update ready").
+This recreates it with the new image; migrations run on start and the data in `/data` stays.
+
+**Rollback:** in *Edit*, set *Repository* to a fixed version, e.g. `ghcr.io/sinanboecker/is-it-worth-it:0.1.0`, and
+*Apply*. Set it back to `:latest` to follow releases again.
+
+**Unreleased build:** `UNRAID_HOST=root@<unraid-ip> scripts/deploy.sh` (needs SSH key login to Unraid) builds locally and
+loads it as `:latest`, then *Edit → Apply*. The next *Update* replaces it with the latest release.
 
 ## License
 
