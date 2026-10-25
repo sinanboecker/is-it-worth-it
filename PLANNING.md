@@ -688,13 +688,13 @@ is_it_worth_it/
 - Every push to `main` (and every pull request) runs the tests: backend lint + pytest, frontend typecheck + unit tests, browser tests.
 - **Release = git tag.** `scripts/release.sh 0.3.0` sets the version in `backend/pyproject.toml` + `frontend/package.json`, commits, tags `v0.3.0` and pushes.
   The workflow tests the tag, checks that it matches the app version, builds the image and pushes it to `ghcr.io/sinanboecker/is-it-worth-it` as `:0.3.0` and `:latest`.
-- The Unraid template points to `ghcr.io/sinanboecker/is-it-worth-it:latest`, so Unraid's update check works: "update ready" → *Update* recreates the container.
-  **Automatic updates:** the CA Auto Update Applications plugin, on a schedule (e.g. daily). Not instant: GitHub can't reach the server (no inbound
-  connections by design), and a self-hosted GitHub runner on Unraid would let pull requests on the public repo run code on the server.
+- The Unraid template points to `ghcr.io/sinanboecker/is-it-worth-it:latest`, so Unraid's update check works. **Updates are manual:**
+  after a release, *Docker → Check for Updates* → "update ready" → *Update* recreates the container with the new image (migrations run on start).
+  GitHub can't push updates to the server (no inbound connections by design).
 - **Rollback:** set the template's repository to a fixed version (e.g. `:0.2.0`) + *Apply*; back to `:latest` to follow releases again.
 - The image is public (the code is public anyway); it contains no keys or data. `RAWG_API_KEY`/`GGDEALS_API_KEY` are set in the Unraid template only.
 - `scripts/deploy.sh` stays as a fallback to try an unreleased build: builds locally, loads it on Unraid over SSH as `:latest`, then *Edit → Apply*;
-  the next update check replaces it with the latest release.
+  the next *Update* replaces it with the latest release.
 - The Android APK is also built locally (`scripts/build-apk.sh`, Gradle) and copied to the phone.
 
 **Backups:** nightly SQLite copy inside `/data/backups` (keep last N), plus your normal Unraid appdata backup (covers can always be re-downloaded).
@@ -713,8 +713,8 @@ is_it_worth_it/
    Added later: Dashboard as start page (`/dashboard`), header search bar + quick-add button, "+ new category" in the sidebar.
 5. ✅ **Metadata + DLC lists:** RAWG search + apply (incl. Steam ID from store links, DLC names), RAWG attribution, cover caching, bulk "fetch missing" job, image upload; Steam Store DLC list with prices + cache.
 6. **Network guard + Docker:** ✅ `ALLOWED_NETWORKS` (loopback always allowed for the healthcheck), ✅ Dockerfile, ✅ compose, ✅ Unraid template, ✅ `deploy.sh`, ✅ GitHub Actions CI + release tags → ghcr.io image;
-   ✅ repo on GitHub, first release **v0.1.0**. Still to do on your side: make the ghcr.io package public, install on Unraid from the template,
-   CA Auto Update plugin, test over WireGuard.
+   ✅ repo on GitHub, releases **v0.1.0–v0.1.2** (image public on ghcr.io). Still to do on your side: install on Unraid from the template,
+   test over WireGuard.
    *(From here on, the app is usable day-to-day and replaces the spreadsheet.)*
 7. **gg.deals wishlist prices:** verify API fields with your key, linking (Steam ID / pasted URL), daily price sync, snapshots, official + keyshop display,
    gg.deals link, target price/deal badge, "Bought it" prefill.
@@ -758,7 +758,7 @@ is_it_worth_it/
 - `docker compose up` (or `podman run`, see README), then open `http://127.0.0.1:8080` (no login), add a game with RAWG data and a physical copy, add a second (digital) copy, sell the physical one (game stays owned), link it to the Switch and to a Trimui Brick (emulated pre-ticked),
   add hours on both devices from Now Playing (total updates), add a DLC from the dropdown, finish it twice with reviews, rate it, sell it; create a console + game bundle;
   add a wishlist game, check official + keyshop price and the gg.deals link; check the journal + heatmap, dashboard, category totals, yearly stats, hardware, DLC and store stats.
-- Release `v0.1.0` and install it on Unraid from the template, then release a second version and let Unraid update; check that data and covers persist in `/data`; test a rollback to the previous version tag. From the phone: works on home Wi-Fi, works on mobile data **with** WireGuard, fails **without** it.
+- Release `v0.1.0` and install it on Unraid from the template, then release a second version and update the container on Unraid (*Check for Updates* → *Update*); check that data and covers persist in `/data`; test a rollback to the previous version tag. From the phone: works on home Wi-Fi, works on mobile data **with** WireGuard, fails **without** it.
 - Android: run on emulator against the dev server (`10.0.2.2:8080`), then on a real phone.
 - Deal alerts: set a target above the current price → `deal_since` set once, `/wishlist/deals?since=` returns it once, the app shows one notification (not again on the next check);
   with the phone off the network, the alert arrives on the next successful check.
@@ -774,7 +774,7 @@ is_it_worth_it/
 wishlist added manually, gg.deals prices incl. keyshops always shown, link to gg.deals · category totals include hardware, yearly figures games (+ DLC) only ·
 no playtime sync (manual hours) · Now Playing as its own page · statuses On hold / Abandoned / Endless added · global default break-even (3 €/h) with per-category override ·
 single user for now · calendar heatmap included · store + physical/digital fields added · ratings 0–5 in 0.5 steps · bundles included · no Excel handling: CSV game import per category + JSON export/import ·
-Docker image built by GitHub Actions on release tags and pulled from ghcr.io (public repo, auto-update on Unraid via CA Auto Update); APK built locally ·
+Docker image built by GitHub Actions on release tags and pulled from ghcr.io (public repo; updated manually on Unraid via *Update*); APK built locally ·
 public GitHub repo, MIT license, made-up test data only · migrations again from v0.1.0 on (baseline = v0.1.0 schema) · Dashboard is the start page (`/dashboard`) ·
 header search + quick-add button · new categories from the sidebar · Android keeps Now Playing as its start screen (fastest way to log hours).
 
