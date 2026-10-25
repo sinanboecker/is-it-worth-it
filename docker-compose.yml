@@ -1,0 +1,17 @@
+# Local testing of the production image: `docker compose up --build` (or `podman compose`), then http://localhost:8080
+services:
+  app:
+    build: .
+    image: is-it-worth-it:latest
+    container_name: is-it-worth-it
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./compose-data:/data
+    environment:
+      TZ: Europe/Berlin
+      PUID: "1000"
+      PGID: "1000"
+      RAWG_API_KEY: ${RAWG_API_KEY:-}
+      # ALLOWED_NETWORKS: 192.168.178.0/24,10.253.0.0/24   # default: private ranges
+    restart: unless-stopped
