@@ -58,23 +58,7 @@ export const CATEGORY_ICONS: Record<CategoryIconName, { label: string; icon: Com
   folder: { label: "Folder", icon: IconFolder },
 };
 
-const RULES: [RegExp, CategoryIconName][] = [
-  [/xbox/, "xbox"],
-  [/playstation|\bps ?([1-5]|vita|p)?\b/, "playstation"],
-  [/nintendo|switch|\bwii|gamecube|\b3?ds\b/, "nintendo"],
-  [/handheld|game ?boy|steam ?deck|retro/, "handheld"],
-  [/\bpc\b|steam|computer|windows|\bgog\b|epic/, "pc"],
-];
-
-/** The icon "automatic" stands for: guessed from the name; hardware-only categories get the handheld. */
-export function guessIcon(category: Pick<Category, "name" | "type">): CategoryIconName {
-  const name = category.name.toLowerCase();
-  const match = RULES.find(([pattern]) => pattern.test(name));
-  if (match) return match[1];
-  return category.type === "hardware_only" ? "handheld" : "folder";
-}
-
-/** Sidebar icon of a category: the chosen one, or the guess when set to automatic (icon = null). */
-export function categoryIcon(category: Pick<Category, "name" | "type" | "icon">): ComponentType<IconProps> {
-  return CATEGORY_ICONS[category.icon ?? guessIcon(category)].icon;
+/** Sidebar icon of a category: the chosen one, the folder when none is set. */
+export function categoryIcon(category: Pick<Category, "icon">): ComponentType<IconProps> {
+  return CATEGORY_ICONS[category.icon ?? "folder"].icon;
 }

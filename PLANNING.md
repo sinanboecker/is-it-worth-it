@@ -141,7 +141,7 @@ item(game) n──n item(hardware)   via play_link (emulated flag, hours per dev
 | break_even_cph | int, nullable | Per-category override (null = use the global default). Applies to games and hardware in that category alike |
 | default_device_id | FK → item (hardware), nullable | device pre-selected when adding a game / hours in this category (e.g. Nintendo → Switch OLED) |
 | sort_order | int | |
-| icon | text, nullable | sidebar icon: `pc` / `playstation` / `nintendo` / `xbox` / `handheld` / `folder`; null = **automatic** (guessed from the name, hardware-only → handheld). Picked in the category dialog. Migration `0002` |
+| icon | text, nullable | sidebar icon: `pc` / `playstation` / `nintendo` / `xbox` / `handheld` / `folder`; null = folder. Picked in the category dialog. Migration `0002` |
 
 The **"Handhelds & Other Hardware"** category (`hardware_only`) is created automatically on first start (name editable).
 Examples: Ayn Thor, Trimui Brick, Anbernic, Retroid, Miyoo.
@@ -533,8 +533,8 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 shows category + status and opens the item; next to it a **+ button** to quickly add a game (category picker, preselected on a category page;
 opens the new game); light/dark toggle.
 
-**Sidebar:** Dashboard, Now Playing, Journal, Favorites, Wishlist, Backlog · **Categories** (one entry per category, with its icon: PC, PlayStation, Nintendo, Xbox, handheld or folder,
-chosen in the category dialog or "Auto" = guessed from the name; a **+** next to the label creates a new category and opens it) · Stats, Settings. On phones it opens via the menu button. Footer on every page: "Game data and images from RAWG" (§5b).
+**Sidebar:** Dashboard, Now Playing, Journal, Favorites, Wishlist, Backlog · **Categories** (one entry per category, with the icon chosen in the category dialog: PC, PlayStation, Nintendo,
+Xbox, handheld, or the folder when none is set; a **+** next to the label creates a new category and opens it) · Stats, Settings. On phones it opens via the menu button. Footer on every page: "Game data and images from RAWG" (§5b).
 
 Pages:
 1. **Dashboard** (`/dashboard`, start page: `/` redirects there; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),

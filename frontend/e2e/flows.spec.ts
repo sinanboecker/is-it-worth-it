@@ -284,7 +284,7 @@ test("pick a category icon in the category dialog", async ({ page, request }) =>
   await page.getByRole("navigation").getByRole("button", { name: "New category" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Name").fill(name);
-  await expect(dialog.getByRole("radio", { name: "Auto" })).toBeChecked();
+  await expect(dialog.getByRole("radio", { name: "Folder" })).toBeChecked();
   await pickSegment(dialog, "PlayStation");
   await expect(dialog.getByRole("radio", { name: "PlayStation" })).toBeChecked();
   await dialog.getByRole("button", { name: "Save" }).click();

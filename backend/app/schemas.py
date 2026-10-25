@@ -71,7 +71,7 @@ class CategoryUpdate(BaseModel):
     break_even_cph: int | None = Field(None, gt=0)
     default_device_id: int | None = None
     sort_order: int | None = None
-    icon: CategoryIcon | None = None  # null = automatic (guessed from the name)
+    icon: CategoryIcon | None = None  # null = folder
 
 
 class CategoryRead(ApiModel):

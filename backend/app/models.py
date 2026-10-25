@@ -83,7 +83,7 @@ class Category(SQLModel, table=True):
         ),
     )
     sort_order: int = 0
-    icon: str | None = None  # a CategoryIcon; None = guessed from the name
+    icon: str | None = None  # a CategoryIcon; None = folder
 
     items: list["Item"] = Relationship(
         back_populates="category",

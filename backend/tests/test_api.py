@@ -40,13 +40,13 @@ def test_category_rules(api):
 
 
 def test_category_icon(api):
-    automatic = api.category("PC")
-    assert automatic["icon"] is None  # guessed from the name by the clients
+    plain = api.category("PC")
+    assert plain["icon"] is None  # shown as the folder
     ps = api.category("Konsole", icon="playstation")
     assert ps["icon"] == "playstation"
     assert api.patch(f"/categories/{ps['id']}", {"icon": "xbox"})["icon"] == "xbox"
     assert api.patch(f"/categories/{ps['id']}", {"name": "Xbox"})["icon"] == "xbox"  # untouched when not sent
-    assert api.patch(f"/categories/{ps['id']}", {"icon": None})["icon"] is None  # back to automatic
+    assert api.patch(f"/categories/{ps['id']}", {"icon": None})["icon"] is None
     assert api.client.patch(f"/api/v1/categories/{ps['id']}", json={"icon": "toaster"}).status_code == 422
 
 
