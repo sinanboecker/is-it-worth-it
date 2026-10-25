@@ -207,11 +207,14 @@ class TopMetric:
 
 
 TOP_METRICS: dict[str, TopMetric] = {
-    # best/worst value; free items (net cost 0 €) would always top the best list, so they're left out
+    # best/worst value; free items (net cost 0 €) would always top the best list and items sold at a gain have a
+    # negative €/h, so both are left out (gains have their own list, "gain")
     "cost_per_hour": TopMetric(
         key=lambda v: v.cost_per_hour_cents,
-        include=lambda v: v.cost_per_hour_cents is not None and v.net_cost_cents != 0,
+        include=lambda v: v.cost_per_hour_cents is not None and v.net_cost_cents > 0,
     ),
+    # best sales: items that brought in more than they cost, by the money gained
+    "gain": TopMetric(key=lambda v: -v.net_cost_cents, include=lambda v: v.net_cost_cents < 0),
     # "almost worth it": not yet at break-even, sorted by the hours still needed; items that are only minutes
     # short (0.0 h left after rounding) are left out
     "hours_to_break_even": TopMetric(

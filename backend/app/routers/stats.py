@@ -104,14 +104,15 @@ def yearly(session: SessionDep, settings: SettingsDep, category_id: CategoryPara
 def top(
     session: SessionDep,
     settings: SettingsDep,
-    metric: Literal["cost_per_hour", "hours_to_break_even", "hours", "net_cost"] = "cost_per_hour",
+    metric: Literal["cost_per_hour", "hours_to_break_even", "hours", "net_cost", "gain"] = "cost_per_hour",
     kind: ItemKind = ItemKind.game,
     order: Literal["asc", "desc"] = "asc",
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     category_id: CategoryParam = None,
 ):
-    """Best/worst value (`cost_per_hour`, without items that cost 0 €). `hours_to_break_even` lists only items not yet
-    worth it with at least 0.1 h left ("almost worth it")."""
+    """Best/worst value (`cost_per_hour`, only items with a net cost above 0 €). `hours_to_break_even` lists only items
+    not yet worth it with at least 0.1 h left ("almost worth it"). `gain` lists items sold for more than they cost,
+    by the money gained (use `order=desc` for the biggest gains first)."""
     items = [i for i in load_items(session, category_id) if i.kind is kind]
     ranked = stats.top_items(items, settings.break_even_cph, metric, order == "asc", limit)
     return [ItemSummary.build(item, settings.break_even_cph) for item, _value in ranked]

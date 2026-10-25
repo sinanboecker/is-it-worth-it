@@ -535,8 +535,9 @@ export interface paths {
         };
         /**
          * Top
-         * @description Best/worst value (`cost_per_hour`, without items that cost 0 €). `hours_to_break_even` lists only items not yet
-         *     worth it with at least 0.1 h left ("almost worth it").
+         * @description Best/worst value (`cost_per_hour`, only items with a net cost above 0 €). `hours_to_break_even` lists only items
+         *     not yet worth it with at least 0.1 h left ("almost worth it"). `gain` lists items sold for more than they cost,
+         *     by the money gained (use `order=desc` for the biggest gains first).
          */
         get: operations["top_api_v1_stats_top_get"];
         put?: never;
@@ -3496,7 +3497,7 @@ export interface operations {
     top_api_v1_stats_top_get: {
         parameters: {
             query?: {
-                metric?: "cost_per_hour" | "hours_to_break_even" | "hours" | "net_cost";
+                metric?: "cost_per_hour" | "hours_to_break_even" | "hours" | "net_cost" | "gain";
                 kind?: components["schemas"]["ItemKind"];
                 order?: "asc" | "desc";
                 limit?: number;

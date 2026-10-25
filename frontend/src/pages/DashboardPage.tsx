@@ -63,6 +63,7 @@ export function DashboardPage() {
   const best = useTop({ metric: "cost_per_hour", order: "asc", limit: 5 });
   const worst = useTop({ metric: "cost_per_hour", order: "desc", limit: 5 });
   const almost = useTop({ metric: "hours_to_break_even", order: "asc", limit: 5 });
+  const sales = useTop({ metric: "gain", order: "desc", limit: 5 });
 
   return (
     <Stack>
@@ -163,7 +164,7 @@ export function DashboardPage() {
         </ChartCard>
       </SimpleGrid>
 
-      <SimpleGrid cols={{ base: 1, md: 3 }}>
+      <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }}>
         <QueryView query={almost}>
           {(items) => (
             <ItemListCard title="Almost worth it" items={items} render={(i) => `${hours(i.value?.hours_to_break_even)} left`} />
@@ -174,6 +175,11 @@ export function DashboardPage() {
         </QueryView>
         <QueryView query={worst}>
           {(items) => <ItemListCard title="Worst value" items={items} render={(i) => perHour(i.value?.cost_per_hour_cents)} />}
+        </QueryView>
+        <QueryView query={sales}>
+          {(items) => (
+            <ItemListCard title="Best sales" items={items} render={(i) => `+${euros(-(i.value?.net_cost_cents ?? 0))}`} />
+          )}
         </QueryView>
       </SimpleGrid>
 

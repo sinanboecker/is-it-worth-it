@@ -2188,7 +2188,7 @@
           "stats"
         ],
         "summary": "Top",
-        "description": "Best/worst value (`cost_per_hour`, without items that cost 0 €). `hours_to_break_even` lists only items not yet\nworth it with at least 0.1 h left (\"almost worth it\").",
+        "description": "Best/worst value (`cost_per_hour`, only items with a net cost above 0 €). `hours_to_break_even` lists only items\nnot yet worth it with at least 0.1 h left (\"almost worth it\"). `gain` lists items sold for more than they cost,\nby the money gained (use `order=desc` for the biggest gains first).",
         "operationId": "top_api_v1_stats_top_get",
         "parameters": [
           {
@@ -2200,7 +2200,8 @@
                 "cost_per_hour",
                 "hours_to_break_even",
                 "hours",
-                "net_cost"
+                "net_cost",
+                "gain"
               ],
               "type": "string",
               "default": "cost_per_hour",

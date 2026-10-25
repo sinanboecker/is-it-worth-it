@@ -180,9 +180,19 @@ def test_top_lists_skip_free_and_nearly_even_items(api):
     played("Paid", 1000, 10)  # 1 €/h
     played("Nearly", 1000, 3.3)  # needs 3.33 h at 3 €/h: 0.03 h left, rounds to 0.0
     played("Far", 600, 1)  # 1 h left
+    played("Flipped", 2000, 5)
+    api.game(nintendo["id"], name="Flipped more", price=1000)  # never played
+    for name, sold_for in [("Flipped", 2500), ("Flipped more", 4000)]:
+        game = api.get("/items", params={"q": name})[0]
+        copy = api.get(f"/items/{game['id']}")["copies"][0]
+        api.patch(f"/items/{game['id']}/copies/{copy['id']}", {"sell_price_cents": sold_for, "sell_date": "2025-01-01"})
 
     best = api.get("/stats/top", params={"metric": "cost_per_hour"})
-    assert [g["name"] for g in best] == ["Paid", "Nearly", "Far"]
+    assert [g["name"] for g in best] == ["Paid", "Nearly", "Far"]  # no gains (negative €/h) and no free games
+    worst = api.get("/stats/top", params={"metric": "cost_per_hour", "order": "desc"})
+    assert [g["name"] for g in worst] == ["Far", "Nearly", "Paid"]
+    sales = api.get("/stats/top", params={"metric": "gain", "order": "desc"})
+    assert [(g["name"], g["value"]["net_cost_cents"]) for g in sales] == [("Flipped more", -3000), ("Flipped", -500)]
     almost = api.get("/stats/top", params={"metric": "hours_to_break_even"})
     assert [g["name"] for g in almost] == ["Far"]
     assert not api.get("/items", params={"q": "Nearly"})[0]["value"]["worth_it"]
