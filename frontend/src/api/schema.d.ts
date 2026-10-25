@@ -1090,7 +1090,7 @@ export interface components {
          * @description Sidebar icon of a category; stored as plain text so new icons need no migration.
          * @enum {string}
          */
-        CategoryIcon: "pc" | "playstation" | "nintendo" | "xbox" | "handheld" | "folder";
+        CategoryIcon: "pc" | "playstation" | "ps4" | "ps5" | "nintendo" | "switch2" | "xbox" | "xbox360" | "xbox_one" | "xbox_series" | "handheld" | "folder";
         /** CategoryRead */
         CategoryRead: {
             /** Id */

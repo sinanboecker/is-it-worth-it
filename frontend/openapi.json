@@ -3964,8 +3964,14 @@
         "enum": [
           "pc",
           "playstation",
+          "ps4",
+          "ps5",
           "nintendo",
+          "switch2",
           "xbox",
+          "xbox360",
+          "xbox_one",
+          "xbox_series",
           "handheld",
           "folder"
         ],

@@ -4,6 +4,7 @@ import {
   Input,
   Modal,
   NumberInput,
+  Radio,
   SegmentedControl,
   Stack,
   Text,
@@ -55,26 +56,29 @@ export function CategoryModal({ category, onClose }: { category?: Category; onCl
           onChange={(v) => setType(v as Category["type"])}
         />
         <Input.Wrapper label="Icon" description="Shown in the sidebar.">
-          <SegmentedControl
-            mt={6}
-            fullWidth
-            aria-label="Icon"
-            value={icon}
-            onChange={(v) => setIcon(v as CategoryIconName)}
-            data={(Object.entries(CATEGORY_ICONS) as [CategoryIconName, (typeof CATEGORY_ICONS)[CategoryIconName]][]).map(
-              ([value, { label, icon: Icon }]) => ({
-                value,
-                label: (
-                  <Tooltip label={label} withinPortal>
-                    <Group justify="center">
-                      <Icon size={18} />
-                      <VisuallyHidden>{label}</VisuallyHidden>
-                    </Group>
+          <Radio.Group value={icon} onChange={(v) => setIcon(v as CategoryIconName)} aria-label="Icon">
+            <Group gap={6} mt={6}>
+              {(Object.entries(CATEGORY_ICONS) as [CategoryIconName, (typeof CATEGORY_ICONS)[CategoryIconName]][]).map(
+                ([value, { label, icon: Icon }]) => (
+                  <Tooltip key={value} label={label} withinPortal>
+                    <Radio.Card
+                      value={value}
+                      w={40}
+                      h={36}
+                      radius="sm"
+                      bg={value === icon ? "var(--mantine-primary-color-light)" : undefined}
+                      c={value === icon ? "var(--mantine-primary-color-light-color)" : undefined}
+                    >
+                      <Group justify="center">
+                        <Icon size={18} />
+                        <VisuallyHidden>{label}</VisuallyHidden>
+                      </Group>
+                    </Radio.Card>
                   </Tooltip>
                 ),
-              }),
-            )}
-          />
+              )}
+            </Group>
+          </Radio.Group>
         </Input.Wrapper>
         <DeviceSelect
           label="Default device"

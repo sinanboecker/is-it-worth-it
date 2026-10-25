@@ -49,11 +49,83 @@ export function IconHandheld(props: IconProps) {
   );
 }
 
+/** PlayStation 4: flat slab with slanted ends and the groove across the middle. */
+export function IconPs4(props: IconProps) {
+  return (
+    <OutlineIcon {...props}>
+      <path d="M5 6h16l-2 12h-16z" />
+      <path d="M4 12h16" />
+    </OutlineIcon>
+  );
+}
+
+/** PlayStation 5: the tall core between two curved side panels. */
+export function IconPs5(props: IconProps) {
+  return (
+    <OutlineIcon {...props}>
+      <path d="M10 5v14h4v-14z" />
+      <path d="M10 3c-3 0 -5 2 -5 5v9c0 2 2 4 5 4" />
+      <path d="M14 3c3 0 5 2 5 5v9c0 2 -2 4 -5 4" />
+    </OutlineIcon>
+  );
+}
+
+/** Nintendo Switch 2: wide screen between two Joy-Cons with their sticks. */
+export function IconSwitch2(props: IconProps) {
+  return (
+    <OutlineIcon {...props}>
+      <rect x="2" y="6" width="20" height="12" rx="3" />
+      <path d="M7 6v12M17 6v12" />
+      <path d="M3.5 10a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="currentColor" />
+      <path d="M18.5 14a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="currentColor" />
+    </OutlineIcon>
+  );
+}
+
+/** Xbox 360: standing console with concave sides and the ring of light. */
+export function IconXbox360(props: IconProps) {
+  return (
+    <OutlineIcon {...props}>
+      <path d="M5 3h14c-1.5 3 -1.5 15 0 18h-14c1.5 -3 1.5 -15 0 -18z" />
+      <circle cx="12" cy="8" r="2" />
+    </OutlineIcon>
+  );
+}
+
+/** Xbox One: wide box, vented on the left, power button on the glossy right side. */
+export function IconXboxOne(props: IconProps) {
+  return (
+    <OutlineIcon {...props}>
+      <rect x="2" y="7" width="20" height="10" rx="1" />
+      <path d="M14 7v10" />
+      <path d="M5 10v4M8 10v4M11 10v4" />
+      <circle cx="18" cy="12" r="1" />
+    </OutlineIcon>
+  );
+}
+
+/** Xbox Series X: tall tower with the round vent on top. */
+export function IconXboxSeries(props: IconProps) {
+  return (
+    <OutlineIcon {...props}>
+      <rect x="6" y="2" width="12" height="20" rx="1.5" />
+      <circle cx="12" cy="7" r="3" />
+      <path d="M9 18h2" />
+    </OutlineIcon>
+  );
+}
+
 export const CATEGORY_ICONS: Record<CategoryIconName, { label: string; icon: ComponentType<IconProps> }> = {
   pc: { label: "PC", icon: IconDeviceDesktop },
   playstation: { label: "PlayStation", icon: IconPlayStation },
+  ps4: { label: "PlayStation 4", icon: IconPs4 },
+  ps5: { label: "PlayStation 5", icon: IconPs5 },
   nintendo: { label: "Nintendo", icon: IconDeviceNintendo },
+  switch2: { label: "Nintendo Switch 2", icon: IconSwitch2 },
   xbox: { label: "Xbox", icon: IconBrandXbox },
+  xbox360: { label: "Xbox 360", icon: IconXbox360 },
+  xbox_one: { label: "Xbox One", icon: IconXboxOne },
+  xbox_series: { label: "Xbox Series", icon: IconXboxSeries },
   handheld: { label: "Handheld", icon: IconHandheld },
   folder: { label: "Folder", icon: IconFolder },
 };

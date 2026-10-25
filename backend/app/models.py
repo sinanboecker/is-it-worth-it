@@ -26,8 +26,14 @@ class CategoryIcon(StrEnum):
 
     pc = "pc"
     playstation = "playstation"
+    ps4 = "ps4"
+    ps5 = "ps5"
     nintendo = "nintendo"
+    switch2 = "switch2"
     xbox = "xbox"
+    xbox360 = "xbox360"
+    xbox_one = "xbox_one"
+    xbox_series = "xbox_series"
     handheld = "handheld"
     folder = "folder"
 
