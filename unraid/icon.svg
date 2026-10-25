@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Is It Worth It? icon: a gamepad with a € in the middle -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5c7cfa"/>
+      <stop offset="1" stop-color="#3b5bdb"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- gamepad -->
+  <path fill="#ffffff" d="M 150 136 H 362 C 432 136 470 178 482 250 L 492 330 C 500 392 468 424 428 424
+    C 398 424 382 404 362 372 L 344 344 H 168 L 150 372 C 130 404 114 424 84 424
+    C 44 424 12 392 20 330 L 30 250 C 42 178 80 136 150 136 Z"/>
+
+  <!-- d-pad -->
+  <g fill="#3b5bdb">
+    <rect x="104" y="200" width="30" height="88" rx="7"/>
+    <rect x="75" y="229" width="88" height="30" rx="7"/>
+  </g>
+
+  <!-- face buttons -->
+  <g fill="#3b5bdb">
+    <circle cx="396" cy="212" r="16"/>
+    <circle cx="396" cy="276" r="16"/>
+    <circle cx="364" cy="244" r="16"/>
+    <circle cx="428" cy="244" r="16"/>
+  </g>
+
+  <!-- € -->
+  <g fill="none" stroke="#2f9e44" stroke-linecap="round">
+    <path d="M 300 196 A 60 60 0 1 0 300 292" stroke-width="28"/>
+    <path d="M 200 228 H 276 M 200 262 H 268" stroke-width="20"/>
+  </g>
+</svg>

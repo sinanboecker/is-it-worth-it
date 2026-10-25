@@ -30,6 +30,9 @@ COPY backend/app ./app
 COPY --from=frontend /build/dist ./frontend
 COPY docker/entrypoint.sh /entrypoint.sh
 
+# shown by Unraid for containers created without the template
+LABEL net.unraid.docker.icon="https://raw.githubusercontent.com/sinanboecker/is-it-worth-it/main/unraid/icon.png"
+
 VOLUME /data
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \

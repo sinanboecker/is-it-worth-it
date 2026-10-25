@@ -8,6 +8,7 @@
   <Registry>https://github.com/sinanboecker/is-it-worth-it/pkgs/container/is-it-worth-it</Registry>
   <Support>https://github.com/sinanboecker/is-it-worth-it/issues</Support>
   <Project>https://github.com/sinanboecker/is-it-worth-it</Project>
+  <Icon>https://raw.githubusercontent.com/sinanboecker/is-it-worth-it/main/unraid/icon.png</Icon>
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>

@@ -669,7 +669,7 @@ is_it_worth_it/
 ├── Dockerfile          multi-stage: build frontend → copy into python image
 ├── docker/entrypoint.sh  hands /data to PUID:PGID, drops root
 ├── docker-compose.yml  for local testing (or `podman run`, see README)
-├── unraid/is-it-worth-it.xml   Unraid container template (ghcr.io image)
+├── unraid/             is-it-worth-it.xml (Unraid template, ghcr.io image), icon.svg/.png (gamepad with €)
 ├── .github/workflows/ci.yml    tests on push; release tags publish the image to ghcr.io
 └── scripts/            release.sh (version + tag + push), deploy.sh (try an unreleased build on Unraid), build-apk.sh
 ```
