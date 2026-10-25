@@ -17,5 +17,7 @@ sed -i "s/^version = \".*\"/version = \"$VERSION\"/" backend/pyproject.toml
 git add backend/pyproject.toml frontend/package.json frontend/package-lock.json
 git diff --cached --quiet || git commit -q -m "Release $VERSION"
 git tag -a "v$VERSION" -m "Release $VERSION"
-git push origin main "v$VERSION"
+# separate pushes: a tag pushed together with a branch that adds/changes the workflow can be missed by GitHub Actions
+git push origin main
+git push origin "v$VERSION"
 echo "Pushed v$VERSION. Build: https://github.com/sinanboecker/is-it-worth-it/actions"
