@@ -6,7 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session
 
 from app import config
-from app.db import create_tables, get_engine
+from app.db import get_engine
+from app.migrations import upgrade_database
 from app.netguard import DEFAULT_NETWORKS, NetworkGuard, parse_networks
 from app.routers import bundles, categories, items, metadata, settings, stats, transfer
 from app.seed import seed
@@ -14,7 +15,7 @@ from app.seed import seed
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    create_tables(get_engine())
+    upgrade_database(get_engine())
     with Session(get_engine()) as session:
         seed(session)
     yield

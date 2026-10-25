@@ -62,7 +62,7 @@ python3 -m venv .venv
 .venv/bin/ruff check app tests && .venv/bin/ruff format app tests
 ```
 
-Data is stored in `backend/data/app.db` (override with `DATA_DIR`). Tables are created on startup.
+Data is stored in `backend/data/app.db` (override with `DATA_DIR`). Migrations run automatically on startup.
 
 Game info and images come from [RAWG](https://rawg.io): get a free API key ("Get API key") and start the backend with
 `RAWG_API_KEY=<your key>`. Without a key everything works, just without metadata lookups. The DLC list with prices comes
@@ -76,8 +76,12 @@ Command line tools (run from `backend/`):
 .venv/bin/python -m app.cli import-json backup.json --mode replace
 ```
 
-There are no database migrations yet: after changing a model, delete `backend/data/app.db` (or restore a JSON export
-into a fresh database).
+**Every model change needs a migration** (a test fails otherwise). Create it from `backend/`, then check the generated
+file in `app/alembic/versions/` (SQLite changes run in batch mode; data changes have to be written by hand):
+
+```bash
+.venv/bin/python -m app.cli migration "describe change"
+```
 
 ### Frontend
 

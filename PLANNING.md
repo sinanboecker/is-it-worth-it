@@ -63,7 +63,7 @@ Goal:
 | Hours on a finished game | Adding hours **keeps the status** (e.g. Finished stays Finished); only Backlog/On hold games get a "switch to Currently playing?" suggestion. |
 | Bundles | One purchase → several items; the price is split across them (proportional to their standalone value by default). See §3. |
 | Code & releases | **Public GitHub repo** (github.com/sinanboecker/is-it-worth-it, MIT license). A **git tag** (`v1.2.3`) is a release: GitHub Actions tests it and publishes the Docker image to **ghcr.io**; Unraid updates from there. See §11. |
-| Database schema | **No migrations for now.** Tables are created from the models on startup; the database is filled fresh on Unraid. Migrations (Alembic) come back once a schema change has to keep real data. |
+| Database schema | **Alembic migrations, run automatically on startup.** Every model change comes with a migration (a test compares migrations and models). Baseline `0001` = schema of v0.1.0; databases from v0.1.0 (no migration record) and from the first, removed migration history (`0005`) are adopted without changes. |
 | Test data | The repo contains **made-up games only** (CSV fixtures). Real purchase data stays in the untracked data folders and is never committed. |
 
 ---
@@ -95,7 +95,7 @@ The server needs **outbound** internet only for RAWG, gg.deals and the Steam Sto
 | Layer | Choice | Why |
 |---|---|---|
 | Backend | **Python 3.14 + FastAPI** (code runs on 3.12+) | Small, fast, generates OpenAPI docs automatically (useful for the Android client), good CSV/JSON handling in the standard library |
-| ORM / migrations | **SQLModel (SQLAlchemy)**; tables created on startup, **no migrations for now** | The database is filled fresh on Unraid; Alembic can be added back (with the then-current schema as baseline) once a schema change has to keep real data |
+| ORM / migrations | **SQLModel (SQLAlchemy) + Alembic** | Typed models, safe schema upgrades between versions (real data on Unraid is kept) |
 | Database | **SQLite** in `/data` volume | One user, small dataset; backup = copy the `/data` folder. No separate DB container |
 | CSV import / JSON export | Python standard library (`csv`, `json`) + Pydantic for validation | No extra dependencies |
 | Game metadata | **RAWG API** (free key for personal use) via `httpx` | No Twitch/IGDB account needed; release date, genres, developer, description, landscape image, DLC names, store links (Steam ID) |
@@ -680,7 +680,7 @@ is_it_worth_it/
 - Env: `ALLOWED_NETWORKS`, `RAWG_API_KEY`, `GGDEALS_API_KEY` (added to the template with milestone 7), `TZ` (default `Europe/Berlin`), `PUID`/`PGID` (99/100 Unraid defaults)
 - Starts as root only to hand `/data` to `PUID:PGID` (`docker/entrypoint.sh`), then runs the server as that user (`setpriv`)
 - Background jobs (daily wishlist price sync, nightly backup) run **inside** the container via APScheduler, so no extra cron container is needed
-- Tables are created on startup; the default "Handhelds & Other Hardware" category and the default break-even (3 €/h) are seeded on first start
+- Migrations run automatically on startup; the default "Handhelds & Other Hardware" category and the default break-even (3 €/h) are seeded on first start
 - `HEALTHCHECK` hits `/api/v1/health`
 
 **Getting the image to Unraid: GitHub Actions + GitHub Container Registry** (repo: github.com/sinanboecker/is-it-worth-it, public)
@@ -774,7 +774,7 @@ wishlist added manually, gg.deals prices incl. keyshops always shown, link to gg
 no playtime sync (manual hours) · Now Playing as its own page · statuses On hold / Abandoned / Endless added · global default break-even (3 €/h) with per-category override ·
 single user for now · calendar heatmap included · store + physical/digital fields added · ratings 0–5 in 0.5 steps · bundles included · no Excel handling: CSV game import per category + JSON export/import ·
 Docker image built by GitHub Actions on release tags and pulled from ghcr.io (public repo, auto-update on Unraid via CA Auto Update); APK built locally ·
-public GitHub repo, MIT license, made-up test data only · no database migrations for now (fresh database on Unraid) · Dashboard is the start page (`/dashboard`) ·
+public GitHub repo, MIT license, made-up test data only · migrations again from v0.1.0 on (baseline = v0.1.0 schema) · Dashboard is the start page (`/dashboard`) ·
 header search + quick-add button · new categories from the sidebar · Android keeps Now Playing as its start screen (fastest way to log hours).
 
 ## 15. Future ideas
