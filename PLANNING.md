@@ -575,6 +575,7 @@ Pages:
 10. **Settings:** gg.deals (region, refresh interval, API key status), global default break-even value,
     default bundle split mode, categories (type, default device, break-even override shown as "default (3 €/h)" until set), stores (rename/merge duplicates),
     **JSON export (with or without images)** and **JSON import/restore**, "fetch missing metadata" bulk job.
+    **About:** app version (links to that release's code on GitHub), link to the repository, license.
 
 Prices are shown in EUR with German formatting `1.234,56 €`. Responsive layout so it also works in a mobile browser.
 

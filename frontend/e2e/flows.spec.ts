@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import path from "node:path";
+import pkg from "../package.json" with { type: "json" };
 
 /** Test data through the API; the flows under test go through the UI. */
 async function setup(request: APIRequestContext) {
@@ -236,4 +237,18 @@ test("the start page is the dashboard", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+});
+
+test("settings show the version and the repository link", async ({ page }) => {
+  const { version } = pkg;
+  await page.goto("/settings");
+  const about = page.getByRole("heading", { name: "About" }).locator("..");
+  await expect(about.getByRole("link", { name: version, exact: true })).toHaveAttribute(
+    "href",
+    `https://github.com/sinanboecker/is-it-worth-it/tree/v${version}`,
+  );
+  await expect(about.getByRole("link", { name: /github\.com\/sinanboecker\/is-it-worth-it/ })).toHaveAttribute(
+    "href",
+    "https://github.com/sinanboecker/is-it-worth-it",
+  );
 });

@@ -15,7 +15,7 @@ import {
   Title,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconDownload, IconEdit, IconPlus, IconSearch, IconTrash, IconUpload } from "@tabler/icons-react";
+import { IconBrandGithub, IconDownload, IconEdit, IconPlus, IconSearch, IconTrash, IconUpload } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { useState, type ReactNode } from "react";
@@ -275,6 +275,42 @@ function MetadataSettings() {
   );
 }
 
+const REPOSITORY = "https://github.com/sinanboecker/is-it-worth-it";
+
+function AboutSection() {
+  return (
+    <Section title="About">
+      <Table variant="vertical" withTableBorder={false} maw={480}>
+        <Table.Tbody>
+          <Table.Tr>
+            <Table.Th w={140}>Version</Table.Th>
+            <Table.Td>
+              <Anchor href={`${REPOSITORY}/tree/v${__APP_VERSION__}`} target="_blank" rel="noreferrer">
+                {__APP_VERSION__}
+              </Anchor>
+            </Table.Td>
+          </Table.Tr>
+          <Table.Tr>
+            <Table.Th>Source code</Table.Th>
+            <Table.Td>
+              <Anchor href={REPOSITORY} target="_blank" rel="noreferrer">
+                <Group gap={6} wrap="nowrap">
+                  <IconBrandGithub size={16} />
+                  github.com/sinanboecker/is-it-worth-it
+                </Group>
+              </Anchor>
+            </Table.Td>
+          </Table.Tr>
+          <Table.Tr>
+            <Table.Th>License</Table.Th>
+            <Table.Td>MIT</Table.Td>
+          </Table.Tr>
+        </Table.Tbody>
+      </Table>
+    </Section>
+  );
+}
+
 export function SettingsPage() {
   const settings = useSettings();
   return (
@@ -287,6 +323,7 @@ export function SettingsPage() {
             <CategoriesSettings settings={s} />
             <MetadataSettings />
             <DataSettings />
+            <AboutSection />
           </Stack>
         )}
       </QueryView>
