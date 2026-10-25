@@ -62,6 +62,9 @@ Goal:
 | Ratings | 0–5 stars in **0.5 steps**, **only on the game**. A finish (completion) has no rating, only an optional review. |
 | Hours on a finished game | Adding hours **keeps the status** (e.g. Finished stays Finished); only Backlog/On hold games get a "switch to Currently playing?" suggestion. |
 | Bundles | One purchase → several items; the price is split across them (proportional to their standalone value by default). See §3. |
+| Code & releases | **Public GitHub repo** (github.com/sinanboecker/is-it-worth-it, MIT license). A **git tag** (`v1.2.3`) is a release: GitHub Actions tests it and publishes the Docker image to **ghcr.io**; Unraid updates from there. See §11. |
+| Database schema | **No migrations for now.** Tables are created from the models on startup; the database is filled fresh on Unraid. Migrations (Alembic) come back once a schema change has to keep real data. |
+| Test data | The repo contains **made-up games only** (CSV fixtures). Real purchase data stays in the untracked data folders and is never committed. |
 
 ---
 
@@ -91,7 +94,7 @@ The server needs **outbound** internet only for RAWG, gg.deals and the Steam Sto
 
 | Layer | Choice | Why |
 |---|---|---|
-| Backend | **Python 3.12 + FastAPI** | Small, fast, generates OpenAPI docs automatically (useful for the Android client), good CSV/JSON handling in the standard library |
+| Backend | **Python 3.14 + FastAPI** (code runs on 3.12+) | Small, fast, generates OpenAPI docs automatically (useful for the Android client), good CSV/JSON handling in the standard library |
 | ORM / migrations | **SQLModel (SQLAlchemy)**; tables created on startup, **no migrations for now** | The database is filled fresh on Unraid; Alembic can be added back (with the then-current schema as baseline) once a schema change has to keep real data |
 | Database | **SQLite** in `/data` volume | One user, small dataset; backup = copy the `/data` folder. No separate DB container |
 | CSV import / JSON export | Python standard library (`csv`, `json`) + Pydantic for validation | No extra dependencies |
@@ -99,7 +102,8 @@ The server needs **outbound** internet only for RAWG, gg.deals and the Steam Sto
 | Web frontend | **React + TypeScript + Vite** | Built to static files and served by FastAPI |
 | Web UI libs | **Mantine 8** (UI, forms, dates, charts on Recharts), TanStack Query (data fetching), React Router; API types generated from the OpenAPI schema (openapi-typescript + openapi-fetch) | Mature and well documented; sortable tables are built with Mantine directly |
 | Android | **Kotlin + Jetpack Compose + Material 3**, Coil for images | Native look and feel; Retrofit + kotlinx.serialization for the API |
-| Container | Multi-stage Dockerfile (node build → python slim runtime) | Small image, single artifact |
+| Container | Multi-stage Dockerfile (`node:22-slim` build → `python:3.14-slim` runtime), ~225 MB | Small image, single artifact |
+| CI / releases | **GitHub Actions** (tests on every push; release tags build and push the image to **ghcr.io**) | Free for public repos; Unraid can update from a registry |
 
 > **Android = native app** (decided), built **after** the web app is stable. A native app works over plain HTTP on the LAN and can show
 > real Android notifications (deal alerts) without HTTPS or a push service, which a web app (PWA) couldn't.
@@ -505,8 +509,13 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 - **Reachable only from the home LAN and the WireGuard tunnel.** No port forwarding on the router, no reverse proxy, no Tailscale.
 - **WireGuard:** use Unraid's built-in VPN Manager (*Settings → VPN Manager*), tunnel type **"Remote access to LAN"**. The phone uses the official WireGuard Android app;
   when the tunnel is up, the app talks to `http://<unraid-lan-ip>:8080` exactly like at home.
-- **Extra safety net (defense in depth):** env var `ALLOWED_NETWORKS` (e.g. `192.168.178.0/24,10.253.0.0/24`). The server rejects requests from any other source address.
-  Default = private ranges only (10/8, 172.16/12, 192.168/16).
+- **Extra safety net (defense in depth):** env var `ALLOWED_NETWORKS` (e.g. `192.168.178.0/24,10.253.0.0/24`). The server answers **403** to requests from any other source address
+  (`app/netguard.py`, an ASGI middleware in front of API and web app).
+  - Default = private ranges only: 10/8, 172.16/12, 192.168/16, plus IPv6 unique local (fc00::/7) and link-local (fe80::/10).
+  - **Loopback (127.0.0.1, ::1) is always allowed**, for the container healthcheck and local development. IPv4-mapped IPv6 addresses are checked as IPv4.
+  - An invalid entry stops the server at startup with an error naming the entry.
+  - The server runs **without proxy headers**, so the checked address is always the real client (a spoofed `X-Forwarded-For` has no effect).
+    In Docker's bridge mode the real LAN/WireGuard address arrives unchanged; the Docker gateway (172.17.0.1) is inside the default ranges.
 - **Plain HTTP** inside the LAN/tunnel (the WireGuard traffic is already encrypted). The Android app allows cleartext only for private IP ranges via `network_security_config`.
   *(Optional later: a self-signed cert / local CA for HTTPS.)*
 - **No login** (decided): being on the home network or the WireGuard tunnel is the access control. Single user.
@@ -519,8 +528,12 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 
 ## 8. Web app (frontend)
 
-**Search bar** in the header on every page (Ctrl+K): finds games and hardware by name across all categories, shows category + status, opens the item.
-Next to it a **+ button** to quickly add a game (category picker, preselected on a category page; opens the new game).
+**Header** (every page): app name (hidden on phones), **search bar** (Ctrl+K) that finds games and hardware by name across all categories,
+shows category + status and opens the item; next to it a **+ button** to quickly add a game (category picker, preselected on a category page;
+opens the new game); light/dark toggle.
+
+**Sidebar:** Dashboard, Now Playing, Journal, Favorites, Wishlist, Backlog · **Categories** (one entry per category; a **+** next to the label creates a
+new category and opens it) · Stats, Settings. On phones it opens via the menu button. Footer on every page: "Game data and images from RAWG" (§5b).
 
 Pages:
 1. **Dashboard** (`/dashboard`, start page: `/` redirects there; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),
@@ -645,6 +658,8 @@ The nightly backup (see §11) stays an SQLite copy; the JSON export is for manua
 ```
 is_it_worth_it/
 ├── PLANNING.md
+├── README.md           run locally, development, Docker/Unraid, releases
+├── LICENSE             MIT
 ├── backend/            FastAPI app, tests
 │   ├── app/ (main.py, models.py, schemas.py, calc.py, bundles.py, status.py, journal.py, metadata.py, ggdeals.py, steam_store.py,
 │   │        scheduler.py, netguard.py, routers/, csv_import.py, json_io.py, cli.py)
@@ -653,7 +668,7 @@ is_it_worth_it/
 ├── android/            Gradle project
 ├── Dockerfile          multi-stage: build frontend → copy into python image
 ├── docker/entrypoint.sh  hands /data to PUID:PGID, drops root
-├── docker-compose.yml  for local dev / testing
+├── docker-compose.yml  for local testing (or `podman run`, see README)
 ├── unraid/is-it-worth-it.xml   Unraid container template (ghcr.io image)
 ├── .github/workflows/ci.yml    tests on push; release tags publish the image to ghcr.io
 └── scripts/            release.sh (version + tag + push), deploy.sh (try an unreleased build on Unraid), build-apk.sh
@@ -662,7 +677,8 @@ is_it_worth_it/
 **Container contract**
 - Port `8080`, network type **bridge** (reachable on the Unraid LAN IP, and via WireGuard because the tunnel routes into the LAN)
 - Volume `/data` → Unraid `/mnt/user/appdata/is-it-worth-it` (contains `app.db`, `covers/`, `uploads/`, `backups/`)
-- Env: `ALLOWED_NETWORKS`, `RAWG_API_KEY`, `GGDEALS_API_KEY`, `TZ`, `PUID`/`PGID` (99/100 Unraid defaults)
+- Env: `ALLOWED_NETWORKS`, `RAWG_API_KEY`, `GGDEALS_API_KEY` (added to the template with milestone 7), `TZ` (default `Europe/Berlin`), `PUID`/`PGID` (99/100 Unraid defaults)
+- Starts as root only to hand `/data` to `PUID:PGID` (`docker/entrypoint.sh`), then runs the server as that user (`setpriv`)
 - Background jobs (daily wishlist price sync, nightly backup) run **inside** the container via APScheduler, so no extra cron container is needed
 - Tables are created on startup; the default "Handhelds & Other Hardware" category and the default break-even (3 €/h) are seeded on first start
 - `HEALTHCHECK` hits `/api/v1/health`
@@ -693,9 +709,11 @@ is_it_worth_it/
 3. ✅ **Stats + journal endpoints:** summary / categories / yearly / top / hardware / stores / format / resale / ratings / dlc / journal / heatmap / now playing.
 4. ✅ **Web frontend:** category pages with totals, game/hardware forms (copies, devices & hours table, DLC, rating), bundles, status, completions, Now Playing,
    journal + heatmap, wishlist/backlog, dashboard, stats.
+   Added later: Dashboard as start page (`/dashboard`), header search bar + quick-add button, "+ new category" in the sidebar.
 5. ✅ **Metadata + DLC lists:** RAWG search + apply (incl. Steam ID from store links, DLC names), RAWG attribution, cover caching, bulk "fetch missing" job, image upload; Steam Store DLC list with prices + cache.
 6. **Network guard + Docker:** ✅ `ALLOWED_NETWORKS` (loopback always allowed for the healthcheck), ✅ Dockerfile, ✅ compose, ✅ Unraid template, ✅ `deploy.sh`, ✅ GitHub Actions CI + release tags → ghcr.io image;
-   still to do on your side: deploy to Unraid; test over WireGuard.
+   ✅ repo on GitHub, first release **v0.1.0**. Still to do on your side: make the ghcr.io package public, install on Unraid from the template,
+   CA Auto Update plugin, test over WireGuard.
    *(From here on, the app is usable day-to-day and replaces the spreadsheet.)*
 7. **gg.deals wishlist prices:** verify API fields with your key, linking (Steam ID / pasted URL), daily price sync, snapshots, official + keyshop display,
    gg.deals link, target price/deal badge, "Bought it" prefill.
@@ -732,10 +750,11 @@ is_it_worth_it/
   duplicates skipped on re-import; nothing saved before commit.
 - Journal tests: grouping by year/month, replays listed twice, filters, heatmap counts per day (incl. two finishes on the same day).
 - API tests for the stats endpoints and the per-device hours endpoints.
-- Network guard: a request from a non-allowed IP (simulated via test client) gets 403.
-- Import your real sheets as CSV and compare the totals per category and per year with your spreadsheet's values.
+- Network guard: a request from a non-allowed IP (simulated via test client) gets 403; loopback and IPv4-mapped addresses allowed; an invalid `ALLOWED_NETWORKS` stops startup. In the container: only the WireGuard range allowed → a request from the LAN gets 403.
+- Import your real sheets as CSV and compare the totals per category and per year with your spreadsheet's values (manually, on your machine or Unraid; the real CSVs are never committed). The automated test uses a made-up sheet in the same format: every game's cost per hour must equal the sheet's own column.
 - Metadata: search a few known titles (incl. an old Nintendo game) and check that image + info are stored and served from `/data/covers`; Steam ID extracted from the store link. Mocked RAWG in tests.
-- `docker compose up`, then open `http://localhost:8080`, log in, add a game with RAWG data and a physical copy, add a second (digital) copy, sell the physical one (game stays owned), link it to the Switch and to a Trimui Brick (emulated pre-ticked),
+- **CI:** every push to `main` runs backend lint + tests, frontend typecheck + unit tests and the browser tests on GitHub Actions. A release tag only publishes when they pass and the tag matches the app version.
+- `docker compose up` (or `podman run`, see README), then open `http://127.0.0.1:8080` (no login), add a game with RAWG data and a physical copy, add a second (digital) copy, sell the physical one (game stays owned), link it to the Switch and to a Trimui Brick (emulated pre-ticked),
   add hours on both devices from Now Playing (total updates), add a DLC from the dropdown, finish it twice with reviews, rate it, sell it; create a console + game bundle;
   add a wishlist game, check official + keyshop price and the gg.deals link; check the journal + heatmap, dashboard, category totals, yearly stats, hardware, DLC and store stats.
 - Release `v0.1.0` and install it on Unraid from the template, then release a second version and let Unraid update; check that data and covers persist in `/data`; test a rollback to the previous version tag. From the phone: works on home Wi-Fi, works on mobile data **with** WireGuard, fails **without** it.
@@ -754,7 +773,9 @@ is_it_worth_it/
 wishlist added manually, gg.deals prices incl. keyshops always shown, link to gg.deals · category totals include hardware, yearly figures games (+ DLC) only ·
 no playtime sync (manual hours) · Now Playing as its own page · statuses On hold / Abandoned / Endless added · global default break-even (3 €/h) with per-category override ·
 single user for now · calendar heatmap included · store + physical/digital fields added · ratings 0–5 in 0.5 steps · bundles included · no Excel handling: CSV game import per category + JSON export/import ·
-Docker image built by GitHub Actions on release tags and pulled from ghcr.io (public repo, auto-update on Unraid via CA Auto Update); APK built locally.
+Docker image built by GitHub Actions on release tags and pulled from ghcr.io (public repo, auto-update on Unraid via CA Auto Update); APK built locally ·
+public GitHub repo, MIT license, made-up test data only · no database migrations for now (fresh database on Unraid) · Dashboard is the start page (`/dashboard`) ·
+header search + quick-add button · new categories from the sidebar · Android keeps Now Playing as its start screen (fastest way to log hours).
 
 ## 15. Future ideas
 
