@@ -186,3 +186,26 @@ test("add a category from the sidebar", async ({ page }) => {
   await expect(page.getByRole("heading", { name })).toBeVisible();
   await expect(page.getByRole("navigation").getByRole("link", { name })).toBeVisible();
 });
+
+test("search from the header and open the result", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const name = `Metroid Dread ${category.id}`;
+  await request.post("/api/v1/items", {
+    data: { category_id: category.id, kind: "game", name, first_copy: { buy_date: "2024-01-01", buy_price_cents: 3999 } },
+  });
+
+  await page.goto("/");
+  await page.keyboard.press("ControlOrMeta+k");
+  const search = page.getByRole("banner").getByRole("textbox", { name: "Search" });
+  await expect(search).toBeFocused();
+  await search.fill(`dread ${category.id}`);
+  const option = page.getByRole("option", { name: new RegExp(name) });
+  await expect(option).toContainText(category.name);
+  await option.click();
+
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+  await expect(search).toHaveValue("");
+
+  await search.fill("no such game xyz");
+  await expect(page.getByText("Nothing found")).toBeVisible();
+});

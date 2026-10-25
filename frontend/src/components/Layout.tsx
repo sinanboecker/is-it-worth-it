@@ -33,6 +33,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useCategories } from "@/api/queries";
 import { CategoryModal } from "./CategoryModal";
 import { RawgAttribution } from "./MetadataModals";
+import { SearchBar } from "./SearchBar";
 
 const MAIN_LINKS = [
   { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
@@ -76,11 +77,16 @@ export function Layout() {
       padding="md"
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap" gap="md">
+          <Group gap="sm" wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <IconDeviceGamepad2 size={26} />
-            <Title order={4}>Is It Worth It?</Title>
+            <Title order={4} visibleFrom="xs" style={{ whiteSpace: "nowrap" }}>
+              Is It Worth It?
+            </Title>
+          </Group>
+          <Group flex={1} justify="center">
+            <SearchBar />
           </Group>
           <ActionIcon
             variant="default"
