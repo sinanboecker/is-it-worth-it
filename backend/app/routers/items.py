@@ -349,7 +349,7 @@ def add_dlc(item_id: int, data: DlcCreate, session: SessionDep, settings: Settin
         raise invalid("add a copy of the game before adding DLC")
     dlc = Dlc(**data.model_dump())
     if dlc.store is None and game.copies:
-        dlc.store = max(game.copies, key=lambda c: c.buy_date).store
+        dlc.store = max(game.copies, key=lambda c: c.buy_date or date.min).store
     game.dlcs.append(dlc)
     session.commit()
     return read_item(session, item_id, settings, today)

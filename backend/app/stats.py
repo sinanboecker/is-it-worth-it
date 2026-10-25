@@ -46,7 +46,7 @@ def store_stats(items: Iterable[Item]) -> list[StoreRow]:
             net = copy.buy_price_cents - (copy.sell_price_cents or 0)
             r.spent_cents += net
             r.copies += 1
-            if item.kind is ItemKind.game:
+            if item.kind is ItemKind.game and copy.buy_date is not None:
                 add_year(r, copy.buy_date.year, net)
         for dlc in item.dlcs:
             r = row(dlc.store)

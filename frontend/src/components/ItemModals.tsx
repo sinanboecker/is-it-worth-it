@@ -172,6 +172,7 @@ function CopyFields({
   inBundle = false,
   showSale = true,
   priceLabel = "Buy price",
+  requireDate = false,
 }: {
   draft: CopyDraft;
   set: (patch: Partial<CopyDraft>) => void;
@@ -179,6 +180,7 @@ function CopyFields({
   inBundle?: boolean;
   showSale?: boolean;
   priceLabel?: string;
+  requireDate?: boolean;
 }) {
   return (
     <Stack gap="sm">
@@ -188,7 +190,15 @@ function CopyFields({
         </Alert>
       )}
       <Group grow>
-        <DateField label="Bought on" value={draft.buy_date} onChange={(v) => set({ buy_date: v })} required disabled={inBundle} />
+        <DateField
+          label="Bought on"
+          placeholder={requireDate ? undefined : "Unknown"}
+          value={draft.buy_date}
+          onChange={(v) => set({ buy_date: v })}
+          required={requireDate}
+          clearable={!requireDate && !inBundle}
+          disabled={inBundle}
+        />
         <MoneyInput label={priceLabel} value={draft.buy_price_cents} onChange={(v) => set({ buy_price_cents: v })} required disabled={inBundle} />
       </Group>
       <StoreInput value={draft.store} onChange={(v) => set({ store: v })} />
@@ -235,7 +245,7 @@ const emptyCopy = (kind: ItemKind): CopyDraft => ({
   note: null,
 });
 
-const copyBody = (d: CopyDraft) => ({ ...d, buy_date: d.buy_date!, buy_price_cents: d.buy_price_cents! });
+const copyBody = (d: CopyDraft) => ({ ...d, buy_price_cents: d.buy_price_cents! });
 
 export function CopyModal({
   item,
@@ -268,7 +278,7 @@ export function CopyModal({
       <Stack>
         <CopyFields draft={draft} set={set} kind={item.kind} inBundle={inBundle} />
         <Group justify="flex-end">
-          <Button onClick={() => mutation.mutate(undefined)} loading={mutation.isPending} disabled={!draft.buy_date || draft.buy_price_cents === null}>
+          <Button onClick={() => mutation.mutate(undefined)} loading={mutation.isPending} disabled={draft.buy_price_cents === null}>
             Save
           </Button>
         </Group>
@@ -482,7 +492,7 @@ export function NewItemModal({
       },
     },
   );
-  const copyComplete = !hasCopy || (copy.buy_date && copy.buy_price_cents !== null);
+  const copyComplete = !hasCopy || (copy.buy_price_cents !== null && (!bundle || copy.buy_date));
 
   return (
     <Modal opened={opened} onClose={onClose} title={wishlist ? "Add to wishlist" : "Add game or device"} size="lg">
@@ -583,6 +593,7 @@ export function NewItemModal({
             kind={effectiveKind}
             showSale={false}
             priceLabel={bundle ? "Total price of the bundle" : "Buy price"}
+            requireDate={bundle}
           />
         )}
         {bundle && (

@@ -61,7 +61,7 @@ def copy_stats(copies: Iterable[Copy]) -> CopyStats:
         owned_copies=len(copies) - len(sold),
         copies_paid_cents=sum(c.buy_price_cents for c in copies),
         copies_received_cents=sum(c.sell_price_cents for c in sold),
-        first_bought_on=min((c.buy_date for c in copies), default=None),
+        first_bought_on=min((c.buy_date for c in copies if c.buy_date), default=None),
         sold=bool(copies) and len(sold) == len(copies),
         owned=len(sold) < len(copies),
     )
@@ -229,6 +229,8 @@ def yearly_stats(items: Iterable[Item], global_break_even_cph: int) -> list[Year
         if game.kind is not ItemKind.game:
             continue
         for copy in game.copies:
+            if copy.buy_date is None:
+                continue
             row(copy.buy_date.year).spent_cents += copy.buy_price_cents - (copy.sell_price_cents or 0)
         for dlc in game.dlcs:
             r = row(dlc.buy_date.year)

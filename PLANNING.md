@@ -358,6 +358,7 @@ Hardware purchases are **not** part of the yearly figures; they appear in the ca
 - **Money spent in year Y** = Σ (buy price − sell price) of **game copies bought** in Y **+ DLC bought in Y**.
   Each copy and each DLC counts by **its own** buy date (a copy re-bought in 2026 or a DLC bought in 2026 for a 2023 game counts in 2026). Wishlist excluded.
   A copy's sell price is subtracted in the copy's **buy year**, not the year it was sold (no cash-flow view).
+  Copies with an **unknown** buy date count in all totals but in no year.
 - **Hours played in year Y** = Σ hours of games **first bought** in Y (**decided:** all hours of a game count in the buy year of its first copy, like in your current spreadsheet).
   *(Later, a play-session log could split hours into the years they were actually played. See Future ideas.)*
 - **Cost per hour in year Y** = (Σ net_cost of games first bought in Y, incl. all their copies and DLC) ÷ (Σ hours of those games).
@@ -623,8 +624,8 @@ For bringing in games in bulk, e.g. your existing Excel sheets: in Excel, save e
 4. **Columns** are matched by header name (German or English, e.g. "Name", "Kaufdatum"/"Buy date", "Kaufpreis"/"Buy price", "Verkaufsdatum", "Verkaufspreis", "Stunden"/"Hours",
    "Notizen"/"Notes"). An editable column mapping is shown if auto-detection fails; unmapped columns (e.g. calculated cost or cost/hour) are **ignored**.
    Optional columns if present: store, format (physical/digital), condition, copy note, status, rating.
-   Only **name** is required. Each row with buy date + price becomes a game with **one copy** (buy/sell data, store, format, condition go onto the copy);
-   a row without buy date + price becomes a **wishlist** game.
+   Only **name** is required. Each row with a buy price becomes a game with **one copy** (buy/sell data, store, format, condition go onto the copy);
+   without a buy date (empty cell or no such column) the copy's buy date is stored as **unknown**. A row without buy date + price becomes a **wishlist** game.
 5. **Hours → device:** the CSV has one hours value per game. You pick the **device the hours are booked on** for the whole file (default: the category's default device),
    changeable per row in the preview. Splitting hours across devices is done later in the app.
 6. **Status:** from a status column if present; otherwise **Finished** if the "finished" column (e.g. "Durchgespielt") has a ✓/x/ja or a date,

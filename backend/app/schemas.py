@@ -88,7 +88,7 @@ class CategoryRead(ApiModel):
 
 
 class CopyCreate(BaseModel):
-    buy_date: date
+    buy_date: date | None = None
     buy_price_cents: Cents
     store: str | None = None
     format: CopyFormat = CopyFormat.physical
@@ -111,7 +111,7 @@ class CopyUpdate(BaseModel):
 
 class CopyRead(ApiModel):
     id: int
-    buy_date: date
+    buy_date: date | None
     buy_price_cents: int
     store: str | None
     format: CopyFormat
@@ -122,11 +122,11 @@ class CopyRead(ApiModel):
     bundle_id: int | None
     reference_price_cents: int | None
     is_sold: bool
-    days_owned: int
+    days_owned: int | None = Field(description="None while the buy date is unknown")
 
     @classmethod
     def build(cls, copy: Copy, today: date) -> "CopyRead":
-        days = ((copy.sell_date or today) - copy.buy_date).days
+        days = ((copy.sell_date or today) - copy.buy_date).days if copy.buy_date else None
         return cls.model_validate({**copy.model_dump(), "is_sold": copy.is_sold, "days_owned": days})
 
 

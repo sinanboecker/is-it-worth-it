@@ -1229,11 +1229,8 @@ export interface components {
         CopyCondition: "new" | "used";
         /** CopyCreate */
         CopyCreate: {
-            /**
-             * Buy Date
-             * Format: date
-             */
-            buy_date: string;
+            /** Buy Date */
+            buy_date?: string | null;
             /** Buy Price Cents */
             buy_price_cents: number;
             /** Store */
@@ -1257,11 +1254,8 @@ export interface components {
         CopyRead: {
             /** Id */
             id: number;
-            /**
-             * Buy Date
-             * Format: date
-             */
-            buy_date: string;
+            /** Buy Date */
+            buy_date: string | null;
             /** Buy Price Cents */
             buy_price_cents: number;
             /** Store */
@@ -1280,8 +1274,11 @@ export interface components {
             reference_price_cents: number | null;
             /** Is Sold */
             is_sold: boolean;
-            /** Days Owned */
-            days_owned: number;
+            /**
+             * Days Owned
+             * @description None while the buy date is unknown
+             */
+            days_owned: number | null;
         };
         /** CopyUpdate */
         CopyUpdate: {

@@ -206,7 +206,10 @@ def sniff_delimiter(text: str) -> str:
 
 def parse_money(raw: str) -> int | None:
     text = raw.replace("€", "").replace("EUR", "").replace("eur", "")
+    has_currency = text != raw
     text = re.sub(r"[\s  ']", "", text)
+    if text == "-" and has_currency:
+        return 0  # spreadsheet accounting format shows 0 € as " - € "
     if not text or text == "-":
         return None
     if "," in text and "." in text:
@@ -369,6 +372,8 @@ def _derive(row: ImportRow) -> None:
         row.action = "wishlist"
         row.status = GameStatus.wishlist
         return
+    if row.buy_date is None and not row.errors:
+        row.warnings.append("no buy date, stored as unknown")
     if row.status is None:
         if row.finished:
             row.status = GameStatus.finished
@@ -394,8 +399,6 @@ def validate_row(session: Session, row: ImportRow) -> list[str]:
         if row.finished:
             errors.append("a wishlist game (no buy date/price) can't be finished")
         return errors
-    if row.buy_date is None:
-        errors.append("buy date is missing")
     if row.buy_price_cents is None:
         errors.append("buy price is missing")
     if row.sell_date is not None and row.sell_price_cents is None:

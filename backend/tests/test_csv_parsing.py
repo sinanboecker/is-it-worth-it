@@ -21,6 +21,9 @@ from app import csv_import as ci
         ("", None),
         ("  ", None),
         ("-", None),
+        (" - € ", 0),
+        ("€ -", 0),
+        ("- EUR", 0),
     ],
 )
 def test_parse_money(raw, cents):

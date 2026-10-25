@@ -98,7 +98,7 @@ function CopiesSection({ item }: { item: ItemRead }) {
             <Table.Tbody>
               {item.copies.map((copy) => (
                 <Table.Tr key={copy.id} opacity={copy.is_sold ? 0.6 : 1}>
-                  <Table.Td>{day(copy.buy_date)}</Table.Td>
+                  <Table.Td>{copy.buy_date ? day(copy.buy_date) : "unknown"}</Table.Td>
                   <Table.Td ta="right">{euros(copy.buy_price_cents)}</Table.Td>
                   <Table.Td>{copy.store ?? "–"}</Table.Td>
                   <Table.Td>
@@ -122,9 +122,11 @@ function CopiesSection({ item }: { item: ItemRead }) {
                         {euros(copy.sell_price_cents)} · {day(copy.sell_date)}
                       </Badge>
                     ) : (
-                      <Text size="xs" c="dimmed">
-                        owned {copy.days_owned} days
-                      </Text>
+                      copy.days_owned !== null && (
+                        <Text size="xs" c="dimmed">
+                          owned {copy.days_owned} days
+                        </Text>
+                      )
                     )}
                   </Table.Td>
                   <Table.Td>{copy.note}</Table.Td>

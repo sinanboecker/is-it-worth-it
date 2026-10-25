@@ -67,3 +67,15 @@ def test_0002_adds_category_icon_to_existing_categories(engine):
     command.upgrade(alembic_config(engine), "0002")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT name, icon FROM category")).one() == ("PC", None)
+
+
+def test_0003_makes_copy_buy_date_optional(engine):
+    def buy_date_nullable() -> bool:
+        return next(c for c in inspect(engine).get_columns("copy") if c["name"] == "buy_date")["nullable"]
+
+    command.upgrade(alembic_config(engine), "0002")
+    assert not buy_date_nullable()
+    command.upgrade(alembic_config(engine), "0003")
+    assert buy_date_nullable()
+    command.downgrade(alembic_config(engine), "0002")
+    assert not buy_date_nullable()

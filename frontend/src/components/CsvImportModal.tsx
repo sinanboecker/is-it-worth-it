@@ -224,7 +224,7 @@ export function CsvImportModal({
                         </Group>
                       </Table.Td>
                       <Table.Td>{row.name}</Table.Td>
-                      <Table.Td>{day(row.buy_date)}</Table.Td>
+                      <Table.Td>{!row.buy_date && (row.action === "create" || row.action === "add_copy") ? "unknown" : day(row.buy_date)}</Table.Td>
                       <Table.Td ta="right">{euros(row.buy_price_cents)}</Table.Td>
                       <Table.Td ta="right">{euros(row.sell_price_cents)}</Table.Td>
                       <Table.Td ta="right">{row.hours ? hours(row.hours) : ""}</Table.Td>

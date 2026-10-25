@@ -4494,8 +4494,15 @@
       "CopyCreate": {
         "properties": {
           "buy_date": {
-            "type": "string",
-            "format": "date",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Buy Date"
           },
           "buy_price_cents": {
@@ -4566,7 +4573,6 @@
         },
         "type": "object",
         "required": [
-          "buy_date",
           "buy_price_cents"
         ],
         "title": "CopyCreate"
@@ -4586,8 +4592,15 @@
             "title": "Id"
           },
           "buy_date": {
-            "type": "string",
-            "format": "date",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Buy Date"
           },
           "buy_price_cents": {
@@ -4679,8 +4692,16 @@
             "title": "Is Sold"
           },
           "days_owned": {
-            "type": "integer",
-            "title": "Days Owned"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Owned",
+            "description": "None while the buy date is unknown"
           }
         },
         "type": "object",

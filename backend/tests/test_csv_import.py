@@ -165,6 +165,32 @@ def test_errors_block_commit_until_row_is_skipped(api, pc):
     assert response.json()["games_created"] == 2
 
 
+def test_missing_buy_date_is_stored_as_unknown(api, pc):
+    content = "Spiel;Preis;Spielzeit\nNo date;5,00;2\nSecond copy;3,00;\nSecond copy;4,00;\nWish;;\n"
+    result = ok_preview(api, pc["category"]["id"], content.encode(), hardware_id=pc["device"]["id"])
+    assert result["can_commit"]
+    rows = {r["line"]: r for r in result["rows"]}
+    assert rows[2]["buy_date"] is None and rows[2]["action"] == "create"
+    assert rows[2]["warnings"] == ["no buy date, stored as unknown"]
+    assert rows[4]["action"] == "skip" and rows[4]["duplicate"]  # same game, same (unknown) date
+    assert rows[5]["action"] == "wishlist"
+
+    assert commit(api, pc["category"]["id"], result["rows"]).status_code == 200
+    (game,) = api.get("/items", params={"q": "No date"})
+    assert game["copies_summary"]["first_bought_on"] is None
+    assert game["value"]["net_cost_cents"] == 500
+    (copy,) = api.get(f"/items/{game['id']}")["copies"]
+    assert copy["buy_date"] is None and copy["days_owned"] is None
+    assert all(api.client.get(f"/api/v1/stats/{s}").status_code == 200 for s in ("yearly", "stores", "summary"))
+
+
+def test_accounting_zero_price_is_a_free_copy(api, pc):
+    content = "Name;Kaufdatum;Preis;Spielstunden;Durchgespielt\nBorrowed;; - € ;24;✓\n"
+    result = ok_preview(api, pc["category"]["id"], content.encode(), hardware_id=pc["device"]["id"])
+    (row,) = result["rows"]
+    assert (row["action"], row["buy_price_cents"], row["status"], row["errors"]) == ("create", 0, "finished", [])
+
+
 def test_hours_need_a_device(api):
     pc = api.category("PC")
     result = ok_preview(api, pc["id"], b"Spiel;Kaufdatum;Preis;Spielzeit\nA;01.01.2024;5;3\nB;01.01.2024;5;\n")

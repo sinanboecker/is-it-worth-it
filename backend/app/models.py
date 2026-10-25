@@ -171,7 +171,7 @@ class Bundle(SQLModel, table=True):
 class Copy(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     item_id: int = Field(foreign_key="item.id", index=True, ondelete="CASCADE")
-    buy_date: date
+    buy_date: date | None = None  # None = unknown (e.g. imported from a CSV without buy dates)
     buy_price_cents: int
     store: str | None = None
     format: CopyFormat = CopyFormat.physical
