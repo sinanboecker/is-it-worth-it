@@ -415,6 +415,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bundles/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bundle Import Preview
+         * @description What importing the bundles would do. Nothing is saved.
+         */
+        post: operations["bundle_import_preview_api_v1_bundles_import_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bundles/import/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bundle Import Commit
+         * @description Import the bundles of the file (planned again, like the preview). All or nothing.
+         */
+        post: operations["bundle_import_commit_api_v1_bundles_import_commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/import-csv/template": {
         parameters: {
             query?: never;
@@ -900,6 +940,50 @@ export interface components {
              */
             rename: boolean;
         };
+        /** Body_bundle_import_commit_api_v1_bundles_import_commit_post */
+        Body_bundle_import_commit_api_v1_bundles_import_commit_post: {
+            /**
+             * File
+             * @description CSV: a bundle row, its game rows, an empty row, the next bundle
+             */
+            file: string;
+            /**
+             * Category Id
+             * @description platform category of the games
+             */
+            category_id: number;
+            /**
+             * Hardware Id
+             * @description device the hours of new games are booked on
+             */
+            hardware_id?: number | null;
+            /** Store */
+            store?: string | null;
+            /** @default digital */
+            format: components["schemas"]["CopyFormat"];
+        };
+        /** Body_bundle_import_preview_api_v1_bundles_import_preview_post */
+        Body_bundle_import_preview_api_v1_bundles_import_preview_post: {
+            /**
+             * File
+             * @description CSV: a bundle row, its game rows, an empty row, the next bundle
+             */
+            file: string;
+            /**
+             * Category Id
+             * @description platform category of the games
+             */
+            category_id: number;
+            /**
+             * Hardware Id
+             * @description device the hours of new games are booked on
+             */
+            hardware_id?: number | null;
+            /** Store */
+            store?: string | null;
+            /** @default digital */
+            format: components["schemas"]["CopyFormat"];
+        };
         /** Body_csv_preview_api_v1_categories__category_id__import_csv_preview_post */
         Body_csv_preview_api_v1_categories__category_id__import_csv_preview_post: {
             /**
@@ -964,6 +1048,15 @@ export interface components {
             buy_price_cents: number;
             /** Sell Price Cents */
             sell_price_cents: number | null;
+            /** Sell Date */
+            sell_date: string | null;
+            status: components["schemas"]["GameStatus"] | null;
+            /** Cover Path */
+            cover_path: string | null;
+            /** Image Path */
+            image_path: string | null;
+            /** @description the whole game or device, not only this copy */
+            value: components["schemas"]["ValueRead"] | null;
         };
         /** BundleCreate */
         BundleCreate: {
@@ -976,12 +1069,22 @@ export interface components {
             buy_date: string;
             /** Total Price Cents */
             total_price_cents: number;
+            /** Url */
+            url?: string | null;
+            /**
+             * Other Sales Cents
+             * @default 0
+             */
+            other_sales_cents: number;
             /** Store */
             store?: string | null;
             split_mode?: components["schemas"]["SplitMode"] | null;
             /** Notes */
             notes?: string | null;
-            /** Entries */
+            /**
+             * Entries
+             * @default []
+             */
             entries: components["schemas"]["BundleEntryIn"][];
         };
         /** BundleEntryIn */
@@ -999,6 +1102,79 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** BundleImportPreview */
+        BundleImportPreview: {
+            /** Bundles */
+            bundles: components["schemas"]["BundlePlan"][];
+            /** New Bundles */
+            new_bundles: number;
+            /** New Games */
+            new_games: number;
+            /** Moved Copies */
+            moved_copies: number;
+            /** Added Copies */
+            added_copies: number;
+            /** Skipped Bundles */
+            skipped_bundles: number;
+            /** With Errors */
+            with_errors: number;
+            /** Can Commit */
+            can_commit: boolean;
+        };
+        /** BundleImportResult */
+        BundleImportResult: {
+            /** Bundles Created */
+            bundles_created: number;
+            /** Games Created */
+            games_created: number;
+            /** Copies Moved */
+            copies_moved: number;
+            /** Copies Added */
+            copies_added: number;
+            /** Skipped Bundles */
+            skipped_bundles: number;
+        };
+        /** BundlePlan */
+        BundlePlan: {
+            /** Line */
+            line: number;
+            /** Name */
+            name: string;
+            /** Buy Date */
+            buy_date?: string | null;
+            /** Total Price Cents */
+            total_price_cents?: number | null;
+            /**
+             * Sold Cents
+             * @default 0
+             */
+            sold_cents: number;
+            /**
+             * Other Sales Cents
+             * @default 0
+             */
+            other_sales_cents: number;
+            /**
+             * Games
+             * @default []
+             */
+            games: components["schemas"]["GamePlan"][];
+            /**
+             * Skip
+             * @default false
+             */
+            skip: boolean;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /**
+             * Errors
+             * @default []
+             */
+            errors: string[];
+        };
         /** BundleRead */
         BundleRead: {
             /** Id */
@@ -1012,6 +1188,10 @@ export interface components {
             buy_date: string;
             /** Total Price Cents */
             total_price_cents: number;
+            /** Url */
+            url: string | null;
+            /** Other Sales Cents */
+            other_sales_cents: number;
             /** Store */
             store: string | null;
             split_mode: components["schemas"]["SplitMode"];
@@ -1025,6 +1205,13 @@ export interface components {
             notes: string | null;
             /** Copies */
             copies: components["schemas"]["BundleCopyRead"][];
+            /**
+             * Sold Cents
+             * @description what the bundle's copies and untracked parts were sold for so far
+             */
+            sold_cents: number;
+            /** @description the bundle as one purchase; hours are those of its games */
+            value: components["schemas"]["ValueRead"];
         };
         /** BundleUpdate */
         BundleUpdate: {
@@ -1034,6 +1221,10 @@ export interface components {
             buy_date?: string | null;
             /** Total Price Cents */
             total_price_cents?: number | null;
+            /** Url */
+            url?: string | null;
+            /** Other Sales Cents */
+            other_sales_cents?: number | null;
             /** Store */
             store?: string | null;
             split_mode?: components["schemas"]["SplitMode"] | null;
@@ -1454,6 +1645,36 @@ export interface components {
             net_cost_cents: number;
             /** Average Net Cost Cents */
             average_net_cost_cents: number | null;
+        };
+        /** GamePlan */
+        GamePlan: {
+            /** Line */
+            line: number;
+            /** Name */
+            name: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "new" | "move" | "add_copy" | "skip";
+            /** Existing Item Id */
+            existing_item_id?: number | null;
+            /** Copy Id */
+            copy_id?: number | null;
+            /**
+             * Hours
+             * @default 0
+             */
+            hours: number;
+            /**
+             * Finished
+             * @default false
+             */
+            finished: boolean;
+            /** Sold Cents */
+            sold_cents?: number | null;
+            /** Note */
+            note?: string | null;
         };
         /**
          * GameStatus
@@ -3315,6 +3536,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommitResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bundle_import_preview_api_v1_bundles_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_bundle_import_preview_api_v1_bundles_import_preview_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundleImportPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bundle_import_commit_api_v1_bundles_import_commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_bundle_import_commit_api_v1_bundles_import_commit_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundleImportResult"];
                 };
             };
             /** @description Validation Error */

@@ -1941,6 +1941,90 @@
         }
       }
     },
+    "/api/v1/bundles/import/preview": {
+      "post": {
+        "tags": [
+          "import & export"
+        ],
+        "summary": "Bundle Import Preview",
+        "description": "What importing the bundles would do. Nothing is saved.",
+        "operationId": "bundle_import_preview_api_v1_bundles_import_preview_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_bundle_import_preview_api_v1_bundles_import_preview_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BundleImportPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bundles/import/commit": {
+      "post": {
+        "tags": [
+          "import & export"
+        ],
+        "summary": "Bundle Import Commit",
+        "description": "Import the bundles of the file (planned again, like the preview). All or nothing.",
+        "operationId": "bundle_import_commit_api_v1_bundles_import_commit_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_bundle_import_commit_api_v1_bundles_import_commit_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BundleImportResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/import-csv/template": {
       "get": {
         "tags": [
@@ -3303,6 +3387,102 @@
         ],
         "title": "ApplyMetadata"
       },
+      "Body_bundle_import_commit_api_v1_bundles_import_commit_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "CSV: a bundle row, its game rows, an empty row, the next bundle"
+          },
+          "category_id": {
+            "type": "integer",
+            "title": "Category Id",
+            "description": "platform category of the games"
+          },
+          "hardware_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Id",
+            "description": "device the hours of new games are booked on"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "format": {
+            "$ref": "#/components/schemas/CopyFormat",
+            "default": "digital"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "category_id"
+        ],
+        "title": "Body_bundle_import_commit_api_v1_bundles_import_commit_post"
+      },
+      "Body_bundle_import_preview_api_v1_bundles_import_preview_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "CSV: a bundle row, its game rows, an empty row, the next bundle"
+          },
+          "category_id": {
+            "type": "integer",
+            "title": "Category Id",
+            "description": "platform category of the games"
+          },
+          "hardware_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Id",
+            "description": "device the hours of new games are booked on"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "format": {
+            "$ref": "#/components/schemas/CopyFormat",
+            "default": "digital"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "category_id"
+        ],
+        "title": "Body_bundle_import_preview_api_v1_bundles_import_preview_post"
+      },
       "Body_csv_preview_api_v1_categories__category_id__import_csv_preview_post": {
         "properties": {
           "file": {
@@ -3457,6 +3637,61 @@
               }
             ],
             "title": "Sell Price Cents"
+          },
+          "sell_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GameStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cover_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Path"
+          },
+          "image_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Path"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValueRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the whole game or device, not only this copy"
           }
         },
         "type": "object",
@@ -3467,7 +3702,12 @@
           "kind",
           "reference_price_cents",
           "buy_price_cents",
-          "sell_price_cents"
+          "sell_price_cents",
+          "sell_date",
+          "status",
+          "cover_path",
+          "image_path",
+          "value"
         ],
         "title": "BundleCopyRead"
       },
@@ -3487,6 +3727,25 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Total Price Cents"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^https?://\\S+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "other_sales_cents": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Other Sales Cents",
+            "default": 0
           },
           "store": {
             "anyOf": [
@@ -3525,16 +3784,15 @@
               "$ref": "#/components/schemas/BundleEntryIn"
             },
             "type": "array",
-            "minItems": 1,
-            "title": "Entries"
+            "title": "Entries",
+            "default": []
           }
         },
         "type": "object",
         "required": [
           "name",
           "buy_date",
-          "total_price_cents",
-          "entries"
+          "total_price_cents"
         ],
         "title": "BundleCreate"
       },
@@ -3614,6 +3872,170 @@
         "type": "object",
         "title": "BundleEntryIn"
       },
+      "BundleImportPreview": {
+        "properties": {
+          "bundles": {
+            "items": {
+              "$ref": "#/components/schemas/BundlePlan"
+            },
+            "type": "array",
+            "title": "Bundles"
+          },
+          "new_bundles": {
+            "type": "integer",
+            "title": "New Bundles"
+          },
+          "new_games": {
+            "type": "integer",
+            "title": "New Games"
+          },
+          "moved_copies": {
+            "type": "integer",
+            "title": "Moved Copies"
+          },
+          "added_copies": {
+            "type": "integer",
+            "title": "Added Copies"
+          },
+          "skipped_bundles": {
+            "type": "integer",
+            "title": "Skipped Bundles"
+          },
+          "with_errors": {
+            "type": "integer",
+            "title": "With Errors"
+          },
+          "can_commit": {
+            "type": "boolean",
+            "title": "Can Commit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bundles",
+          "new_bundles",
+          "new_games",
+          "moved_copies",
+          "added_copies",
+          "skipped_bundles",
+          "with_errors",
+          "can_commit"
+        ],
+        "title": "BundleImportPreview"
+      },
+      "BundleImportResult": {
+        "properties": {
+          "bundles_created": {
+            "type": "integer",
+            "title": "Bundles Created"
+          },
+          "games_created": {
+            "type": "integer",
+            "title": "Games Created"
+          },
+          "copies_moved": {
+            "type": "integer",
+            "title": "Copies Moved"
+          },
+          "copies_added": {
+            "type": "integer",
+            "title": "Copies Added"
+          },
+          "skipped_bundles": {
+            "type": "integer",
+            "title": "Skipped Bundles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bundles_created",
+          "games_created",
+          "copies_moved",
+          "copies_added",
+          "skipped_bundles"
+        ],
+        "title": "BundleImportResult"
+      },
+      "BundlePlan": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "buy_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Date"
+          },
+          "total_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Price Cents"
+          },
+          "sold_cents": {
+            "type": "integer",
+            "title": "Sold Cents",
+            "default": 0
+          },
+          "other_sales_cents": {
+            "type": "integer",
+            "title": "Other Sales Cents",
+            "default": 0
+          },
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/GamePlan"
+            },
+            "type": "array",
+            "title": "Games",
+            "default": []
+          },
+          "skip": {
+            "type": "boolean",
+            "title": "Skip",
+            "default": false
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "name"
+        ],
+        "title": "BundlePlan"
+      },
       "BundleRead": {
         "properties": {
           "id": {
@@ -3632,6 +4054,21 @@
           "total_price_cents": {
             "type": "integer",
             "title": "Total Price Cents"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "other_sales_cents": {
+            "type": "integer",
+            "title": "Other Sales Cents"
           },
           "store": {
             "anyOf": [
@@ -3691,6 +4128,15 @@
             },
             "type": "array",
             "title": "Copies"
+          },
+          "sold_cents": {
+            "type": "integer",
+            "title": "Sold Cents",
+            "description": "what the bundle's copies and untracked parts were sold for so far"
+          },
+          "value": {
+            "$ref": "#/components/schemas/ValueRead",
+            "description": "the bundle as one purchase; hours are those of its games"
           }
         },
         "type": "object",
@@ -3699,13 +4145,17 @@
           "name",
           "buy_date",
           "total_price_cents",
+          "url",
+          "other_sales_cents",
           "store",
           "split_mode",
           "sold_as_bundle",
           "sell_date",
           "sell_total_cents",
           "notes",
-          "copies"
+          "copies",
+          "sold_cents",
+          "value"
         ],
         "title": "BundleRead"
       },
@@ -3746,6 +4196,31 @@
               }
             ],
             "title": "Total Price Cents"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^https?://\\S+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "other_sales_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Other Sales Cents"
           },
           "store": {
             "anyOf": [
@@ -5320,6 +5795,89 @@
           "average_net_cost_cents"
         ],
         "title": "FormatOut"
+      },
+      "GamePlan": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "new",
+              "move",
+              "add_copy",
+              "skip"
+            ],
+            "title": "Action"
+          },
+          "existing_item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Item Id"
+          },
+          "copy_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Id"
+          },
+          "hours": {
+            "type": "number",
+            "title": "Hours",
+            "default": 0
+          },
+          "finished": {
+            "type": "boolean",
+            "title": "Finished",
+            "default": false
+          },
+          "sold_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sold Cents"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "name",
+          "action"
+        ],
+        "title": "GamePlan"
       },
       "GameStatus": {
         "type": "string",

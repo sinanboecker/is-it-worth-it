@@ -53,6 +53,11 @@ def split_amount(
     return shares
 
 
+def cost_to_split(bundle: Bundle) -> int:
+    """What the bundle's copies cost together: the price minus money from selling untracked parts (at least 0)."""
+    return max(bundle.total_price_cents - bundle.other_sales_cents, 0)
+
+
 def apply_split(bundle: Bundle, manual_shares: list[int | None] | None = None) -> None:
     """Recalculate buy (and, if sold as a bundle, sell) prices of all copies in the bundle.
 
@@ -60,12 +65,12 @@ def apply_split(bundle: Bundle, manual_shares: list[int | None] | None = None) -
     """
     copies = bundle.copies
     if not copies:
-        raise BundleSplitError("a bundle needs at least one copy")
+        return  # nothing to split, e.g. an imported bundle whose games were all sold without being listed
 
     if bundle.split_mode is SplitMode.manual and manual_shares is None:
         manual_shares = [c.buy_price_cents for c in copies]
     buy_shares = split_amount(
-        bundle.total_price_cents,
+        cost_to_split(bundle),
         bundle.split_mode,
         reference_prices=[c.reference_price_cents for c in copies],
         manual_shares=manual_shares,

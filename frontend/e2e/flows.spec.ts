@@ -112,7 +112,7 @@ test("import games from a CSV file", async ({ page, request }) => {
 test("all pages load without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const url of ["/", "/dashboard", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/stats", "/settings"]) {
+  for (const url of ["/", "/dashboard", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/bundles", "/stats", "/settings"]) {
     await page.goto(url);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
   }
@@ -177,6 +177,133 @@ test("add a console as a bundle with a game, then edit the bundle", async ({ pag
   await edit.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Bundle saved")).toBeVisible();
   await expect(page.getByRole("cell", { name: "224,50 €" })).toBeVisible();
+});
+
+test("the bundles page shows each bundle with its games, sales, hours and worth it", async ({ page, request }) => {
+  const { category, device } = await setup(request);
+  const name = `Humble Bundle ${category.id}`;
+  const bundle = await (
+    await request.post("/api/v1/bundles", {
+      data: {
+        name,
+        buy_date: "2025-03-01",
+        total_price_cents: 2000,
+        split_mode: "equal",
+        entries: ["Played", "Resold"].map((game) => ({
+          new_item: { category_id: category.id, kind: "game", name: `${game} ${category.id}` },
+          format: "digital",
+        })),
+      },
+    })
+  ).json();
+  const [played, resold] = bundle.copies;
+  const consoleBundle = `Console bundle ${category.id}`;
+  await request.post("/api/v1/bundles", {
+    data: {
+      name: consoleBundle,
+      buy_date: "2025-03-01",
+      total_price_cents: 40000,
+      split_mode: "equal",
+      entries: [
+        { new_item: { category_id: category.id, kind: "hardware", name: `Console ${category.id}` } },
+        { new_item: { category_id: category.id, kind: "game", name: `Pack-in ${category.id}` }, format: "physical" },
+      ],
+    },
+  });
+  await request.post(`/api/v1/items/${played.item_id}/hours`, { data: { hours: 4, hardware_id: device.id } });
+  await request.patch(`/api/v1/items/${resold.item_id}/copies/${resold.copy_id}`, {
+    data: { sell_price_cents: 800, sell_date: "2025-04-01" },
+  });
+
+  await page.goto("/dashboard");
+  await page.getByRole("navigation").getByRole("link", { name: "Bundles" }).click();
+  const card = page.locator(".mantine-Card-root", { hasText: name });
+  await expect(card.getByText("Bought 01.03.2025")).toBeVisible();
+  await expect(card.getByText("✔ worth it").first()).toBeVisible(); // 20 € − 8 € sold = 12 € for 4 h: 3 €/h
+  await expect(card.getByText("3,00 €/h")).toBeVisible();
+  await expect(card.getByRole("row", { name: new RegExp(`Resold ${category.id}`) })).toContainText("8,00 € · 01.04.2025");
+  await expect(page.getByText(consoleBundle)).toHaveCount(0); // bundles with hardware are left out
+  await card.getByRole("link", { name: `Played ${category.id}` }).click();
+  await expect(page.getByRole("heading", { name: `Played ${category.id}` })).toBeVisible();
+});
+
+test("add a game bundle with a link and money from selling keys", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const name = `Humble Choice ${category.id}`;
+
+  await page.goto("/bundles");
+  await page.getByRole("button", { name: "Add bundle" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Name", exact: true }).fill(name);
+  await dialog.getByRole("textbox", { name: "Link" }).fill("https://www.humblebundle.com/membership");
+  await fillMoney(page, "Price", "12");
+  await fillMoney(page, "Earned from other sales", "4");
+  await expect(dialog.getByRole("textbox", { name: "Split the price" })).toHaveValue("Equal shares"); // default here
+
+  await dialog.getByLabel("New: name").fill(`Key A ${category.id}`);
+  await dialog.getByRole("textbox", { name: "Category" }).click();
+  await page.getByRole("option", { name: category.name }).click();
+  await dialog.getByRole("button", { name: "Add game" }).click();
+  await dialog.getByLabel("New: name").nth(1).fill(`Key B ${category.id}`); // same category as the game before
+  await expect(dialog.getByText("8,00 € shared by 2 games")).toBeVisible();
+  await expect(dialog.getByText("4,00 €", { exact: true })).toHaveCount(2);
+  await dialog.getByRole("button", { name: "Add bundle" }).click();
+  await expect(page.getByText(`Bundle “${name}” added with 2 game(s)`)).toBeVisible();
+
+  const card = page.locator(".mantine-Card-root", { hasText: name });
+  await expect(card.getByText("incl. 4,00 € not listed below")).toBeVisible();
+  await expect(card.getByRole("link", { name: `Open the link of ${name}` })).toHaveAttribute(
+    "href",
+    "https://www.humblebundle.com/membership",
+  );
+  await expect(card.getByRole("row", { name: new RegExp(`Key B ${category.id}`) })).toContainText("4,00 €");
+});
+
+test("add a bundle without games when all of them were sold", async ({ page }) => {
+  const name = `All sold ${Date.now()}`;
+  await page.goto("/bundles");
+  await page.getByRole("button", { name: "Add bundle" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Name", exact: true }).fill(name);
+  await fillMoney(page, "Price", "8");
+  await fillMoney(page, "Earned from other sales", "10");
+  await dialog.getByRole("button", { name: "Remove from bundle" }).click();
+  await expect(dialog.getByText("No games: the bundle only keeps its price")).toBeVisible();
+  await dialog.getByRole("button", { name: "Add bundle" }).click();
+  await expect(page.getByText(`Bundle “${name}” added with 0 game(s)`)).toBeVisible();
+
+  const card = page.locator(".mantine-Card-root", { hasText: name });
+  await expect(card.getByText("No games listed.")).toBeVisible();
+  await expect(card.getByText("-2,00 €")).toBeVisible(); // net cost: 8 € − 10 €
+});
+
+test("import bundles from a CSV sheet", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const id = category.id;
+  const sheet = [
+    `Choice ${id};;8,00;5,00;;;`,
+    `Kept ${id};03.01.2023;;;2;✓;`,
+    `Sold ${id};03.01.2023;;3,00;;;Verkauft`,
+    "",
+    `All sold ${id};01.02.2023;8,00;10,00;;;`,
+  ].join("\n");
+
+  await page.goto("/bundles");
+  await page.getByRole("button", { name: "Import" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[type="file"]').setInputFiles({ name: "bundles.csv", mimeType: "text/csv", buffer: Buffer.from(sheet) });
+  await dialog.getByRole("textbox", { name: "Category of the games" }).click();
+  await page.getByRole("option", { name: category.name }).click();
+  await dialog.getByRole("button", { name: "Preview" }).click();
+  await expect(dialog.getByText("2,00 € other sales")).toBeVisible();
+  await expect(dialog.getByText("no games listed: only the price and the sales are imported")).toBeVisible();
+  await dialog.getByRole("button", { name: "Import 2 bundles" }).click();
+  await expect(page.getByText("Imported 2 bundles: 2 new games")).toBeVisible();
+
+  const card = page.locator(".mantine-Card-root", { hasText: `Choice ${id}` });
+  await expect(card.getByText("Bought 03.01.2023 at Humble Bundle")).toBeVisible();
+  await expect(card.getByRole("row", { name: new RegExp(`Kept ${id}`) })).toContainText("2 h");
+  await expect(page.locator(".mantine-Card-root", { hasText: `All sold ${id}` }).getByText("No games listed.")).toBeVisible();
 });
 
 test("add a category from the sidebar", async ({ page }) => {

@@ -1,4 +1,4 @@
-"""CSV game import per category, JSON export and import/restore."""
+"""CSV game import per category, bundle import, JSON export and import/restore."""
 
 import json
 from datetime import date
@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, ValidationError
 
-from app import config, csv_import, json_io
+from app import bundle_import, config, csv_import, json_io
 from app.models import CopyFormat
 from app.routers.deps import SessionDep, invalid, load_category, load_hardware
 
@@ -65,6 +65,65 @@ def csv_commit(category_id: int, data: CsvCommit, session: SessionDep):
         return csv_import.commit(session, category, data.rows)
     except csv_import.ImportError_ as e:
         raise invalid(e.problems) from e
+
+
+# --- bundles ----------------------------------------------------------------------------------
+
+
+async def _bundle_import_args(
+    session: SessionDep,
+    category_id: int,
+    file: UploadFile,
+    hardware_id: int | None,
+    store: str | None,
+    format: CopyFormat,
+):
+    category = load_category(session, category_id)
+    if hardware_id is not None:
+        load_hardware(session, hardware_id)
+    options = bundle_import.BundleImportOptions(hardware_id=hardware_id, store=store or None, format=format)
+    return category, await _read_upload(file), options
+
+
+BundleFile = Annotated[UploadFile, File(description="CSV: a bundle row, its game rows, an empty row, the next bundle")]
+CategoryForm = Annotated[int, Form(description="platform category of the games")]
+DeviceForm = Annotated[int | None, Form(description="device the hours of new games are booked on")]
+
+
+@router.post("/bundles/import/preview", response_model=bundle_import.BundleImportPreview)
+async def bundle_import_preview(
+    session: SessionDep,
+    file: BundleFile,
+    category_id: CategoryForm,
+    hardware_id: DeviceForm = None,
+    store: Annotated[str | None, Form()] = None,
+    format: Annotated[CopyFormat, Form()] = CopyFormat.digital,
+):
+    """What importing the bundles would do. Nothing is saved."""
+    category, data, options = await _bundle_import_args(session, category_id, file, hardware_id, store, format)
+    try:
+        return bundle_import.plan(session, category, data, options)
+    except ValueError as e:
+        raise invalid(str(e)) from e
+
+
+@router.post("/bundles/import/commit", response_model=bundle_import.BundleImportResult)
+async def bundle_import_commit(
+    session: SessionDep,
+    file: BundleFile,
+    category_id: CategoryForm,
+    hardware_id: DeviceForm = None,
+    store: Annotated[str | None, Form()] = None,
+    format: Annotated[CopyFormat, Form()] = CopyFormat.digital,
+):
+    """Import the bundles of the file (planned again, like the preview). All or nothing."""
+    category, data, options = await _bundle_import_args(session, category_id, file, hardware_id, store, format)
+    try:
+        return bundle_import.commit(session, category, data, options)
+    except bundle_import.BundleImportError as e:
+        raise invalid(e.problems) from e
+    except ValueError as e:
+        raise invalid(str(e)) from e
 
 
 @router.get("/import-csv/template", response_class=Response)

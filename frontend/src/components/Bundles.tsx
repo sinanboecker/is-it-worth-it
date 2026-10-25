@@ -1,4 +1,5 @@
-/** Bundles (one purchase, several items): the "other items" editor for the new-hardware dialog, and the edit dialog. */
+/** Bundles (one purchase, several items): the "other items" editor for the new-item dialog, the new-bundle dialog and
+ * the edit dialog. */
 import {
   ActionIcon,
   Alert,
@@ -18,13 +19,13 @@ import { useDebouncedValue } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation, useCategories, useItems } from "@/api/queries";
 import type { Bundle, BundleEntryIn, CopyFormat, ItemKind, SplitMode } from "@/api/types";
 import { day, euros, todayIso } from "@/lib/format";
 import { FORMAT, options, SPLIT_MODE } from "@/lib/labels";
-import { DateField, MoneyInput } from "./inputs";
+import { DateField, MoneyInput, StoreInput } from "./inputs";
 
 /** Live preview of the split while editing (computed by the server, same algorithm as on save). */
 export function useSplitPreview(
@@ -95,22 +96,26 @@ export function BundleEntryCard({
   share,
   onChange,
   onRemove,
+  gamesOnly = false,
 }: {
   entry: BundleEntryDraft;
   mode: SplitMode;
   share: number | undefined;
   onChange: (patch: Partial<BundleEntryDraft>) => void;
   onRemove: () => void;
+  gamesOnly?: boolean;
 }) {
   const categories = useCategories();
   const items = useItems();
-  const itemOptions = (items.data ?? []).map((i) => ({ value: String(i.id), label: i.name }));
+  const itemOptions = (items.data ?? [])
+    .filter((i) => !gamesOnly || i.kind === "game")
+    .map((i) => ({ value: String(i.id), label: i.name }));
   return (
     <Card withBorder padding="sm">
       <Stack gap="xs">
         <Group grow align="flex-end">
           <Select
-            label="Existing game / device"
+            label={gamesOnly ? "Existing game" : "Existing game / device"}
             placeholder="…or add a new one below"
             data={itemOptions}
             value={entry.existingId ? String(entry.existingId) : null}
@@ -131,18 +136,22 @@ export function BundleEntryCard({
             <TextInput label="New: name" value={entry.newName} onChange={(e) => onChange({ newName: e.currentTarget.value })} />
             <Select
               label="Category"
-              data={(categories.data ?? []).map((c) => ({ value: String(c.id), label: c.name }))}
+              data={(categories.data ?? [])
+                .filter((c) => !gamesOnly || c.type === "platform")
+                .map((c) => ({ value: String(c.id), label: c.name }))}
               value={entry.newCategory ? String(entry.newCategory) : null}
               onChange={(v) => onChange({ newCategory: v ? Number(v) : null })}
             />
-            <SegmentedControl
-              data={[
-                { value: "game", label: "Game" },
-                { value: "hardware", label: "Hardware" },
-              ]}
-              value={entry.newKind}
-              onChange={(v) => onChange({ newKind: v as ItemKind })}
-            />
+            {!gamesOnly && (
+              <SegmentedControl
+                data={[
+                  { value: "game", label: "Game" },
+                  { value: "hardware", label: "Hardware" },
+                ]}
+                value={entry.newKind}
+                onChange={(v) => onChange({ newKind: v as ItemKind })}
+              />
+            )}
           </Group>
         )}
         <Group justify="space-between">
@@ -213,6 +222,151 @@ export function BundleEntriesEditor({
   );
 }
 
+const validUrl = (url: string) => !url.trim() || /^https?:\/\/\S+$/.test(url.trim());
+
+/** What the bundle's copies share: the price minus money from selling untracked parts (same as the server). */
+const costToSplit = (total: number | null, otherSales: number | null) => (total === null ? null : Math.max(total - (otherSales ?? 0), 0));
+
+/** Link and "other sales" fields, shared by the new and the edit dialog. */
+function LinkInput({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  return (
+    <TextInput
+      label="Link"
+      placeholder="https://…"
+      value={value}
+      onChange={(e) => onChange(e.currentTarget.value)}
+      error={validUrl(value) ? null : "Start the link with http:// or https://"}
+    />
+  );
+}
+
+function OtherSalesInput({ value, onChange }: { value: number | null; onChange: (cents: number | null) => void }) {
+  return (
+    <MoneyInput
+      label="Earned from other sales"
+      description="Games or keys from this bundle you sold without listing them as games. Lowers what the listed games cost."
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+
+/** New bundle: name, link, price and date on top, then the games one by one. */
+export function AddBundleModal({ onClose }: { onClose: () => void }) {
+  const categories = useCategories();
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [buyDate, setBuyDate] = useState<string | null>(todayIso());
+  const [store, setStore] = useState<string | null>(null);
+  const [total, setTotal] = useState<number | null>(null);
+  const [otherSales, setOtherSales] = useState<number | null>(null);
+  const [modeChoice, setModeChoice] = useState<SplitMode | null>(null);
+  const mode: SplitMode = modeChoice ?? "equal"; // game bundles: equal shares unless chosen otherwise
+  const [entries, setEntries] = useState<BundleEntryDraft[]>([]);
+  const firstPlatform = categories.data?.find((c) => c.type === "platform")?.id ?? null;
+  const started = useRef(false);
+  useEffect(() => {
+    // one empty game to start with, once the categories are there (removing it leaves a bundle without games)
+    if (categories.data && !started.current) {
+      started.current = true;
+      setEntries([emptyEntry(firstPlatform, "digital")]);
+    }
+  }, [categories.data, firstPlatform]);
+  const update = (key: number, patch: Partial<BundleEntryDraft>) => setEntries((es) => es.map((e) => (e.key === key ? { ...e, ...patch } : e)));
+  // a new game starts with the category and format of the one before
+  const addGame = () => {
+    const last = entries.at(-1);
+    setEntries([...entries, emptyEntry(last?.newCategory ?? firstPlatform, last?.format ?? "digital")]);
+  };
+  const shared = costToSplit(total, otherSales);
+  const preview = useSplitPreview(
+    shared,
+    mode,
+    entries.map((e) => e.reference),
+    entries.map((e) => e.manual),
+  );
+  const create = useApiMutation(
+    () =>
+      unwrap(
+        api.POST("/api/v1/bundles", {
+          body: {
+            name: name.trim(),
+            url: url.trim() || null,
+            buy_date: buyDate!,
+            total_price_cents: total!,
+            other_sales_cents: otherSales ?? 0,
+            store,
+            split_mode: mode,
+            notes: null,
+            entries: entries.map((e) => entryBody(e, mode)),
+          },
+        }),
+      ),
+    { success: (b) => `Bundle “${b.name}” added with ${b.copies.length} game(s)`, onSuccess: onClose },
+  );
+  const complete =
+    name.trim() && validUrl(url) && buyDate && total !== null && entries.every(entryComplete) && (!entries.length || preview.isSuccess);
+  return (
+    <Modal opened onClose={onClose} title="New bundle" size="lg">
+      <Stack>
+        <TextInput label="Name" placeholder="e.g. Humble Indie Bundle 23" value={name} onChange={(e) => setName(e.currentTarget.value)} required data-autofocus />
+        <LinkInput value={url} onChange={setUrl} />
+        <Group grow align="flex-start">
+          <DateField label="Bought on" value={buyDate} onChange={setBuyDate} required />
+          <StoreInput value={store} onChange={setStore} />
+        </Group>
+        <Group grow align="flex-start">
+          <MoneyInput label="Price" value={total} onChange={setTotal} required />
+          <Select label="Split the price" data={options(SPLIT_MODE)} value={mode} onChange={(v) => v && setModeChoice(v as SplitMode)} allowDeselect={false} />
+        </Group>
+        <OtherSalesInput value={otherSales} onChange={setOtherSales} />
+        <Group justify="space-between" mt="xs">
+          <Text size="sm" fw={600}>
+            Games
+          </Text>
+          {shared !== null && entries.length > 0 && (
+            <Text size="sm" c="dimmed">
+              {euros(shared)} shared by {entries.length} game{entries.length === 1 ? "" : "s"}
+            </Text>
+          )}
+        </Group>
+        {!entries.length && (
+          <Text size="sm" c="dimmed">
+            No games: the bundle only keeps its price and the money from the sales (e.g. all games were sold).
+          </Text>
+        )}
+        {entries.map((entry, index) => (
+          <BundleEntryCard
+            key={entry.key}
+            entry={entry}
+            mode={mode}
+            share={preview.data?.shares_cents[index]}
+            onChange={(patch) => update(entry.key, patch)}
+            onRemove={() => setEntries((es) => es.filter((e) => e.key !== entry.key))}
+            gamesOnly
+          />
+        ))}
+        <Button variant="light" leftSection={<IconPlus size={16} />} onClick={addGame}>
+          Add game
+        </Button>
+        {preview.isError && (
+          <Text c="red" size="sm">
+            {preview.error.message}
+          </Text>
+        )}
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => create.mutate(undefined)} loading={create.isPending} disabled={!complete}>
+            Add bundle
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
 /** Edit an existing bundle: total, split, standalone prices, sale as a whole; or delete it. */
 export function EditBundleModal({ bundleId, onClose }: { bundleId: number; onClose: () => void }) {
   const query = useQuery({
@@ -230,13 +384,15 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
   const [name, setName] = useState(bundle.name);
   const [buyDate, setBuyDate] = useState<string | null>(bundle.buy_date);
   const [total, setTotal] = useState<number | null>(bundle.total_price_cents);
+  const [url, setUrl] = useState(bundle.url ?? "");
+  const [otherSales, setOtherSales] = useState<number | null>(bundle.other_sales_cents || null);
   const [mode, setMode] = useState<SplitMode>(bundle.split_mode);
   const [references, setReferences] = useState(bundle.copies.map((c) => c.reference_price_cents));
   const [manual, setManual] = useState<(number | null)[]>(bundle.copies.map((c) => c.buy_price_cents));
   const [soldAsBundle, setSoldAsBundle] = useState(bundle.sold_as_bundle);
   const [sellTotal, setSellTotal] = useState(bundle.sell_total_cents);
   const [sellDate, setSellDate] = useState(bundle.sell_date ?? todayIso());
-  const preview = useSplitPreview(total, mode, references, manual);
+  const preview = useSplitPreview(costToSplit(total, otherSales), mode, references, manual);
   const save = useApiMutation(
     () =>
       unwrap(
@@ -246,6 +402,8 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
             name: name.trim(),
             buy_date: buyDate,
             total_price_cents: total!,
+            url: url.trim() || null,
+            other_sales_cents: otherSales ?? 0,
             split_mode: mode,
             reference_prices: Object.fromEntries(bundle.copies.map((c, i) => [c.copy_id, references[i] ?? 0])),
             manual_shares: mode === "manual" ? Object.fromEntries(bundle.copies.map((c, i) => [c.copy_id, manual[i] ?? 0])) : null,
@@ -271,6 +429,8 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
         <MoneyInput label="Total price" value={total} onChange={setTotal} />
         <Select label="Split" data={options(SPLIT_MODE)} value={mode} onChange={(v) => v && setMode(v as SplitMode)} allowDeselect={false} />
       </Group>
+      <LinkInput value={url} onChange={setUrl} />
+      <OtherSalesInput value={otherSales} onChange={setOtherSales} />
       <Table>
         <Table.Tbody>
           {bundle.copies.map((c, i) => (
@@ -296,7 +456,9 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
           {preview.error.message}
         </Text>
       )}
-      <Checkbox label="Sold as a whole" checked={soldAsBundle} onChange={(e) => setSoldAsBundle(e.currentTarget.checked)} />
+      {bundle.copies.length > 0 && (
+        <Checkbox label="Sold as a whole" checked={soldAsBundle} onChange={(e) => setSoldAsBundle(e.currentTarget.checked)} />
+      )}
       {soldAsBundle && (
         <Group grow>
           <MoneyInput label="Sold for (total)" value={sellTotal} onChange={setSellTotal} />
@@ -327,7 +489,9 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
         <Button
           onClick={() => save.mutate(undefined)}
           loading={save.isPending}
-          disabled={!name.trim() || total === null || !preview.isSuccess || (soldAsBundle && sellTotal === null)}
+          disabled={
+            !name.trim() || !validUrl(url) || total === null || (bundle.copies.length > 0 && !preview.isSuccess) || (soldAsBundle && sellTotal === null)
+          }
         >
           Save
         </Button>

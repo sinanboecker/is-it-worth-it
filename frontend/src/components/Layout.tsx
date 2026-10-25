@@ -21,6 +21,7 @@ import {
   IconHeart,
   IconLayoutDashboard,
   IconMoon,
+  IconPackage,
   IconPlayerPlay,
   IconPlus,
   IconSettings,
@@ -43,6 +44,7 @@ const MAIN_LINKS = [
   { to: "/favorites", label: "Favorites", icon: IconHeart },
   { to: "/wishlist", label: "Wishlist", icon: IconBookmark },
   { to: "/backlog", label: "Backlog", icon: IconStack2 },
+  { to: "/bundles", label: "Bundles", icon: IconPackage },
 ];
 
 const MORE_LINKS = [

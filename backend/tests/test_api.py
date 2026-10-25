@@ -358,12 +358,27 @@ def test_bundle_entries_and_delete(api):
 
     bundle = api.delete(f"/bundles/{bundle['id']}/copies/{bundle['copies'][1]['copy_id']}")
     assert [c["buy_price_cents"] for c in bundle["copies"]] == [900]
-    assert (
-        api.client.delete(f"/api/v1/bundles/{bundle['id']}/copies/{bundle['copies'][0]['copy_id']}").status_code == 409
-    )
-
+    bundle = api.delete(f"/bundles/{bundle['id']}/copies/{bundle['copies'][0]['copy_id']}")  # the last one, too
+    assert bundle["copies"] == [] and api.get(f"/items/{game_a}")["copies"] == []
     api.delete(f"/bundles/{bundle['id']}")
-    assert api.get(f"/items/{game_a}")["copies"] == []
+    assert api.get("/bundles") == []
+
+
+def test_bundle_without_games(api):
+    """E.g. all games of the bundle were sold: only the price and the money from the sales."""
+    bundle = api.post(
+        "/bundles",
+        {
+            "name": "Humble Choice November 2025",
+            "buy_date": "2025-11-04",
+            "total_price_cents": 800,
+            "other_sales_cents": 1000,
+        },
+    )
+    assert bundle["copies"] == []
+    assert (bundle["sold_cents"], bundle["value"]["net_cost_cents"], bundle["value"]["worth_it"]) == (1000, -200, True)
+    bundle = api.patch(f"/bundles/{bundle['id']}", {"total_price_cents": 900, "split_mode": "equal"})
+    assert bundle["value"]["net_cost_cents"] == -100
 
 
 def test_preview_split(api):
@@ -418,3 +433,66 @@ def test_favorites(api):
     assert api.patch(f"/items/{zelda['id']}", {"favorite": False})["favorite"] is False
     switch = api.hardware(nintendo["id"])
     assert api.client.patch(f"/api/v1/items/{switch['id']}", json={"favorite": True}).status_code == 422
+
+
+def test_bundle_value_counts_sales_and_game_hours(api):
+    pc = api.category("PC")
+    device = api.hardware(pc["id"], name="Gaming PC")
+    bundle = api.post(
+        "/bundles",
+        {
+            "name": "Humble Bundle",
+            "buy_date": "2025-01-01",
+            "total_price_cents": 3000,
+            "split_mode": "equal",
+            "entries": [
+                {"new_item": {"category_id": pc["id"], "kind": "game", "name": n}, "format": "digital"} for n in "ABC"
+            ],
+        },
+    )
+    a, b, c = bundle["copies"]
+    api.post(f"/items/{a['item_id']}/hours", {"hours": 4, "hardware_id": device["id"]})
+    api.post(f"/items/{b['item_id']}/hours", {"hours": 2, "hardware_id": device["id"]})
+    api.patch(f"/items/{c['item_id']}/copies/{c['copy_id']}", {"sell_price_cents": 1200, "sell_date": "2025-06-01"})
+
+    (bundle,) = api.get("/bundles")
+    assert bundle["sold_cents"] == 1200
+    value = bundle["value"]
+    assert (value["hours"], value["net_cost_cents"], value["cost_per_hour_cents"]) == (6, 1800, 300)
+    assert value["worth_it"] and value["threshold_cph"] == 300
+    assert [(x["item_name"], x["value"]["hours"], x["sell_price_cents"]) for x in bundle["copies"]] == [
+        ("A", 4, None),
+        ("B", 2, None),
+        ("C", 0, 1200),
+    ]
+    assert not bundle["copies"][1]["value"]["worth_it"]  # B alone: 10 € for 2 h
+
+
+def test_bundle_other_sales_lower_the_shares_and_count_as_sold(api):
+    pc = api.category("PC")
+    body = {
+        "name": "Humble Choice",
+        "url": "https://www.humblebundle.com/membership",
+        "buy_date": "2025-01-01",
+        "total_price_cents": 1200,
+        "other_sales_cents": 400,  # e.g. two keys sold that aren't tracked as games
+        "split_mode": "equal",
+        "entries": [
+            {"new_item": {"category_id": pc["id"], "kind": "game", "name": n}, "format": "digital"} for n in "AB"
+        ],
+    }
+    bundle = api.post("/bundles", body)
+    assert bundle["url"] == "https://www.humblebundle.com/membership"
+    assert [c["buy_price_cents"] for c in bundle["copies"]] == [400, 400]  # 12 € − 4 € shared by two games
+    assert (bundle["sold_cents"], bundle["value"]["net_cost_cents"]) == (400, 800)
+
+    bundle = api.patch(f"/bundles/{bundle['id']}", {"other_sales_cents": None, "url": None})
+    assert [c["buy_price_cents"] for c in bundle["copies"]] == [600, 600]
+    assert (bundle["other_sales_cents"], bundle["url"]) == (0, None)
+
+    bundle = api.patch(f"/bundles/{bundle['id']}", {"other_sales_cents": 1500})  # sold for more than it cost
+    assert [c["buy_price_cents"] for c in bundle["copies"]] == [0, 0]
+    assert bundle["value"]["net_cost_cents"] == -300
+
+    response = api.client.post("/api/v1/bundles", json={**body, "url": "javascript:alert(1)"})
+    assert response.status_code == 422

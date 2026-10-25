@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { BundlesPage } from "./pages/BundlesPage";
 import { CategoryPage } from "./pages/CategoryPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ItemPage } from "./pages/ItemPage";
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: "/favorites", element: <FavoritesPage /> },
       { path: "/wishlist", element: <WishlistPage /> },
       { path: "/backlog", element: <BacklogPage /> },
+      { path: "/bundles", element: <BundlesPage /> },
       { path: "/categories/:id", element: <CategoryPage /> },
       { path: "/items/:id", element: <ItemPage /> },
       { path: "/stats", element: <StatsPage /> },

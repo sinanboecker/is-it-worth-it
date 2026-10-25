@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
 
-from app.models import Copy, GameStatus, Item, ItemKind
+from app.models import Bundle, Copy, GameStatus, Item, ItemKind
 
 
 def minutes_to_hours(minutes: int) -> float:
@@ -142,6 +142,30 @@ def item_value(item: Item, global_break_even_cph: int) -> Value | None:
     if item.kind is ItemKind.game:
         return game_value(item, global_break_even_cph)
     return hardware_value(item, global_break_even_cph)
+
+
+def bundle_value(bundle: Bundle, global_break_even_cph: int) -> Value:
+    """A bundle as one purchase: its price minus what its copies and untracked parts were sold for, against the hours
+    of its games.
+
+    Hardware in a bundle adds no hours of its own (they are the hours of the games played on it). The break-even is
+    the items' category threshold when they all share one, otherwise the global one.
+    """
+    items = {c.item.id: c.item for c in bundle.copies}.values()
+    minutes = sum(game_minutes(i) for i in items if i.kind is ItemKind.game)
+    received = sum(c.sell_price_cents for c in bundle.copies if c.is_sold) + bundle.other_sales_cents
+    net_cost = bundle.total_price_cents - received
+    thresholds = {threshold_for(i, global_break_even_cph) for i in items}
+    threshold = thresholds.pop() if len(thresholds) == 1 else global_break_even_cph
+    return Value(
+        minutes=minutes,
+        net_cost_cents=net_cost,
+        cost_per_hour_cents=cost_per_hour(net_cost, minutes),
+        worth_it=is_worth_it(net_cost, minutes, threshold),
+        hours_to_break_even=hours_to_break_even(net_cost, minutes, threshold),
+        threshold_cph=threshold,
+        total_paid_cents=bundle.total_price_cents,
+    )
 
 
 @dataclass

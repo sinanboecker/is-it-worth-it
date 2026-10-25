@@ -8,3 +8,6 @@ backend/data/
 frontend/tsconfig.tsbuildinfo
 compose-data/
 .DS_Store
+/bundles.csv
+/bundles.ods
+.~lock.*#

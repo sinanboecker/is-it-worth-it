@@ -79,3 +79,15 @@ def test_0003_makes_copy_buy_date_optional(engine):
     assert buy_date_nullable()
     command.downgrade(alembic_config(engine), "0002")
     assert not buy_date_nullable()
+
+
+def test_0004_adds_bundle_url_and_other_sales(engine):
+    command.upgrade(alembic_config(engine), "0003")
+    with engine.begin() as conn:
+        conn.execute(
+            text("INSERT INTO bundle (id, name, buy_date, total_price_cents, split_mode, sold_as_bundle)"
+                 " VALUES (1, 'B', '2024-01-01', 1000, 'equal', 0)")
+        )  # fmt: skip
+    command.upgrade(alembic_config(engine), "0004")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT url, other_sales_cents FROM bundle")).one() == (None, 0)

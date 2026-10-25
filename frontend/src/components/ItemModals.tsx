@@ -415,6 +415,7 @@ export function NewItemModal({
             name: bundleName.trim() || `${name.trim()} bundle`,
             buy_date: copy.buy_date!,
             total_price_cents: copy.buy_price_cents!,
+            other_sales_cents: 0,
             store: copy.store,
             split_mode: splitMode,
             notes: null,

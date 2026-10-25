@@ -161,6 +161,10 @@ class Bundle(SQLModel, table=True):
     name: str
     buy_date: date
     total_price_cents: int
+    url: str | None = None  # e.g. the bundle's store page
+    # money from selling parts of the bundle that aren't tracked as games (e.g. resold keys); lowers what the
+    # bundle's copies cost
+    other_sales_cents: int = 0
     store: str | None = None
     split_mode: SplitMode = SplitMode.proportional
     sold_as_bundle: bool = False

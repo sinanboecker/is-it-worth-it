@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
-from app import status
+from app import calc, status
 from app.bundles import BundleSplitError, apply_split, split_amount
 from app.models import Bundle, Copy, Item, ItemKind, SplitMode
 from app.routers.deps import (
@@ -12,7 +12,6 @@ from app.routers.deps import (
     SettingsDep,
     check_copy,
     check_game_category,
-    conflict,
     invalid,
     link_default_device,
     load_category,
@@ -27,6 +26,7 @@ from app.schemas import (
     BundleUpdate,
     SplitPreviewIn,
     SplitPreviewOut,
+    ValueRead,
 )
 
 router = APIRouter(prefix="/bundles", tags=["bundles"])
@@ -41,7 +41,7 @@ def _load_bundle(session: Session, bundle_id: int) -> Bundle:
     return bundle
 
 
-def _read(bundle: Bundle) -> BundleRead:
+def _read(bundle: Bundle, global_break_even_cph: int) -> BundleRead:
     return BundleRead(
         **bundle.model_dump(exclude={"id"}),
         id=bundle.id,
@@ -54,9 +54,16 @@ def _read(bundle: Bundle) -> BundleRead:
                 reference_price_cents=c.reference_price_cents,
                 buy_price_cents=c.buy_price_cents,
                 sell_price_cents=c.sell_price_cents,
+                sell_date=c.sell_date,
+                status=c.item.status,
+                cover_path=c.item.cover_path,
+                image_path=c.item.image_path,
+                value=ValueRead.build(calc.item_value(c.item, global_break_even_cph)),
             )
             for c in bundle.copies
         ],
+        sold_cents=sum(c.sell_price_cents for c in bundle.copies if c.is_sold) + bundle.other_sales_cents,
+        value=ValueRead.build(calc.bundle_value(bundle, global_break_even_cph)),
     )
 
 
@@ -96,11 +103,11 @@ def _add_entry(session: Session, bundle: Bundle, entry: BundleEntryIn) -> Copy:
 
 
 @router.get("", response_model=list[BundleRead])
-def list_bundles(session: SessionDep):
+def list_bundles(session: SessionDep, settings: SettingsDep):
     bundles = session.exec(
         select(Bundle).options(selectinload(Bundle.copies).selectinload(Copy.item)).order_by(Bundle.buy_date.desc())
     ).all()
-    return [_read(b) for b in bundles]
+    return [_read(b, settings.break_even_cph) for b in bundles]
 
 
 @router.post("/preview-split", response_model=SplitPreviewOut)
@@ -131,20 +138,22 @@ def create_bundle(data: BundleCreate, session: SessionDep, settings: SettingsDep
     manual = [e.buy_price_cents for e in data.entries] if bundle.split_mode is SplitMode.manual else None
     _split(bundle, manual)
     session.commit()
-    return _read(_load_bundle(session, bundle.id))
+    return _read(_load_bundle(session, bundle.id), settings.break_even_cph)
 
 
 @router.get("/{bundle_id}", response_model=BundleRead)
-def get_bundle(bundle_id: int, session: SessionDep):
-    return _read(_load_bundle(session, bundle_id))
+def get_bundle(bundle_id: int, session: SessionDep, settings: SettingsDep):
+    return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 
 
 @router.patch("/{bundle_id}", response_model=BundleRead)
-def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep):
+def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep, settings: SettingsDep):
     bundle = _load_bundle(session, bundle_id)
     changes = data.model_dump(exclude_unset=True)
     reference_prices = changes.pop("reference_prices", None) or {}
     manual_shares = changes.pop("manual_shares", None)
+    if "other_sales_cents" in changes and changes["other_sales_cents"] is None:
+        changes["other_sales_cents"] = 0
 
     copy_ids = {c.id for c in bundle.copies}
     unknown = (set(reference_prices) | set(manual_shares or {})) - copy_ids
@@ -167,32 +176,30 @@ def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep):
         manual = [manual_shares.get(c.id, c.buy_price_cents) for c in bundle.copies]
     _split(bundle, manual)
     session.commit()
-    return _read(_load_bundle(session, bundle_id))
+    return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 
 
 @router.post("/{bundle_id}/entries", response_model=BundleRead, status_code=201)
-def add_bundle_entry(bundle_id: int, entry: BundleEntryIn, session: SessionDep):
+def add_bundle_entry(bundle_id: int, entry: BundleEntryIn, session: SessionDep, settings: SettingsDep):
     bundle = _load_bundle(session, bundle_id)
     _add_entry(session, bundle, entry)
     _split(bundle)
     session.commit()
-    return _read(_load_bundle(session, bundle_id))
+    return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 
 
 @router.delete("/{bundle_id}/copies/{copy_id}", response_model=BundleRead)
-def remove_bundle_copy(bundle_id: int, copy_id: int, session: SessionDep):
+def remove_bundle_copy(bundle_id: int, copy_id: int, session: SessionDep, settings: SettingsDep):
     """Removes the copy from the bundle and deletes it (it was bought as part of the bundle)."""
     bundle = _load_bundle(session, bundle_id)
     copy = next((c for c in bundle.copies if c.id == copy_id), None)
     if copy is None:
         raise not_found("copy")
-    if len(bundle.copies) == 1:
-        raise conflict("a bundle needs at least one copy; delete the bundle instead")
     bundle.copies.remove(copy)
     session.delete(copy)
     _split(bundle)
     session.commit()
-    return _read(_load_bundle(session, bundle_id))
+    return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 
 
 @router.delete("/{bundle_id}", status_code=204)

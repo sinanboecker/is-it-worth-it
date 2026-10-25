@@ -447,20 +447,27 @@ class BundleEntryIn(BaseModel):
         return self
 
 
+HttpUrl = Annotated[str, Field(pattern=r"^https?://\S+$", max_length=2000)]
+
+
 class BundleCreate(BaseModel):
     name: str = Field(min_length=1)
     buy_date: date
     total_price_cents: Cents
+    url: HttpUrl | None = None
+    other_sales_cents: Cents = 0
     store: str | None = None
     split_mode: SplitMode | None = None  # None = default from settings
     notes: str | None = None
-    entries: list[BundleEntryIn] = Field(min_length=1)
+    entries: list[BundleEntryIn] = []  # may be empty, e.g. when all games of the bundle were sold
 
 
 class BundleUpdate(BaseModel):
     name: str | None = Field(None, min_length=1)
     buy_date: date | None = None
     total_price_cents: Cents | None = None
+    url: HttpUrl | None = None
+    other_sales_cents: Cents | None = None
     store: str | None = None
     split_mode: SplitMode | None = None
     sold_as_bundle: bool | None = None
@@ -479,6 +486,11 @@ class BundleCopyRead(BaseModel):
     reference_price_cents: int | None
     buy_price_cents: int
     sell_price_cents: int | None
+    sell_date: date | None
+    status: GameStatus | None
+    cover_path: str | None
+    image_path: str | None
+    value: ValueRead | None = Field(description="the whole game or device, not only this copy")
 
 
 class BundleRead(BaseModel):
@@ -486,6 +498,8 @@ class BundleRead(BaseModel):
     name: str
     buy_date: date
     total_price_cents: int
+    url: str | None
+    other_sales_cents: int
     store: str | None
     split_mode: SplitMode
     sold_as_bundle: bool
@@ -493,6 +507,8 @@ class BundleRead(BaseModel):
     sell_total_cents: int | None
     notes: str | None
     copies: list[BundleCopyRead]
+    sold_cents: int = Field(description="what the bundle's copies and untracked parts were sold for so far")
+    value: ValueRead = Field(description="the bundle as one purchase; hours are those of its games")
 
 
 class SplitPreviewIn(BaseModel):

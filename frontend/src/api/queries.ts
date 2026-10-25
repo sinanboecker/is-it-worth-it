@@ -71,6 +71,9 @@ export const useTop = (query: TopQuery) =>
     queryFn: () => unwrap(api.GET("/api/v1/stats/top", { params: { query } })),
   });
 
+export const useBundles = () =>
+  useQuery({ queryKey: ["bundles"], queryFn: () => unwrap(api.GET("/api/v1/bundles")) });
+
 export const useHardwareStats = () =>
   useQuery({ queryKey: ["stats", "hardware"], queryFn: () => unwrap(api.GET("/api/v1/stats/hardware")) });
 
