@@ -79,7 +79,7 @@ export function DashboardPage() {
               value={t.status_counts.backlog ?? 0}
               hint={`${euros(t.backlog_value_cents)} not played yet`}
             />
-            <Anchor component={Link} to="/" underline="never">
+            <Anchor component={Link} to="/now-playing" underline="never">
               <StatTile label="Now playing" value={nowPlaying.data?.playing.length ?? "–"} hint={`${nowPlaying.data?.on_hold.length ?? 0} on hold`} />
             </Anchor>
           </SimpleGrid>

@@ -35,8 +35,8 @@ import { CategoryModal } from "./CategoryModal";
 import { RawgAttribution } from "./MetadataModals";
 
 const MAIN_LINKS = [
-  { to: "/", label: "Now Playing", icon: IconPlayerPlay },
-  { to: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard },
+  { to: "/", label: "Dashboard", icon: IconLayoutDashboard },
+  { to: "/now-playing", label: "Now Playing", icon: IconPlayerPlay },
   { to: "/journal", label: "Journal", icon: IconBook },
   { to: "/favorites", label: "Favorites", icon: IconHeart },
   { to: "/wishlist", label: "Wishlist", icon: IconBookmark },

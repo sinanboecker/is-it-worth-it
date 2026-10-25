@@ -520,12 +520,12 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 ## 8. Web app (frontend)
 
 Pages:
-1. **Dashboard:** lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),
+1. **Dashboard** (start page, `/`; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),
    game spending per year (bar, incl. DLC), hours per year (bar), cost/hour per year (line), games finished per year,
    status counts (backlog size, **backlog value** = money in games not started yet), a "Now Playing" tile (count + link to the page), "almost worth it" list, best/worst value items,
    **"Wishlist deals"** (games at or below their target price, official or keyshop).
 2. **Journal:** see §4 (incl. calendar heatmap).
-3. **Now Playing:** a dedicated page for games in progress.
+3. **Now Playing** (`/now-playing`): a dedicated page for games in progress.
    - **Currently playing** as large cover cards, sorted by last played. Each card shows: total hours with a small **per-device breakdown**, last played,
      started on + days since start, rating, and a **break-even progress bar** ("12.5 / 20 h, 7.5 h left").
    - **Quick actions** on each card: + hours (device pre-selected), Finished (date → device → review; rate the game if not rated yet), On hold, Abandoned.

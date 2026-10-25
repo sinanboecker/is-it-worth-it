@@ -105,7 +105,7 @@ test("import games from a CSV file", async ({ page, request }) => {
 test("all pages load without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const url of ["/", "/dashboard", "/journal", "/favorites", "/wishlist", "/backlog", "/stats", "/settings"]) {
+  for (const url of ["/", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/stats", "/settings"]) {
     await page.goto(url);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
   }

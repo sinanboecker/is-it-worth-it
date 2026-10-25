@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { CategoryPage } from "./pages/CategoryPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -14,8 +14,9 @@ export const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      { path: "/", element: <NowPlayingPage /> },
-      { path: "/dashboard", element: <DashboardPage /> },
+      { path: "/", element: <DashboardPage /> },
+      { path: "/dashboard", element: <Navigate to="/" replace /> },
+      { path: "/now-playing", element: <NowPlayingPage /> },
       { path: "/journal", element: <JournalPage /> },
       { path: "/favorites", element: <FavoritesPage /> },
       { path: "/wishlist", element: <WishlistPage /> },
