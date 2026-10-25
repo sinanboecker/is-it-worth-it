@@ -11,7 +11,7 @@ VERSION=${1:?usage: scripts/release.sh <version>, e.g. 0.2.0}
 [ -z "$(git status --porcelain)" ] || { echo "commit or stash your changes first"; exit 1; }
 git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null && { echo "v$VERSION exists already"; exit 1; }
 
-sed -i "s/^version = \".*\"/version = \"$VERSION\"/" backend/pyproject.toml
+sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" backend/pyproject.toml && rm backend/pyproject.toml.bak  # -i.bak: works with GNU and BSD sed
 (cd frontend && npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null)
 
 git add backend/pyproject.toml frontend/package.json frontend/package-lock.json
