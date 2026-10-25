@@ -36,7 +36,7 @@ def session(engine) -> Iterator[Session]:
 
 @pytest.fixture
 def client(engine) -> Iterator[TestClient]:
-    """API client; startup runs the real migrations and seeding."""
+    """API client; startup creates the tables and seeds like the real app."""
     with TestClient(app, client=LAN_CLIENT) as client:
         yield client
 

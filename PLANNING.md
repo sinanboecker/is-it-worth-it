@@ -92,7 +92,7 @@ The server needs **outbound** internet only for RAWG, gg.deals and the Steam Sto
 | Layer | Choice | Why |
 |---|---|---|
 | Backend | **Python 3.12 + FastAPI** | Small, fast, generates OpenAPI docs automatically (useful for the Android client), good CSV/JSON handling in the standard library |
-| ORM / migrations | **SQLModel (SQLAlchemy) + Alembic** | Typed models, safe schema upgrades between versions |
+| ORM / migrations | **SQLModel (SQLAlchemy)**; tables created on startup, **no migrations for now** | The database is filled fresh on Unraid; Alembic can be added back (with the then-current schema as baseline) once a schema change has to keep real data |
 | Database | **SQLite** in `/data` volume | One user, small dataset; backup = copy the `/data` folder. No separate DB container |
 | CSV import / JSON export | Python standard library (`csv`, `json`) + Pydantic for validation | No extra dependencies |
 | Game metadata | **RAWG API** (free key for personal use) via `httpx` | No Twitch/IGDB account needed; release date, genres, developer, description, landscape image, DLC names, store links (Steam ID) |
@@ -645,7 +645,7 @@ The nightly backup (see §11) stays an SQLite copy; the JSON export is for manua
 ```
 is_it_worth_it/
 ├── PLANNING.md
-├── backend/            FastAPI app, Alembic migrations, tests
+├── backend/            FastAPI app, tests
 │   ├── app/ (main.py, models.py, schemas.py, calc.py, bundles.py, status.py, journal.py, metadata.py, ggdeals.py, steam_store.py,
 │   │        scheduler.py, netguard.py, routers/, csv_import.py, json_io.py, cli.py)
 │   └── tests/
@@ -663,7 +663,7 @@ is_it_worth_it/
 - Volume `/data` → Unraid `/mnt/user/appdata/is-it-worth-it` (contains `app.db`, `covers/`, `uploads/`, `backups/`)
 - Env: `ALLOWED_NETWORKS`, `RAWG_API_KEY`, `GGDEALS_API_KEY`, `TZ`, `PUID`/`PGID` (99/100 Unraid defaults)
 - Background jobs (daily wishlist price sync, nightly backup) run **inside** the container via APScheduler, so no extra cron container is needed
-- Migrations run automatically on startup; the default "Handhelds & Other Hardware" category and the default break-even (3 €/h) are seeded on first start
+- Tables are created on startup; the default "Handhelds & Other Hardware" category and the default break-even (3 €/h) are seeded on first start
 - `HEALTHCHECK` hits `/api/v1/health`
 
 **Getting the image to Unraid: built locally, no registry** (nothing goes through GitHub or any other registry)
@@ -671,7 +671,7 @@ is_it_worth_it/
   1. `docker build -t is-it-worth-it:<version> -t is-it-worth-it:latest .`
   2. `docker save is-it-worth-it:latest | ssh root@<unraid> docker load` (SSH key login to Unraid needed once)
   3. retags podman's `localhost/` image names on Unraid. Then **recreate** the container in Unraid (*Docker → is-it-worth-it → Edit → Apply*);
-     a plain `docker restart` keeps running the old image. Migrations run on start.
+     a plain `docker restart` keeps running the old image.
 - Alternative without your PC: clone the repo on Unraid and run `docker build` there (Unraid has Docker built in).
 - The Unraid template points to the **local** image `is-it-worth-it:latest`. Unraid's "Check for updates" shows "not available" for local images, which is expected;
   updating = running `deploy.sh` again + *Edit → Apply*.
@@ -684,7 +684,7 @@ is_it_worth_it/
 
 ## 12. Milestones
 
-1. ✅ **Backend core:** models (user, setting, category, item, copy, play_link, dlc, bundle, completion), migrations, seeding, CRUD, `calc.py` (copies → paid/received/sold, hours per device → totals, cost incl. DLC,
+1. ✅ **Backend core:** models (user, setting, category, item, copy, play_link, dlc, bundle, completion), seeding, CRUD, `calc.py` (copies → paid/received/sold, hours per device → totals, cost incl. DLC,
    cost/hr, break-even, hardware hours, category totals incl. hardware, yearly games + DLC figures), `bundles.py` (price split + rounding), `status.py` (status rules), with unit tests.
 2. ✅ **CSV import + JSON export/import:** CSV game import per category + CLI (parsing, header mapping, hours → device, status, duplicates, preview);
    import your sheets saved as CSV; **numbers match your spreadsheet** ✅. JSON export + import/restore (early, so your data is never locked in).

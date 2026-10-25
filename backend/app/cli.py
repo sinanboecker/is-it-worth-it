@@ -8,15 +8,14 @@ from pathlib import Path
 from sqlmodel import Session, select
 
 from app import config, csv_import, json_io
-from app.db import get_engine
-from app.migrations import upgrade_database
+from app.db import create_tables, get_engine
 from app.models import Category, CopyFormat, Item, ItemKind
 from app.seed import seed
 
 
 def _session() -> Session:
     engine = get_engine()
-    upgrade_database(engine)
+    create_tables(engine)
     session = Session(engine)
     seed(session)
     return session

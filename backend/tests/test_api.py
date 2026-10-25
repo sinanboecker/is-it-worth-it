@@ -1,4 +1,4 @@
-"""API flows through the real app (migrations + seeding on startup)."""
+"""API flows through the real app (table creation + seeding on startup)."""
 
 from datetime import date
 

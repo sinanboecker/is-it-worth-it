@@ -2,7 +2,7 @@
 # Build the image locally and load it into Docker on Unraid over SSH (no registry).
 #   UNRAID_HOST=root@192.168.178.10 scripts/deploy.sh
 # Then recreate the container on Unraid (Docker tab > is-it-worth-it > Edit > Apply): a plain restart
-# would keep running the old image. Migrations run on start; data in /data stays.
+# would keep running the old image. Data in /data stays.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

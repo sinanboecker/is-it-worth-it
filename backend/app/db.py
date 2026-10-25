@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
 from app import config
 
@@ -18,6 +18,13 @@ def make_engine(url: str) -> Engine:
         cursor.close()
 
     return engine
+
+
+def create_tables(engine: Engine) -> None:
+    """Create missing tables from the models. No migrations: existing tables are left as they are."""
+    import app.models  # noqa: F401  (registers the tables on SQLModel.metadata)
+
+    SQLModel.metadata.create_all(engine)
 
 
 engine: Engine | None = None
