@@ -3,6 +3,49 @@
 Self-hosted tracker for games and gaming/PC hardware: purchases (copies, DLC, bundles), playtime per device,
 cost per hour and break-even, journal and wishlist. See [PLANNING.md](PLANNING.md) for the full plan.
 
+## Run locally
+
+Two ways to build and open the app on your own machine. Both serve the web app and the API on one port.
+
+### With a container (same as on Unraid)
+
+Needs Podman (or Docker). Run from the repository root:
+
+```bash
+podman build --format docker -t is-it-worth-it:latest .
+mkdir -p compose-data
+podman run -d --name is-it-worth-it -p 8080:8080 -v ./compose-data:/data:Z is-it-worth-it:latest
+```
+
+Open http://127.0.0.1:8080 (use `127.0.0.1`: rootless Podman doesn't forward IPv6, which `localhost` may pick).
+Data is kept in `compose-data/`. Add `-e RAWG_API_KEY=<your key>` before the image name for game info and images.
+
+```bash
+podman logs -f is-it-worth-it        # logs
+podman stop is-it-worth-it           # stop; `podman start is-it-worth-it` starts it again with the same data
+```
+
+After changing code, rebuild the image and **recreate** the container (a restart keeps the old image):
+
+```bash
+podman build --format docker -t is-it-worth-it:latest .
+podman rm -f is-it-worth-it
+podman run -d --name is-it-worth-it -p 8080:8080 -v ./compose-data:/data:Z is-it-worth-it:latest
+```
+
+### Without a container
+
+Needs Python 3.12+ and Node.js 22. Build the frontend once, then start the backend, which serves it:
+
+```bash
+cd frontend && npm install && npm run build && cd ..
+cd backend && python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+.venv/bin/uvicorn app.main:app --port 8000       # from backend/
+```
+
+Open http://127.0.0.1:8000. Data is kept in `backend/data/`. After frontend changes run `npm run build` again and
+reload the page; for working on the code, the dev servers below are faster (they reload automatically).
+
 ## Development
 
 The backend serves the API under `/api` and, once built, the web frontend at `/` (one process, one port).
@@ -52,12 +95,8 @@ npm run gen:api      # regenerate src/api/schema.d.ts after API changes
 
 ## Docker / Unraid
 
-One image with the backend and the built frontend, port `8080`, data in the `/data` volume.
-
-```bash
-podman build --format docker -t is-it-worth-it:latest .     # or: docker build -t is-it-worth-it:latest .
-podman run --rm -p 8080:8080 -v ./compose-data:/data:Z is-it-worth-it:latest   # or: docker compose up --build
-```
+One image with the backend and the built frontend, port `8080`, data in the `/data` volume. Building and running it
+locally: see [Run locally](#with-a-container-same-as-on-unraid) (with Docker: `docker compose up --build`).
 
 Environment variables: `ALLOWED_NETWORKS` (comma-separated source networks, default = private ranges; loopback is
 always allowed), `RAWG_API_KEY`, `TZ` (default `Europe/Berlin`), `PUID`/`PGID` (owner of `/data`, default 99/100).
