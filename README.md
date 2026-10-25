@@ -111,3 +111,7 @@ always allowed), `RAWG_API_KEY`, `TZ` (default `Europe/Berlin`), `PUID`/`PGID` (
    Updates: *Edit → Apply* recreates the container with the new image (a restart would keep the old one).
 
 Rollback: `docker tag is-it-worth-it:<old version> is-it-worth-it:latest` on Unraid, then *Edit → Apply*.
+
+## License
+
+[MIT](LICENSE). Game data and images shown in the app come from [RAWG](https://rawg.io) and are subject to its terms.
