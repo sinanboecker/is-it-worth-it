@@ -18,7 +18,6 @@ import {
   IconBookmark,
   IconChartBar,
   IconDeviceGamepad2,
-  IconFolder,
   IconHeart,
   IconLayoutDashboard,
   IconMoon,
@@ -28,9 +27,10 @@ import {
   IconStack2,
   IconSun,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { Link, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
 import { useCategories } from "@/api/queries";
+import { categoryIcon } from "./CategoryIcon";
 import { CategoryModal } from "./CategoryModal";
 import { NewItemModal } from "./ItemModals";
 import { RawgAttribution } from "./MetadataModals";
@@ -61,7 +61,7 @@ export function Layout() {
   const { setColorScheme } = useMantineColorScheme();
   const scheme = useComputedColorScheme("light");
 
-  const link = ({ to, label, icon: Icon }: { to: string; label: string; icon: typeof IconBook }) => (
+  const link = ({ to, label, icon: Icon }: { to: string; label: string; icon: ComponentType<{ size?: number | string }> }) => (
     <NavLink
       key={to}
       component={Link}
@@ -118,7 +118,7 @@ export function Layout() {
             </ActionIcon>
           </Group>
           {categories.data?.map((c) =>
-            link({ to: `/categories/${c.id}`, label: c.name, icon: IconFolder }),
+            link({ to: `/categories/${c.id}`, label: c.name, icon: categoryIcon(c) }),
           )}
           <Divider my="xs" />
           {MORE_LINKS.map(link)}
