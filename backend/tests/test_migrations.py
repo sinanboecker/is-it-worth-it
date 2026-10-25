@@ -58,3 +58,12 @@ def test_database_from_old_migration_history_is_adopted(engine):
     with engine.connect() as conn:
         assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() >= BASELINE
         assert conn.execute(text("SELECT name FROM category")).scalar() == "PC"
+
+
+def test_0002_adds_category_icon_to_existing_categories(engine):
+    command.upgrade(alembic_config(engine), BASELINE)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO category (id, name, type, sort_order) VALUES (1, 'PC', 'platform', 0)"))
+    command.upgrade(alembic_config(engine), "0002")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT name, icon FROM category")).one() == ("PC", None)

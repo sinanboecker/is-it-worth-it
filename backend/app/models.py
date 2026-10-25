@@ -21,6 +21,17 @@ class CategoryType(StrEnum):
     hardware_only = "hardware_only"
 
 
+class CategoryIcon(StrEnum):
+    """Sidebar icon of a category; stored as plain text so new icons need no migration."""
+
+    pc = "pc"
+    playstation = "playstation"
+    nintendo = "nintendo"
+    xbox = "xbox"
+    handheld = "handheld"
+    folder = "folder"
+
+
 class ItemKind(StrEnum):
     game = "game"
     hardware = "hardware"
@@ -72,6 +83,7 @@ class Category(SQLModel, table=True):
         ),
     )
     sort_order: int = 0
+    icon: str | None = None  # a CategoryIcon; None = guessed from the name
 
     items: list["Item"] = Relationship(
         back_populates="category",

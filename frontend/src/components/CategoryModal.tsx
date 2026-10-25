@@ -1,8 +1,21 @@
-import { Button, Group, Modal, NumberInput, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
+import {
+  Button,
+  Group,
+  Input,
+  Modal,
+  NumberInput,
+  SegmentedControl,
+  Stack,
+  Text,
+  TextInput,
+  Tooltip,
+  VisuallyHidden,
+} from "@mantine/core";
 import { useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation } from "@/api/queries";
-import type { Category } from "@/api/types";
+import type { Category, CategoryIconName } from "@/api/types";
+import { CATEGORY_ICONS, guessIcon } from "./CategoryIcon";
 import { DeviceSelect, MoneyInput } from "./inputs";
 
 /** Create or edit a category. `onClose` gets the saved category, or nothing when cancelled. */
@@ -12,6 +25,8 @@ export function CategoryModal({ category, onClose }: { category?: Category; onCl
   const [defaultDevice, setDefaultDevice] = useState(category?.default_device_id ?? null);
   const [override, setOverride] = useState(category?.break_even_cph ?? null);
   const [sortOrder, setSortOrder] = useState<number>(category?.sort_order ?? 0);
+  const [icon, setIcon] = useState<CategoryIconName | null>(category?.icon ?? null);
+  const guessed = CATEGORY_ICONS[guessIcon({ name, type })];
   const save = useApiMutation(
     () => {
       const body = {
@@ -20,6 +35,7 @@ export function CategoryModal({ category, onClose }: { category?: Category; onCl
         default_device_id: defaultDevice,
         break_even_cph: override,
         sort_order: sortOrder,
+        icon,
       };
       return category
         ? unwrap(api.PATCH("/api/v1/categories/{category_id}", { params: { path: { category_id: category.id } }, body }))
@@ -39,6 +55,42 @@ export function CategoryModal({ category, onClose }: { category?: Category; onCl
           value={type}
           onChange={(v) => setType(v as Category["type"])}
         />
+        <Input.Wrapper
+          label="Icon"
+          description={`Shown in the sidebar. Auto picks one from the name (now: ${guessed.label}).`}
+        >
+          <SegmentedControl
+            mt={6}
+            fullWidth
+            aria-label="Icon"
+            value={icon ?? "auto"}
+            onChange={(v) => setIcon(v === "auto" ? null : (v as CategoryIconName))}
+            data={[
+              {
+                value: "auto",
+                label: (
+                  <Group gap={6} wrap="nowrap" justify="center">
+                    <guessed.icon size={18} />
+                    <span>Auto</span>
+                  </Group>
+                ),
+              },
+              ...(Object.entries(CATEGORY_ICONS) as [CategoryIconName, (typeof CATEGORY_ICONS)[CategoryIconName]][]).map(
+                ([value, { label, icon: Icon }]) => ({
+                  value,
+                  label: (
+                    <Tooltip label={label} withinPortal>
+                      <Group justify="center">
+                        <Icon size={18} />
+                        <VisuallyHidden>{label}</VisuallyHidden>
+                      </Group>
+                    </Tooltip>
+                  ),
+                }),
+              ),
+            ]}
+          />
+        </Input.Wrapper>
         <DeviceSelect
           label="Default device"
           value={defaultDevice}

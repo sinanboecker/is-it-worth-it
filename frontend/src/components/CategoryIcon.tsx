@@ -1,6 +1,6 @@
 import { IconBrandXbox, IconDeviceDesktop, IconDeviceNintendo, IconFolder } from "@tabler/icons-react";
 import type { ComponentType, ReactNode } from "react";
-import type { Category } from "@/api/types";
+import type { Category, CategoryIconName } from "@/api/types";
 
 type IconProps = { size?: number | string };
 
@@ -49,18 +49,32 @@ export function IconHandheld(props: IconProps) {
   );
 }
 
-const RULES: [RegExp, ComponentType<IconProps>][] = [
-  [/xbox/, IconBrandXbox],
-  [/playstation|\bps ?([1-5]|vita|p)?\b/, IconPlayStation],
-  [/nintendo|switch|\bwii|gamecube|\b3?ds\b/, IconDeviceNintendo],
-  [/handheld|game ?boy|steam ?deck|retro/, IconHandheld],
-  [/\bpc\b|steam|computer|windows|\bgog\b|epic/, IconDeviceDesktop],
+export const CATEGORY_ICONS: Record<CategoryIconName, { label: string; icon: ComponentType<IconProps> }> = {
+  pc: { label: "PC", icon: IconDeviceDesktop },
+  playstation: { label: "PlayStation", icon: IconPlayStation },
+  nintendo: { label: "Nintendo", icon: IconDeviceNintendo },
+  xbox: { label: "Xbox", icon: IconBrandXbox },
+  handheld: { label: "Handheld", icon: IconHandheld },
+  folder: { label: "Folder", icon: IconFolder },
+};
+
+const RULES: [RegExp, CategoryIconName][] = [
+  [/xbox/, "xbox"],
+  [/playstation|\bps ?([1-5]|vita|p)?\b/, "playstation"],
+  [/nintendo|switch|\bwii|gamecube|\b3?ds\b/, "nintendo"],
+  [/handheld|game ?boy|steam ?deck|retro/, "handheld"],
+  [/\bpc\b|steam|computer|windows|\bgog\b|epic/, "pc"],
 ];
 
-/** Icon for a category, guessed from its name; hardware-only categories (e.g. "Handhelds & Other Hardware") get the handheld. */
-export function categoryIcon(category: Pick<Category, "name" | "type">): ComponentType<IconProps> {
+/** The icon "automatic" stands for: guessed from the name; hardware-only categories get the handheld. */
+export function guessIcon(category: Pick<Category, "name" | "type">): CategoryIconName {
   const name = category.name.toLowerCase();
   const match = RULES.find(([pattern]) => pattern.test(name));
   if (match) return match[1];
-  return category.type === "hardware_only" ? IconHandheld : IconFolder;
+  return category.type === "hardware_only" ? "handheld" : "folder";
+}
+
+/** Sidebar icon of a category: the chosen one, or the guess when set to automatic (icon = null). */
+export function categoryIcon(category: Pick<Category, "name" | "type" | "icon">): ComponentType<IconProps> {
+  return CATEGORY_ICONS[category.icon ?? guessIcon(category)].icon;
 }

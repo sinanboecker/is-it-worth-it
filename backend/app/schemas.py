@@ -11,6 +11,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 
 from app import calc
 from app.models import (
+    CategoryIcon,
     CategoryType,
     Completion,
     Copy,
@@ -61,6 +62,7 @@ class CategoryCreate(BaseModel):
     break_even_cph: int | None = Field(None, gt=0)
     default_device_id: int | None = None
     sort_order: int = 0
+    icon: CategoryIcon | None = None
 
 
 class CategoryUpdate(BaseModel):
@@ -69,6 +71,7 @@ class CategoryUpdate(BaseModel):
     break_even_cph: int | None = Field(None, gt=0)
     default_device_id: int | None = None
     sort_order: int | None = None
+    icon: CategoryIcon | None = None  # null = automatic (guessed from the name)
 
 
 class CategoryRead(ApiModel):
@@ -78,6 +81,7 @@ class CategoryRead(ApiModel):
     break_even_cph: int | None
     default_device_id: int | None
     sort_order: int
+    icon: CategoryIcon | None
 
 
 # --- copies -----------------------------------------------------------------------------------

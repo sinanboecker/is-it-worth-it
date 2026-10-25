@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import path from "node:path";
 import pkg from "../package.json" with { type: "json" };
 
@@ -14,6 +14,12 @@ async function setup(request: APIRequestContext) {
   });
   await request.patch(`/api/v1/categories/${category.id}`, { data: { default_device_id: device.id } });
   return { category, device };
+}
+
+/** Mantine's SegmentedControl moves its radio inputs off-screen; click the visible label instead. */
+async function pickSegment(scope: Locator, name: string) {
+  const id = await scope.getByRole("radio", { name }).getAttribute("id");
+  await scope.locator(`label[for="${id}"]`).click();
 }
 
 async function fillMoney(page: Page, label: string, value: string) {
@@ -270,4 +276,20 @@ test("typed dates are read as day.month.year", async ({ page, request }) => {
   const [game] = await (await request.get(`/api/v1/items?q=Date ${category.id}`)).json();
   const detail = await (await request.get(`/api/v1/items/${game.id}`)).json();
   expect(detail.copies[0].buy_date).toBe("2024-03-05");
+});
+
+test("pick a category icon in the category dialog", async ({ page, request }) => {
+  const name = `Konsole ${Date.now()}`;
+  await page.goto("/dashboard");
+  await page.getByRole("navigation").getByRole("button", { name: "New category" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(name);
+  await expect(dialog.getByRole("radio", { name: "Auto" })).toBeChecked();
+  await pickSegment(dialog, "PlayStation");
+  await expect(dialog.getByRole("radio", { name: "PlayStation" })).toBeChecked();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Category saved")).toBeVisible();
+
+  const categories = await (await request.get("/api/v1/categories")).json();
+  expect(categories.find((c: { name: string }) => c.name === name).icon).toBe("playstation");
 });

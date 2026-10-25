@@ -535,7 +535,8 @@ export interface paths {
         };
         /**
          * Top
-         * @description Best/worst value. `hours_to_break_even` lists only items not yet worth it ("almost worth it").
+         * @description Best/worst value (`cost_per_hour`, without items that cost 0 €). `hours_to_break_even` lists only items not yet
+         *     worth it with at least 0.1 h left ("almost worth it").
          */
         get: operations["top_api_v1_stats_top_get"];
         put?: never;
@@ -1082,7 +1083,14 @@ export interface components {
              * @default 0
              */
             sort_order: number;
+            icon?: components["schemas"]["CategoryIcon"] | null;
         };
+        /**
+         * CategoryIcon
+         * @description Sidebar icon of a category; stored as plain text so new icons need no migration.
+         * @enum {string}
+         */
+        CategoryIcon: "pc" | "playstation" | "nintendo" | "xbox" | "handheld" | "folder";
         /** CategoryRead */
         CategoryRead: {
             /** Id */
@@ -1096,6 +1104,7 @@ export interface components {
             default_device_id: number | null;
             /** Sort Order */
             sort_order: number;
+            icon: components["schemas"]["CategoryIcon"] | null;
         };
         /** CategoryTotalsOut */
         CategoryTotalsOut: {
@@ -1123,6 +1132,7 @@ export interface components {
             default_device_id?: number | null;
             /** Sort Order */
             sort_order?: number | null;
+            icon?: components["schemas"]["CategoryIcon"] | null;
         };
         /** CommitResult */
         CommitResult: {

@@ -2188,7 +2188,7 @@
           "stats"
         ],
         "summary": "Top",
-        "description": "Best/worst value. `hours_to_break_even` lists only items not yet worth it (\"almost worth it\").",
+        "description": "Best/worst value (`cost_per_hour`, without items that cost 0 €). `hours_to_break_even` lists only items not yet\nworth it with at least 0.1 h left (\"almost worth it\").",
         "operationId": "top_api_v1_stats_top_get",
         "parameters": [
           {
@@ -3941,6 +3941,16 @@
             "type": "integer",
             "title": "Sort Order",
             "default": 0
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -3948,6 +3958,19 @@
           "name"
         ],
         "title": "CategoryCreate"
+      },
+      "CategoryIcon": {
+        "type": "string",
+        "enum": [
+          "pc",
+          "playstation",
+          "nintendo",
+          "xbox",
+          "handheld",
+          "folder"
+        ],
+        "title": "CategoryIcon",
+        "description": "Sidebar icon of a category; stored as plain text so new icons need no migration."
       },
       "CategoryRead": {
         "properties": {
@@ -3987,6 +4010,16 @@
           "sort_order": {
             "type": "integer",
             "title": "Sort Order"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -3996,7 +4029,8 @@
           "type",
           "break_even_cph",
           "default_device_id",
-          "sort_order"
+          "sort_order",
+          "icon"
         ],
         "title": "CategoryRead"
       },
@@ -4092,6 +4126,16 @@
               }
             ],
             "title": "Sort Order"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

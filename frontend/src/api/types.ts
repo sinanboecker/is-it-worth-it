@@ -6,6 +6,7 @@ export type AppSettings = S["AppSettings"];
 export type Category = S["CategoryRead"];
 export type CategoryCreate = S["CategoryCreate"];
 export type CategoryUpdate = S["CategoryUpdate"];
+export type CategoryIconName = S["CategoryIcon"];
 export type ItemSummary = S["ItemSummary"];
 export type ItemRead = S["ItemRead"];
 export type ItemCreate = S["ItemCreate"];
