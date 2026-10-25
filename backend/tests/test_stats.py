@@ -166,3 +166,23 @@ def test_up_next_oldest_backlog_first(api):
         api.game(pc["id"], name=name, buy_date=bought)
     api.game(pc["id"], name="Wish", price=None)
     assert [g["name"] for g in api.get("/now-playing")["up_next"]] == ["Old", "Middle", "New"]
+
+
+def test_top_lists_skip_free_and_nearly_even_items(api):
+    nintendo = api.category()
+    switch = api.hardware(nintendo["id"])
+
+    def played(name, price, hours):
+        game = api.game(nintendo["id"], name=name, price=price)
+        api.post(f"/items/{game['id']}/hours", {"hours": hours, "hardware_id": switch["id"]})
+
+    played("Free", 0, 10)  # 0 €/h
+    played("Paid", 1000, 10)  # 1 €/h
+    played("Nearly", 1000, 3.3)  # needs 3.33 h at 3 €/h: 0.03 h left, rounds to 0.0
+    played("Far", 600, 1)  # 1 h left
+
+    best = api.get("/stats/top", params={"metric": "cost_per_hour"})
+    assert [g["name"] for g in best] == ["Paid", "Nearly", "Far"]
+    almost = api.get("/stats/top", params={"metric": "hours_to_break_even"})
+    assert [g["name"] for g in almost] == ["Far"]
+    assert not api.get("/items", params={"q": "Nearly"})[0]["value"]["worth_it"]

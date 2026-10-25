@@ -110,7 +110,8 @@ def top(
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     category_id: CategoryParam = None,
 ):
-    """Best/worst value. `hours_to_break_even` lists only items not yet worth it ("almost worth it")."""
+    """Best/worst value (`cost_per_hour`, without items that cost 0 €). `hours_to_break_even` lists only items not yet
+    worth it with at least 0.1 h left ("almost worth it")."""
     items = [i for i in load_items(session, category_id) if i.kind is kind]
     ranked = stats.top_items(items, settings.break_even_cph, metric, order == "asc", limit)
     return [ItemSummary.build(item, settings.break_even_cph) for item, _value in ranked]

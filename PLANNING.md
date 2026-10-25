@@ -538,7 +538,8 @@ new category and opens it) · Stats, Settings. On phones it opens via the menu b
 Pages:
 1. **Dashboard** (`/dashboard`, start page: `/` redirects there; first entry in the sidebar): lifetime totals (tiles, incl. hardware), **cost per category** (bar: games / DLC / hardware stacked, with all-in €/h),
    game spending per year (bar, incl. DLC), hours per year (bar), cost/hour per year (line), games finished per year,
-   status counts (backlog size, **backlog value** = money in games not started yet), a "Now Playing" tile (count + link to the page), "almost worth it" list, best/worst value items,
+   status counts (backlog size, **backlog value** = money in games not started yet), a "Now Playing" tile (count + link to the page), "almost worth it" list (without items only minutes short, i.e. 0.0 h left),
+   best/worst value items (without items that cost 0 €),
    **"Wishlist deals"** (games at or below their target price, official or keyshop).
 2. **Journal:** see §4 (incl. calendar heatmap).
 3. **Now Playing** (`/now-playing`): a dedicated page for games in progress.
