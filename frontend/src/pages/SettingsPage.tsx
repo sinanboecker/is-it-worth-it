@@ -24,6 +24,7 @@ import { useApiMutation, useCategories, useHardware, useMetadataStatus, useSetti
 import { FetchMissingModal, RawgAttribution, RawgNotConfigured } from "@/components/MetadataModals";
 import type { AppSettings, Category, SplitMode } from "@/api/types";
 import { PageHeader, QueryView } from "@/components/common";
+import { CategoryIconFor } from "@/components/CategoryIcon";
 import { CategoryModal } from "@/components/CategoryModal";
 import { MoneyInput } from "@/components/inputs";
 import { perHour } from "@/lib/format";
@@ -111,7 +112,12 @@ function CategoriesSettings({ settings }: { settings: AppSettings }) {
             <Table.Tbody>
               {rows.map((c) => (
                 <Table.Tr key={c.id}>
-                  <Table.Td>{c.name}</Table.Td>
+                  <Table.Td>
+                    <Group gap="xs" wrap="nowrap">
+                      <CategoryIconFor category={c} />
+                      {c.name}
+                    </Group>
+                  </Table.Td>
                   <Table.Td>{c.type === "platform" ? "Platform" : "Hardware only"}</Table.Td>
                   <Table.Td>{deviceName(c.default_device_id)}</Table.Td>
                   <Table.Td>

@@ -62,3 +62,9 @@ export const CATEGORY_ICONS: Record<CategoryIconName, { label: string; icon: Com
 export function categoryIcon(category: Pick<Category, "icon">): ComponentType<IconProps> {
   return CATEGORY_ICONS[category.icon ?? "folder"].icon;
 }
+
+/** Renders a category's icon (see `categoryIcon`). */
+export function CategoryIconFor({ category, size = 18 }: { category: Pick<Category, "icon">; size?: number | string }) {
+  const Icon = categoryIcon(category);
+  return <Icon size={size} />;
+}
