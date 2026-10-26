@@ -1,6 +1,7 @@
 import { Card, Group, ScrollArea, SimpleGrid, Stack, Table, Text, UnstyledButton } from "@mantine/core";
 import { IconChevronDown, IconChevronUp, IconSelector } from "@tabler/icons-react";
-import { useState, type ReactNode } from "react";
+import { useLocalStorage } from "@mantine/hooks";
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { ItemSummary } from "@/api/types";
 import { day, euros, hours, perHour } from "@/lib/format";
@@ -107,6 +108,13 @@ export const COLUMNS: Record<string, Column> = {
 export const GAME_COLUMNS = ["name", "status", "rating", "bought", "hours", "cost", "cph", "worth", "finished", "devices", "copies"];
 export const HARDWARE_COLUMNS = ["name", "bought", "cost", "hours", "games", "cph", "worth", "copies"];
 
+type Sort = { key: string; desc: boolean };
+
+/** The last sort picked in any list, used by all lists (a list without that column uses its own default). */
+function useSavedSort() {
+  return useLocalStorage<Sort | null>({ key: "item-list-sort", defaultValue: null, getInitialValueInEffect: false });
+}
+
 export function ItemTable({
   items,
   columns,
@@ -119,11 +127,12 @@ export function ItemTable({
   empty?: ReactNode;
 }) {
   const navigate = useNavigate();
-  const [sort, setSort] = useState<{ key: string; desc: boolean }>({ key: initialSort, desc: false });
+  const [saved, setSaved] = useSavedSort();
   if (!items.length) return <Empty>{empty}</Empty>;
 
   const cols = columns.map((c) => (typeof c === "string" ? COLUMNS[c] : c));
   const byKey = new Map(cols.map((c) => [c.key, c]));
+  const sort: Sort = saved && byKey.get(saved.key)?.sort ? saved : { key: initialSort, desc: false };
   const column = byKey.get(sort.key);
   const sorted = column?.sort
     ? [...items].sort((a, b) => {
@@ -136,16 +145,22 @@ export function ItemTable({
 
   const header = (col: Column) => {
     const key = col.key;
-    const Icon = sort.key === key ? (sort.desc ? IconChevronDown : IconChevronUp) : IconSelector;
+    const active = sort.key === key;
+    const Icon = active ? (sort.desc ? IconChevronDown : IconChevronUp) : IconSelector;
+    const color = active ? "var(--mantine-primary-color-filled)" : undefined;
     return (
-      <Table.Th key={key} style={{ textAlign: col.align, whiteSpace: "nowrap" }}>
+      <Table.Th
+        key={key}
+        style={{ textAlign: col.align, whiteSpace: "nowrap" }}
+        aria-sort={active ? (sort.desc ? "descending" : "ascending") : undefined}
+      >
         {col.sort ? (
-          <UnstyledButton onClick={() => setSort((s) => ({ key, desc: s.key === key ? !s.desc : false }))}>
+          <UnstyledButton onClick={() => setSaved({ key, desc: active ? !sort.desc : false })}>
             <Group gap={4} wrap="nowrap" justify={col.align === "right" ? "flex-end" : undefined}>
-              <Text size="sm" fw={600}>
+              <Text size="sm" fw={active ? 700 : 600} c={color}>
                 {col.label}
               </Text>
-              <Icon size={14} />
+              <Icon size={14} color={color} stroke={active ? 2.5 : 2} opacity={active ? 1 : 0.5} />
             </Group>
           </UnstyledButton>
         ) : (

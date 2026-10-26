@@ -306,6 +306,35 @@ test("import bundles from a CSV sheet", async ({ page, request }) => {
   await expect(page.locator(".mantine-Card-root", { hasText: `All sold ${id}` }).getByText("No games listed.")).toBeVisible();
 });
 
+test("the last sort is remembered and used by all lists", async ({ page, request }) => {
+  const { category } = await setup(request);
+  for (const [name, price] of [["Cheap", 500], ["Pricey", 6000]] as const) {
+    await request.post("/api/v1/items", {
+      data: { category_id: category.id, kind: "game", name: `${name} ${category.id}`, first_copy: { buy_date: "2024-01-01", buy_price_cents: price } },
+    });
+  }
+  await request.post("/api/v1/items", { data: { category_id: category.id, kind: "game", name: `Wish ${category.id}` } });
+  const firstGame = () => page.getByRole("row").nth(1);
+
+  await page.goto(`/categories/${category.id}`);
+  await expect(page.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
+  await page.getByRole("button", { name: "Cost", exact: true }).click();
+  await page.getByRole("button", { name: "Cost", exact: true }).click();
+  const cost = page.getByRole("columnheader", { name: "Cost" });
+  await expect(cost).toHaveAttribute("aria-sort", "descending");
+  await expect(page.getByRole("columnheader", { name: "Name" })).not.toHaveAttribute("aria-sort");
+  await expect(firstGame()).toContainText(`Pricey ${category.id}`);
+
+  await page.reload();
+  await expect(cost).toHaveAttribute("aria-sort", "descending");
+  await expect(firstGame()).toContainText(`Pricey ${category.id}`);
+
+  await page.goto("/backlog"); // another list with a cost column sorts the same way
+  await expect(page.getByRole("columnheader", { name: "Cost" })).toHaveAttribute("aria-sort", "descending");
+  await page.goto("/wishlist"); // no cost column: the wishlist's own default
+  await expect(page.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
+});
+
 test("add a category from the sidebar", async ({ page }) => {
   const name = `PlayStation ${Date.now()}`;
   await page.goto("/");
