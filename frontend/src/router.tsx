@@ -8,6 +8,7 @@ import { JournalPage } from "./pages/JournalPage";
 import { BacklogPage, FavoritesPage, WishlistPage } from "./pages/ListPages";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { NowPlayingPage } from "./pages/NowPlayingPage";
+import { PcPage } from "./pages/PcPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StatsPage } from "./pages/StatsPage";
 
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: "/wishlist", element: <WishlistPage /> },
       { path: "/backlog", element: <BacklogPage /> },
       { path: "/bundles", element: <BundlesPage /> },
+      { path: "/pc", element: <PcPage /> },
       { path: "/categories/:id", element: <CategoryPage /> },
       { path: "/items/:id", element: <ItemPage /> },
       { path: "/stats", element: <StatsPage /> },

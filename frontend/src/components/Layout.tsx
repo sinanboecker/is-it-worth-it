@@ -17,6 +17,7 @@ import {
   IconBook,
   IconBookmark,
   IconChartBar,
+  IconCpu,
   IconDeviceGamepad2,
   IconHeart,
   IconLayoutDashboard,
@@ -45,6 +46,7 @@ const MAIN_LINKS = [
   { to: "/wishlist", label: "Wishlist", icon: IconBookmark },
   { to: "/backlog", label: "Backlog", icon: IconStack2 },
   { to: "/bundles", label: "Bundles", icon: IconPackage },
+  { to: "/pc", label: "PC builds", icon: IconCpu },
 ];
 
 const MORE_LINKS = [

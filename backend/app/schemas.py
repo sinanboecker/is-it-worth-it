@@ -521,3 +521,81 @@ class SplitPreviewIn(BaseModel):
 
 class SplitPreviewOut(BaseModel):
     shares_cents: list[int]
+
+
+# --- PC builds & parts ------------------------------------------------------------------------
+
+
+class PcPartCreate(BaseModel):
+    name: str = Field(min_length=1)
+    build_id: int | None = None
+    buy_date: date
+    used_until: date | None = None  # empty = still in use
+    buy_price_cents: Cents
+    sell_price_cents: Cents | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _dates_in_order(self):
+        if self.used_until is not None and self.used_until < self.buy_date:
+            raise ValueError("'used until' is before the buy date")
+        return self
+
+
+class PcPartUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1)
+    build_id: int | None = None
+    buy_date: date | None = None
+    used_until: date | None = None
+    buy_price_cents: Cents | None = None
+    sell_price_cents: Cents | None = None
+    notes: str | None = None
+
+
+class PcPartRead(BaseModel):
+    id: int
+    name: str
+    build_id: int | None
+    build_name: str | None
+    buy_date: date
+    used_until: date | None
+    buy_price_cents: int
+    sell_price_cents: int | None
+    notes: str | None
+    in_use: bool
+    used_days: int = Field(description="from the buy date until 'used until', or today while in use")
+    used_years: float
+    net_cost_cents: int = Field(description="buy price minus sell price")
+    cost_per_day_cents: int | None = Field(description="net cost per used day; null for less than a day")
+
+
+class PcBuildCreate(BaseModel):
+    name: str = Field(min_length=1)
+    hardware_id: int | None = None
+    notes: str | None = None
+
+
+class PcBuildUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1)
+    hardware_id: int | None = None
+    notes: str | None = None
+
+
+class PcBuildRead(BaseModel):
+    id: int
+    name: str
+    hardware_id: int | None
+    hardware_name: str | None
+    notes: str | None
+    parts: list[PcPartRead]
+    buy_price_cents: int
+    sell_price_cents: int
+    net_cost_cents: int
+    first_bought_on: date | None
+    used_until: date | None = Field(description="when the last part went out of use; null while a part is in use")
+    in_use: bool
+    used_days: int
+    used_years: float
+    cost_per_day_cents: int | None
+    hours: float | None = Field(description="game hours of the linked device")
+    cost_per_hour_cents: int | None

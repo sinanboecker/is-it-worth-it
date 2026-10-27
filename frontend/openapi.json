@@ -3262,6 +3262,307 @@
         }
       }
     },
+    "/api/v1/pc/builds": {
+      "get": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "List Builds",
+        "description": "All builds with their parts, the newest first.",
+        "operationId": "list_builds_api_v1_pc_builds_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PcBuildRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Builds Api V1 Pc Builds Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Create Build",
+        "operationId": "create_build_api_v1_pc_builds_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcBuildCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcBuildRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/builds/{build_id}": {
+      "patch": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Update Build",
+        "operationId": "update_build_api_v1_pc_builds__build_id__patch",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcBuildUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcBuildRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Delete Build",
+        "description": "Deletes the build; its parts stay, without a build.",
+        "operationId": "delete_build_api_v1_pc_builds__build_id__delete",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/parts": {
+      "get": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "List Parts",
+        "description": "All parts, the newest first.",
+        "operationId": "list_parts_api_v1_pc_parts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PcPartRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Parts Api V1 Pc Parts Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Create Part",
+        "operationId": "create_part_api_v1_pc_parts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcPartCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcPartRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/parts/{part_id}": {
+      "patch": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Update Part",
+        "operationId": "update_part_api_v1_pc_parts__part_id__patch",
+        "parameters": [
+          {
+            "name": "part_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcPartUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcPartRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Delete Part",
+        "operationId": "delete_part_api_v1_pc_parts__part_id__delete",
+        "parameters": [
+          {
+            "name": "part_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Part Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -7452,6 +7753,523 @@
           "up_next"
         ],
         "title": "NowPlayingOut"
+      },
+      "PcBuildCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "hardware_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PcBuildCreate"
+      },
+      "PcBuildRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "hardware_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Id"
+          },
+          "hardware_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/PcPartRead"
+            },
+            "type": "array",
+            "title": "Parts"
+          },
+          "buy_price_cents": {
+            "type": "integer",
+            "title": "Buy Price Cents"
+          },
+          "sell_price_cents": {
+            "type": "integer",
+            "title": "Sell Price Cents"
+          },
+          "net_cost_cents": {
+            "type": "integer",
+            "title": "Net Cost Cents"
+          },
+          "first_bought_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Bought On"
+          },
+          "used_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Until",
+            "description": "when the last part went out of use; null while a part is in use"
+          },
+          "in_use": {
+            "type": "boolean",
+            "title": "In Use"
+          },
+          "used_days": {
+            "type": "integer",
+            "title": "Used Days"
+          },
+          "used_years": {
+            "type": "number",
+            "title": "Used Years"
+          },
+          "cost_per_day_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Day Cents"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours",
+            "description": "game hours of the linked device"
+          },
+          "cost_per_hour_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Hour Cents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "hardware_id",
+          "hardware_name",
+          "notes",
+          "parts",
+          "buy_price_cents",
+          "sell_price_cents",
+          "net_cost_cents",
+          "first_bought_on",
+          "used_until",
+          "in_use",
+          "used_days",
+          "used_years",
+          "cost_per_day_cents",
+          "hours",
+          "cost_per_hour_cents"
+        ],
+        "title": "PcBuildRead"
+      },
+      "PcBuildUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "hardware_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "PcBuildUpdate"
+      },
+      "PcPartCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "buy_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Buy Date"
+          },
+          "used_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Until"
+          },
+          "buy_price_cents": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Buy Price Cents"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "buy_date",
+          "buy_price_cents"
+        ],
+        "title": "PcPartCreate"
+      },
+      "PcPartRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "build_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Name"
+          },
+          "buy_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Buy Date"
+          },
+          "used_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Until"
+          },
+          "buy_price_cents": {
+            "type": "integer",
+            "title": "Buy Price Cents"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "in_use": {
+            "type": "boolean",
+            "title": "In Use"
+          },
+          "used_days": {
+            "type": "integer",
+            "title": "Used Days",
+            "description": "from the buy date until 'used until', or today while in use"
+          },
+          "used_years": {
+            "type": "number",
+            "title": "Used Years"
+          },
+          "net_cost_cents": {
+            "type": "integer",
+            "title": "Net Cost Cents",
+            "description": "buy price minus sell price"
+          },
+          "cost_per_day_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Day Cents",
+            "description": "net cost per used day; null for less than a day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "build_id",
+          "build_name",
+          "buy_date",
+          "used_until",
+          "buy_price_cents",
+          "sell_price_cents",
+          "notes",
+          "in_use",
+          "used_days",
+          "used_years",
+          "net_cost_cents",
+          "cost_per_day_cents"
+        ],
+        "title": "PcPartRead"
+      },
+      "PcPartUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "buy_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Date"
+          },
+          "used_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Until"
+          },
+          "buy_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Price Cents"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "PcPartUpdate"
       },
       "PlayLinkIn": {
         "properties": {

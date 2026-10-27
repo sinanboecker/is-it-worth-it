@@ -124,6 +124,7 @@ export function DeviceSelect({
   value,
   onChange,
   label = "Device",
+  description,
   exclude = [],
   required,
   clearable = true,
@@ -131,6 +132,7 @@ export function DeviceSelect({
   value: number | null | undefined;
   onChange: (id: number | null) => void;
   label?: string;
+  description?: string;
   exclude?: number[];
   required?: boolean;
   clearable?: boolean;
@@ -147,6 +149,7 @@ export function DeviceSelect({
   return (
     <Select
       label={label}
+      description={description}
       placeholder={hardware.data?.length ? "Choose a device" : "No hardware yet"}
       data={[...groups].map(([group, items]) => ({ group, items }))}
       value={value ? String(value) : null}

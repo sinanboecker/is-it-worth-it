@@ -16,7 +16,7 @@ from sqlalchemy import delete, func
 from sqlmodel import Session, SQLModel, select
 
 from app import media
-from app.models import Bundle, Category, Completion, Copy, Dlc, Item, PlayLink, Setting
+from app.models import Bundle, Category, Completion, Copy, Dlc, Item, PcBuild, PcPart, PlayLink, Setting
 
 FORMAT_NAME = "is-it-worth-it"
 SCHEMA_VERSION = 1
@@ -32,6 +32,8 @@ TABLES: list[tuple[str, type[SQLModel]]] = [
     ("play_links", PlayLink),
     ("dlcs", Dlc),
     ("completions", Completion),
+    ("pc_builds", PcBuild),
+    ("pc_parts", PcPart),
 ]
 
 

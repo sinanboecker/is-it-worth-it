@@ -4,7 +4,7 @@ from alembic.migration import MigrationContext
 from sqlalchemy import inspect, text
 from sqlmodel import SQLModel
 
-from app.migrations import BASELINE, alembic_config, upgrade_database
+from app.migrations import BASELINE, OLD_HEAD, alembic_config, upgrade_database
 
 
 def baseline_tables(engine) -> None:
@@ -91,3 +91,11 @@ def test_0004_adds_bundle_url_and_other_sales(engine):
     command.upgrade(alembic_config(engine), "0004")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT url, other_sales_cents FROM bundle")).one() == (None, 0)
+
+
+def test_no_migration_reuses_the_old_head_revision(engine):
+    """A database at OLD_HEAD is taken for one from the first history and migrated again from the baseline."""
+    from alembic.script import ScriptDirectory
+
+    revisions = {s.revision for s in ScriptDirectory.from_config(alembic_config(engine)).walk_revisions()}
+    assert OLD_HEAD not in revisions

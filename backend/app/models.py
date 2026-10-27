@@ -248,3 +248,32 @@ class Completion(SQLModel, table=True):
     hardware: Item | None = Relationship(
         sa_relationship_kwargs={"foreign_keys": "Completion.hardware_id"},
     )
+
+
+class PcBuild(SQLModel, table=True):
+    """A PC build made of PC parts (separate from games and their hardware)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    # the device the build is used as (its game hours), e.g. "Gaming PC"
+    hardware_id: int | None = Field(default=None, foreign_key="item.id", ondelete="SET NULL")
+    notes: str | None = None
+
+    hardware: Item | None = Relationship()
+    parts: list["PcPart"] = Relationship(
+        back_populates="build",
+        sa_relationship_kwargs={"order_by": "PcPart.buy_date"},
+    )
+
+
+class PcPart(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    build_id: int | None = Field(default=None, foreign_key="pcbuild.id", index=True, ondelete="SET NULL")
+    buy_date: date
+    used_until: date | None = None  # None = still in use
+    buy_price_cents: int
+    sell_price_cents: int | None = None
+    notes: str | None = None
+
+    build: PcBuild | None = Relationship(back_populates="parts")

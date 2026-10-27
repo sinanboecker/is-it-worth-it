@@ -19,6 +19,12 @@ export const perHour = (cents: number | null | undefined): string =>
 export const hours = (value: number | null | undefined): string =>
   value === null || value === undefined ? "–" : `${numberFormat.format(value)} h`;
 
+export const perDay = (cents: number | null | undefined): string =>
+  cents === null || cents === undefined ? "–" : `${euros(cents)}/day`;
+
+export const years = (value: number | null | undefined): string =>
+  value === null || value === undefined ? "–" : `${numberFormat.format(value)} ${value === 1 ? "year" : "years"}`;
+
 export const percent = (value: number | null | undefined): string =>
   value === null || value === undefined ? "–" : percentFormat.format(value);
 

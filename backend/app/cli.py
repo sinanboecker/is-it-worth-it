@@ -103,7 +103,7 @@ def cmd_migration(args) -> None:
     from alembic.script import ScriptDirectory
 
     from app.db import make_engine
-    from app.migrations import alembic_config
+    from app.migrations import OLD_HEAD, alembic_config
 
     with tempfile.TemporaryDirectory() as tmp:
         engine = make_engine(f"sqlite:///{tmp}/scratch.db")
@@ -111,6 +111,8 @@ def cmd_migration(args) -> None:
         upgrade_database(engine)
         head = ScriptDirectory.from_config(cfg).get_current_head()
         rev_id = f"{int(head) + 1:04d}"
+        if rev_id == OLD_HEAD:  # taken by the first migration history; databases there are re-marked as baseline
+            rev_id = f"{int(head) + 2:04d}"
         script = command.revision(cfg, message=args.message, autogenerate=True, rev_id=rev_id)
         engine.dispose()
     print(f"created {script.path}: check it, then commit it with the model change")

@@ -875,6 +875,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pc/builds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Builds
+         * @description All builds with their parts, the newest first.
+         */
+        get: operations["list_builds_api_v1_pc_builds_get"];
+        put?: never;
+        /** Create Build */
+        post: operations["create_build_api_v1_pc_builds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pc/builds/{build_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Build
+         * @description Deletes the build; its parts stay, without a build.
+         */
+        delete: operations["delete_build_api_v1_pc_builds__build_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Build */
+        patch: operations["update_build_api_v1_pc_builds__build_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pc/parts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Parts
+         * @description All parts, the newest first.
+         */
+        get: operations["list_parts_api_v1_pc_parts_get"];
+        put?: never;
+        /** Create Part */
+        post: operations["create_part_api_v1_pc_parts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pc/parts/{part_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Part */
+        delete: operations["delete_part_api_v1_pc_parts__part_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Part */
+        patch: operations["update_part_api_v1_pc_parts__part_id__patch"];
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -2116,6 +2197,147 @@ export interface components {
             on_hold: components["schemas"]["NowPlayingCard"][];
             /** Up Next */
             up_next: components["schemas"]["ItemSummary"][];
+        };
+        /** PcBuildCreate */
+        PcBuildCreate: {
+            /** Name */
+            name: string;
+            /** Hardware Id */
+            hardware_id?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** PcBuildRead */
+        PcBuildRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Hardware Id */
+            hardware_id: number | null;
+            /** Hardware Name */
+            hardware_name: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Parts */
+            parts: components["schemas"]["PcPartRead"][];
+            /** Buy Price Cents */
+            buy_price_cents: number;
+            /** Sell Price Cents */
+            sell_price_cents: number;
+            /** Net Cost Cents */
+            net_cost_cents: number;
+            /** First Bought On */
+            first_bought_on: string | null;
+            /**
+             * Used Until
+             * @description when the last part went out of use; null while a part is in use
+             */
+            used_until: string | null;
+            /** In Use */
+            in_use: boolean;
+            /** Used Days */
+            used_days: number;
+            /** Used Years */
+            used_years: number;
+            /** Cost Per Day Cents */
+            cost_per_day_cents: number | null;
+            /**
+             * Hours
+             * @description game hours of the linked device
+             */
+            hours: number | null;
+            /** Cost Per Hour Cents */
+            cost_per_hour_cents: number | null;
+        };
+        /** PcBuildUpdate */
+        PcBuildUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Hardware Id */
+            hardware_id?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** PcPartCreate */
+        PcPartCreate: {
+            /** Name */
+            name: string;
+            /** Build Id */
+            build_id?: number | null;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Used Until */
+            used_until?: string | null;
+            /** Buy Price Cents */
+            buy_price_cents: number;
+            /** Sell Price Cents */
+            sell_price_cents?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** PcPartRead */
+        PcPartRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Build Id */
+            build_id: number | null;
+            /** Build Name */
+            build_name: string | null;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Used Until */
+            used_until: string | null;
+            /** Buy Price Cents */
+            buy_price_cents: number;
+            /** Sell Price Cents */
+            sell_price_cents: number | null;
+            /** Notes */
+            notes: string | null;
+            /** In Use */
+            in_use: boolean;
+            /**
+             * Used Days
+             * @description from the buy date until 'used until', or today while in use
+             */
+            used_days: number;
+            /** Used Years */
+            used_years: number;
+            /**
+             * Net Cost Cents
+             * @description buy price minus sell price
+             */
+            net_cost_cents: number;
+            /**
+             * Cost Per Day Cents
+             * @description net cost per used day; null for less than a day
+             */
+            cost_per_day_cents: number | null;
+        };
+        /** PcPartUpdate */
+        PcPartUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Build Id */
+            build_id?: number | null;
+            /** Buy Date */
+            buy_date?: string | null;
+            /** Used Until */
+            used_until?: string | null;
+            /** Buy Price Cents */
+            buy_price_cents?: number | null;
+            /** Sell Price Cents */
+            sell_price_cents?: number | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** PlayLinkIn */
         PlayLinkIn: {
@@ -4327,6 +4549,240 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DlcSuggestion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_builds_api_v1_pc_builds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcBuildRead"][];
+                };
+            };
+        };
+    };
+    create_build_api_v1_pc_builds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcBuildCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcBuildRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_build_api_v1_pc_builds__build_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                build_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_build_api_v1_pc_builds__build_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                build_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcBuildUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcBuildRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_parts_api_v1_pc_parts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcPartRead"][];
+                };
+            };
+        };
+    };
+    create_part_api_v1_pc_parts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcPartCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcPartRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_part_api_v1_pc_parts__part_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                part_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_part_api_v1_pc_parts__part_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                part_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcPartUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcPartRead"];
                 };
             };
             /** @description Validation Error */

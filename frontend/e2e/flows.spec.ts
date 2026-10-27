@@ -112,7 +112,7 @@ test("import games from a CSV file", async ({ page, request }) => {
 test("all pages load without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const url of ["/", "/dashboard", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/bundles", "/stats", "/settings"]) {
+  for (const url of ["/", "/dashboard", "/now-playing", "/journal", "/favorites", "/wishlist", "/backlog", "/bundles", "/pc", "/stats", "/settings"]) {
     await page.goto(url);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
   }
@@ -333,6 +333,50 @@ test("the last sort is remembered and used by all lists", async ({ page, request
   await expect(page.getByRole("columnheader", { name: "Cost" })).toHaveAttribute("aria-sort", "descending");
   await page.goto("/wishlist"); // no cost column: the wishlist's own default
   await expect(page.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
+});
+
+test("create a PC build, add parts to it and see what they cost per day", async ({ page, request }) => {
+  const { device } = await setup(request);
+  const name = `Gaming PC ${device.id}`;
+
+  await page.goto("/dashboard");
+  await page.getByRole("navigation").getByRole("link", { name: "PC builds" }).click();
+  await page.getByRole("button", { name: "New build" }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Name" }).fill(name);
+  await dialog.getByRole("textbox", { name: "Device in the app" }).click();
+  await page.getByRole("option", { name: device.name }).click();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(`Build “${name}” saved`)).toBeVisible();
+
+  const card = page.locator(".mantine-Card-root", { hasText: name });
+  await card.getByRole("button", { name: "Part" }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Name" }).fill(`GPU ${device.id}`);
+  await dialog.getByRole("textbox", { name: "Bought on" }).fill("01.01.2021");
+  await dialog.getByRole("textbox", { name: "Used until" }).fill("01.01.2023");
+  await fillMoney(page, "Buy price", "800");
+  await fillMoney(page, "Sell price", "430");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(`GPU ${device.id} saved`)).toBeVisible();
+
+  const gpu = card.getByRole("row", { name: new RegExp(`GPU ${device.id}`) });
+  await expect(gpu).toContainText("730"); // days
+  await expect(gpu).toContainText("2 years");
+  await expect(gpu).toContainText("0,51 €/day"); // (800 € − 430 €) / 730 days
+  await expect(card.getByText("used until 01.01.2023")).toBeVisible();
+  await expect(card.getByRole("link", { name: device.name })).toBeVisible();
+
+  // a part without a build, then the list of all parts
+  await page.getByRole("button", { name: "Add part" }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox", { name: "Name" }).fill(`Spare SSD ${device.id}`);
+  await fillMoney(page, "Buy price", "60");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".mantine-Card-root", { hasText: "Parts without a build" })).toContainText(`Spare SSD ${device.id}`);
+  await page.getByText("All parts").click();
+  await expect(page.getByRole("row", { name: new RegExp(`GPU ${device.id}`) })).toContainText(name);
+  await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toContainText("in use");
 });
 
 test("add a category from the sidebar", async ({ page }) => {
