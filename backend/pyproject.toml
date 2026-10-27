@@ -1,6 +1,6 @@
 [project]
 name = "is-it-worth-it"
-version = "0.2.3"
+version = "0.2.4"
 description = "Self-hosted tracker for game and hardware purchases, playtime and value per hour"
 requires-python = ">=3.12"
 license = "MIT"
