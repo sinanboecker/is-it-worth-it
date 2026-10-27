@@ -110,3 +110,17 @@ def test_0007_existing_pc_parts_get_category_other(engine):
     command.upgrade(alembic_config(engine), "0007")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT category FROM pcpart")).scalar() == "other"
+
+
+def test_0008_sold_pc_parts_leave_their_build(engine):
+    command.upgrade(alembic_config(engine), "0007")
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO pcbuild (id, name) VALUES (1, 'B')"))
+        for id_, sold in [(1, "NULL"), (2, "100")]:
+            conn.execute(
+                text(f"INSERT INTO pcpart (id, name, category, build_id, buy_date, buy_price_cents, sell_price_cents)"
+                     f" VALUES ({id_}, 'P', 'gpu', 1, '2024-01-01', 500, {sold})")
+            )  # fmt: skip
+    command.upgrade(alembic_config(engine), "0008")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT id, build_id FROM pcpart ORDER BY id")).all() == [(1, 1), (2, None)]

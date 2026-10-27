@@ -34,7 +34,7 @@ def _part_read(part: PcPart, today: date) -> PcPartRead:
 
 
 def _build_read(build: PcBuild, today: date, global_break_even_cph: int) -> PcBuildRead:
-    totals = pc.build_totals(build, today, global_break_even_cph)
+    totals = pc.build_totals(build, global_break_even_cph)
     return PcBuildRead(
         id=build.id,
         name=build.name,
@@ -43,14 +43,9 @@ def _build_read(build: PcBuild, today: date, global_break_even_cph: int) -> PcBu
         notes=build.notes,
         parts=[_part_read(p, today) for p in build.parts],
         buy_price_cents=totals.buy_price_cents,
-        sell_price_cents=totals.sell_price_cents,
-        net_cost_cents=totals.usage.net_cost_cents,
         first_bought_on=totals.first_bought_on,
         used_until=totals.used_until,
         in_use=totals.in_use,
-        used_days=totals.usage.days,
-        used_years=totals.usage.years,
-        cost_per_day_cents=totals.usage.cost_per_day_cents,
         hours=totals.hours,
         cost_per_hour_cents=totals.cost_per_hour_cents,
     )
@@ -68,6 +63,12 @@ def _load_part(session: Session, part_id: int) -> PcPart:
     if part is None:
         raise not_found("PC part")
     return part
+
+
+def _leave_build_when_sold(part: PcPart) -> None:
+    """A sold part isn't part of any build any more."""
+    if part.sell_price_cents is not None:
+        part.build_id = None
 
 
 def _check_build(session: Session, build_id: int | None) -> None:
@@ -137,6 +138,7 @@ def list_parts(session: SessionDep, today: TodayDep):
 def create_part(data: PcPartCreate, session: SessionDep, today: TodayDep):
     _check_build(session, data.build_id)
     part = PcPart(**data.model_dump())
+    _leave_build_when_sold(part)
     session.add(part)
     session.commit()
     session.refresh(part)
@@ -156,6 +158,7 @@ def update_part(part_id: int, data: PcPartUpdate, session: SessionDep, today: To
         setattr(part, key, value)
     if part.used_until is not None and part.used_until < part.buy_date:
         raise invalid("'used until' is before the buy date")
+    _leave_build_when_sold(part)
     session.commit()
     session.refresh(part)
     return _part_read(part, today)

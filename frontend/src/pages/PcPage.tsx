@@ -28,17 +28,19 @@ function Figure({ label, value, hint }: { label: string; value: string; hint?: s
 function PartsTable({
   parts,
   showBuild = false,
+  showSold = true,
   dimSold = false,
   onEdit,
 }: {
   parts: PcPart[];
   showBuild?: boolean;
+  showSold?: boolean; // parts of a build are never sold
   dimSold?: boolean; // grey out parts that have a sell price
   onEdit: (part: PcPart) => void;
 }) {
   return (
     <ScrollArea>
-      <Table verticalSpacing={4} miw={showBuild ? 1150 : 1010} layout="fixed" highlightOnHover>
+      <Table verticalSpacing={4} miw={(showBuild ? 1150 : 1010) - (showSold ? 0 : 95)} layout="fixed" highlightOnHover>
         <Table.Thead>
           <Table.Tr>
             <Table.Th w={140}>Category</Table.Th>
@@ -49,9 +51,11 @@ function PartsTable({
             <Table.Th w={95} ta="right">
               Buy price
             </Table.Th>
-            <Table.Th w={95} ta="right">
-              Sell price
-            </Table.Th>
+            {showSold && (
+              <Table.Th w={95} ta="right">
+                Sell price
+              </Table.Th>
+            )}
             <Table.Th w={70} ta="right">
               Days
             </Table.Th>
@@ -98,7 +102,7 @@ function PartsTable({
                   )}
                 </Table.Td>
                 <Table.Td ta="right">{euros(p.buy_price_cents)}</Table.Td>
-                <Table.Td ta="right">{p.sell_price_cents === null ? "–" : euros(p.sell_price_cents)}</Table.Td>
+                {showSold && <Table.Td ta="right">{p.sell_price_cents === null ? "–" : euros(p.sell_price_cents)}</Table.Td>}
                 <Table.Td ta="right">{p.used_days}</Table.Td>
                 <Table.Td ta="right">{years(p.used_years)}</Table.Td>
                 <Table.Td ta="right">{perDay(p.cost_per_day_cents)}</Table.Td>
@@ -172,17 +176,13 @@ function BuildCard({
         </Group>
       </Group>
       {build.parts.length > 0 && (
-        <SimpleGrid cols={{ base: 2, sm: build.hardware_id ? 6 : 5 }} mb="sm">
+        <SimpleGrid cols={{ base: 2, sm: 5 }} mb="sm">
           <Figure label="Bought for" value={euros(build.buy_price_cents)} />
-          <Figure label="Sold for" value={build.sell_price_cents ? euros(build.sell_price_cents) : "–"} />
-          <Figure label="Net cost" value={euros(build.net_cost_cents)} />
-          <Figure label="Used" value={years(build.used_years)} hint={`${build.used_days} days`} />
-          <Figure label="Per day" value={perDay(build.cost_per_day_cents)} />
           {build.hardware_id && <Figure label="Game hours" value={hours(build.hours)} hint={perHour(build.cost_per_hour_cents)} />}
         </SimpleGrid>
       )}
       {build.parts.length > 0 ? (
-        <PartsTable parts={byCategory(build.parts)} onEdit={onEditPart} />
+        <PartsTable parts={byCategory(build.parts)} showSold={false} onEdit={onEditPart} />
       ) : (
         <Text size="sm" c="dimmed">
           Add the parts of this build with “Part”.

@@ -530,7 +530,7 @@ class SplitPreviewOut(BaseModel):
 class PcPartCreate(BaseModel):
     name: str = Field(min_length=1)
     category: PcPartCategory = PcPartCategory.other
-    build_id: int | None = None
+    build_id: int | None = Field(None, description="ignored for a sold part: sold parts aren't in a build")
     buy_date: date
     used_until: date | None = None  # empty = still in use
     buy_price_cents: Cents
@@ -591,15 +591,10 @@ class PcBuildRead(BaseModel):
     hardware_id: int | None
     hardware_name: str | None
     notes: str | None
-    parts: list[PcPartRead]
+    parts: list[PcPartRead] = Field(description="its parts; sold parts aren't in a build")
     buy_price_cents: int
-    sell_price_cents: int
-    net_cost_cents: int
     first_bought_on: date | None
     used_until: date | None = Field(description="when the last part went out of use; null while a part is in use")
     in_use: bool
-    used_days: int
-    used_years: float
-    cost_per_day_cents: int | None
     hours: float | None = Field(description="game hours of the linked device")
-    cost_per_hour_cents: int | None
+    cost_per_hour_cents: int | None = Field(description="buy price of the parts per game hour")

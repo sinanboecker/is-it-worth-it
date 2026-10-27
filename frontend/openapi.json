@@ -7838,19 +7838,12 @@
               "$ref": "#/components/schemas/PcPartRead"
             },
             "type": "array",
-            "title": "Parts"
+            "title": "Parts",
+            "description": "its parts; sold parts aren't in a build"
           },
           "buy_price_cents": {
             "type": "integer",
             "title": "Buy Price Cents"
-          },
-          "sell_price_cents": {
-            "type": "integer",
-            "title": "Sell Price Cents"
-          },
-          "net_cost_cents": {
-            "type": "integer",
-            "title": "Net Cost Cents"
           },
           "first_bought_on": {
             "anyOf": [
@@ -7881,25 +7874,6 @@
             "type": "boolean",
             "title": "In Use"
           },
-          "used_days": {
-            "type": "integer",
-            "title": "Used Days"
-          },
-          "used_years": {
-            "type": "number",
-            "title": "Used Years"
-          },
-          "cost_per_day_cents": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cost Per Day Cents"
-          },
           "hours": {
             "anyOf": [
               {
@@ -7921,7 +7895,8 @@
                 "type": "null"
               }
             ],
-            "title": "Cost Per Hour Cents"
+            "title": "Cost Per Hour Cents",
+            "description": "buy price of the parts per game hour"
           }
         },
         "type": "object",
@@ -7933,14 +7908,9 @@
           "notes",
           "parts",
           "buy_price_cents",
-          "sell_price_cents",
-          "net_cost_cents",
           "first_bought_on",
           "used_until",
           "in_use",
-          "used_days",
-          "used_years",
-          "cost_per_day_cents",
           "hours",
           "cost_per_hour_cents"
         ],
@@ -8021,7 +7991,8 @@
                 "type": "null"
               }
             ],
-            "title": "Build Id"
+            "title": "Build Id",
+            "description": "ignored for a sold part: sold parts aren't in a build"
           },
           "buy_date": {
             "type": "string",

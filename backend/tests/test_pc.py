@@ -51,23 +51,21 @@ def test_build_totals_device_hours_and_deleting(api, fixed_today):
 
     build = api.post("/pc/builds", {"name": "2021 build", "hardware_id": device["id"]})
     assert (build["parts"], build["in_use"], build["hardware_name"]) == ([], True, "Gaming PC")
-    for name, bought, until, price, sold in [
-        ("CPU", "2021-01-01", "2024-12-31", 30000, 10000),
-        ("GPU", "2021-03-01", "2025-01-01", 70000, 30000),
+    for name, bought, until, price in [
+        ("CPU", "2021-01-01", "2024-12-31", 30000),
+        ("GPU", "2021-03-01", "2025-01-01", 70000),
     ]:
         api.post(
             "/pc/parts",
-            {"name": name, "build_id": build["id"], "buy_date": bought, "used_until": until, "buy_price_cents": price,
-             "sell_price_cents": sold},
-        )  # fmt: skip
+            {"name": name, "build_id": build["id"], "buy_date": bought, "used_until": until, "buy_price_cents": price},
+        )
     api.post("/pc/parts", {"name": "Spare fan", "buy_date": "2022-01-01", "buy_price_cents": 1500})
 
     (build,) = api.get("/pc/builds")
     assert [p["name"] for p in build["parts"]] == ["CPU", "GPU"]
-    assert (build["buy_price_cents"], build["sell_price_cents"], build["net_cost_cents"]) == (100000, 40000, 60000)
+    assert build["buy_price_cents"] == 100000
     assert (build["first_bought_on"], build["used_until"], build["in_use"]) == ("2021-01-01", "2025-01-01", False)
-    assert (build["used_days"], build["cost_per_day_cents"]) == (1461, 41)  # 600 € / 1461 days
-    assert (build["hours"], build["cost_per_hour_cents"]) == (100, 600)  # 600 € / 100 h on the linked device
+    assert (build["hours"], build["cost_per_hour_cents"]) == (100, 1000)  # 1000 € / 100 h on the linked device
 
     parts = api.get("/pc/parts")
     assert [(p["name"], p["build_name"]) for p in parts] == [
@@ -91,3 +89,17 @@ def test_unknown_build_or_device(api):
     assert api.client.post("/api/v1/pc/builds", json={"name": "B", "hardware_id": 999}).status_code == 422
     part = {"name": "P", "build_id": 999, "buy_date": "2024-01-01", "buy_price_cents": 1}
     assert api.client.post("/api/v1/pc/parts", json=part).status_code == 404
+
+
+def test_sold_parts_leave_their_build(api):
+    build = api.post("/pc/builds", {"name": "B"})
+    part = {"name": "GPU", "build_id": build["id"], "buy_date": "2021-01-01", "buy_price_cents": 50000}
+    gpu = api.post("/pc/parts", part)
+    assert gpu["build_id"] == build["id"]
+
+    sold = api.patch(f"/pc/parts/{gpu['id']}", {"sell_price_cents": 20000, "used_until": "2024-01-01"})
+    assert (sold["build_id"], sold["build_name"]) == (None, None)
+    assert api.get("/pc/builds")[0]["parts"] == []
+    assert api.patch(f"/pc/parts/{gpu['id']}", {"build_id": build["id"]})["build_id"] is None  # can't go back
+
+    assert api.post("/pc/parts", {**part, "sell_price_cents": 100})["build_id"] is None  # sold right away

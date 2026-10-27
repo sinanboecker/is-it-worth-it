@@ -112,12 +112,13 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
   const [sellPrice, setSellPrice] = useState<number | null>(part?.sell_price_cents ?? null);
   const [notes, setNotes] = useState(part?.notes ?? "");
   const datesWrong = Boolean(buyDate && usedUntil && usedUntil < buyDate);
+  const sold = sellPrice !== null; // a sold part leaves its build
   const save = useApiMutation(
     () => {
       const body = {
         name: name.trim(),
         category: category!,
-        build_id: build,
+        build_id: sold ? null : build,
         buy_date: buyDate!,
         used_until: usedUntil,
         buy_price_cents: buyPrice!,
@@ -161,10 +162,12 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
         </Group>
         <Select
           label="Build"
+          description={sold ? "Sold parts aren't in a build any more." : undefined}
           placeholder="No build"
           data={(builds.data ?? []).map((b) => ({ value: String(b.id), label: b.name }))}
-          value={build ? String(build) : null}
+          value={build && !sold ? String(build) : null}
           onChange={(v) => setBuild(v ? Number(v) : null)}
+          disabled={sold}
           clearable
         />
         <Group grow align="flex-start">

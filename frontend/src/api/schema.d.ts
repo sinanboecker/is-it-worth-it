@@ -2219,14 +2219,13 @@ export interface components {
             hardware_name: string | null;
             /** Notes */
             notes: string | null;
-            /** Parts */
+            /**
+             * Parts
+             * @description its parts; sold parts aren't in a build
+             */
             parts: components["schemas"]["PcPartRead"][];
             /** Buy Price Cents */
             buy_price_cents: number;
-            /** Sell Price Cents */
-            sell_price_cents: number;
-            /** Net Cost Cents */
-            net_cost_cents: number;
             /** First Bought On */
             first_bought_on: string | null;
             /**
@@ -2236,18 +2235,15 @@ export interface components {
             used_until: string | null;
             /** In Use */
             in_use: boolean;
-            /** Used Days */
-            used_days: number;
-            /** Used Years */
-            used_years: number;
-            /** Cost Per Day Cents */
-            cost_per_day_cents: number | null;
             /**
              * Hours
              * @description game hours of the linked device
              */
             hours: number | null;
-            /** Cost Per Hour Cents */
+            /**
+             * Cost Per Hour Cents
+             * @description buy price of the parts per game hour
+             */
             cost_per_hour_cents: number | null;
         };
         /** PcBuildUpdate */
@@ -2270,7 +2266,10 @@ export interface components {
             name: string;
             /** @default other */
             category: components["schemas"]["PcPartCategory"];
-            /** Build Id */
+            /**
+             * Build Id
+             * @description ignored for a sold part: sold parts aren't in a build
+             */
             build_id?: number | null;
             /**
              * Buy Date

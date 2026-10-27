@@ -335,9 +335,11 @@ test("the last sort is remembered and used by all lists", async ({ page, request
   await expect(page.getByRole("columnheader", { name: "Name" })).toHaveAttribute("aria-sort", "ascending");
 });
 
-test("create a PC build, add parts to it and see what they cost per day", async ({ page, request }) => {
+test("create a PC build, add parts to it, sell one and see what they cost per day", async ({ page, request }) => {
   const { device } = await setup(request);
   const name = `Gaming PC ${device.id}`;
+  const gpuName = `GPU ${device.id}`;
+  const row = (scope: Page | Locator, part: string) => scope.getByRole("row", { name: new RegExp(part) });
 
   await page.goto("/dashboard");
   await page.getByRole("navigation").getByRole("link", { name: "PC builds" }).click();
@@ -352,25 +354,36 @@ test("create a PC build, add parts to it and see what they cost per day", async 
   const card = page.locator(".mantine-Card-root", { hasText: name });
   await card.getByRole("button", { name: "Part" }).click();
   dialog = page.getByRole("dialog");
-  await dialog.getByRole("textbox", { name: "Name" }).fill(`GPU ${device.id}`);
+  await dialog.getByRole("textbox", { name: "Name" }).fill(gpuName);
   await dialog.getByRole("textbox", { name: "Category" }).click();
   await page.getByRole("option", { name: "GPU" }).click();
   await dialog.getByRole("textbox", { name: "Bought on" }).fill("01.01.2021");
   await dialog.getByRole("textbox", { name: "Used until" }).fill("01.01.2023");
   await fillMoney(page, "Buy price", "800");
-  await fillMoney(page, "Sell price", "430");
   await dialog.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText(`GPU ${device.id} saved`)).toBeVisible();
+  await expect(page.getByText(`${gpuName} saved`)).toBeVisible();
 
-  const gpu = card.getByRole("row", { name: new RegExp(`GPU ${device.id}`) });
-  await expect(gpu).toContainText("GPU"); // category
-  await expect(gpu).toContainText("730"); // days
-  await expect(gpu).toContainText("2 years");
-  await expect(gpu).toContainText("0,51 €/day"); // (800 € − 430 €) / 730 days
+  await expect(row(card, gpuName)).toContainText("GPU"); // category
+  await expect(row(card, gpuName)).toContainText("730"); // days
+  await expect(row(card, gpuName)).toContainText("2 years");
+  await expect(row(card, gpuName)).toContainText("1,10 €/day"); // 800 € / 730 days
+  await expect(card.getByText("Bought for")).toBeVisible();
+  await expect(card.getByText("Net cost")).toHaveCount(0); // a build only shows what its parts cost
   await expect(card.getByText("used until 01.01.2023")).toBeVisible();
   await expect(card.getByRole("link", { name: device.name })).toBeVisible();
 
-  // a part without a build, then the list of all parts
+  // selling the GPU takes it out of the build
+  await card.getByRole("button", { name: `Edit ${gpuName}` }).click();
+  dialog = page.getByRole("dialog");
+  await fillMoney(page, "Sell price", "430");
+  await expect(dialog.getByText("Sold parts aren't in a build any more.")).toBeVisible();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(card.getByText("Add the parts of this build")).toBeVisible();
+  const loose = page.locator(".mantine-Card-root", { hasText: "Parts without a build" });
+  await expect(row(loose, gpuName)).toContainText("0,51 €/day"); // (800 € − 430 €) / 730 days
+  await expect(row(loose, gpuName)).toHaveCSS("opacity", "0.6"); // sold
+
+  // a part bought without a build, then the list of all parts
   await page.getByRole("button", { name: "Add part" }).click();
   dialog = page.getByRole("dialog");
   await dialog.getByRole("textbox", { name: "Name" }).fill(`Spare SSD ${device.id}`);
@@ -378,17 +391,12 @@ test("create a PC build, add parts to it and see what they cost per day", async 
   await page.getByRole("option", { name: "Storage" }).click();
   await fillMoney(page, "Buy price", "60");
   await dialog.getByRole("button", { name: "Save" }).click();
-  const loose = page.locator(".mantine-Card-root", { hasText: "Parts without a build" });
-  await expect(loose.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toHaveCSS("opacity", "1");
-  await loose.getByRole("button", { name: `Edit Spare SSD ${device.id}` }).click();
-  await fillMoney(page, "Sell price", "40");
-  await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
-  await expect(loose.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toHaveCSS("opacity", "0.6"); // sold
+  await expect(row(loose, `Spare SSD ${device.id}`)).toHaveCSS("opacity", "1");
   await page.getByText("All parts").click();
-  await expect(page.getByRole("row", { name: new RegExp(`GPU ${device.id}`) })).toContainText(name);
-  await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toContainText("Storage");
-  await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toContainText("in use");
-  await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toHaveCSS("opacity", "1"); // only there
+  await expect(row(page, gpuName)).toContainText("0,51 €/day");
+  await expect(row(page, gpuName)).toHaveCSS("opacity", "1"); // greyed out only in "Parts without a build"
+  await expect(row(page, `Spare SSD ${device.id}`)).toContainText("Storage");
+  await expect(row(page, `Spare SSD ${device.id}`)).toContainText("in use");
 });
 
 test("add a category from the sidebar", async ({ page }) => {
