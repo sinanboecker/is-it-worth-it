@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.e2e.json",
     "test": "vitest run --dir src",
     "gen:api": "cd ../backend && .venv/bin/python -m app.cli openapi -o ../frontend/openapi.json && cd ../frontend && openapi-typescript openapi.json -o src/api/schema.d.ts",
     "e2e": "vite build && playwright test"

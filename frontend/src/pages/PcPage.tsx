@@ -21,27 +21,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { usePcBuilds, usePcParts, usePcPurchases } from "@/api/queries";
 import type { PcBuild, PcPart, PcPurchase } from "@/api/types";
-import { Empty, PageHeader, QueryView } from "@/components/common";
+import { Empty, Figure, PageHeader, QueryView } from "@/components/common";
 import { PcPurchaseModal, PcSaleModal } from "@/components/PcGroupModals";
 import { byCategory, PC_PART_ICON, PcBuildModal, PcPartModal } from "@/components/PcModals";
 import { day, euros, hours, perDay, perHour, years } from "@/lib/format";
 import { PC_PART_CATEGORY } from "@/lib/labels";
-
-function Figure({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div>
-      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-        {label}
-      </Text>
-      <Text fw={600}>{value}</Text>
-      {hint && (
-        <Text size="xs" c="dimmed">
-          {hint}
-        </Text>
-      )}
-    </div>
-  );
-}
 
 type Selection = { selected: Set<number>; onToggle: (part: PcPart) => void };
 

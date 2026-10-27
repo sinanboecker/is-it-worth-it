@@ -249,3 +249,40 @@ def test_sale_errors_and_free_parts(api):
     response = api.client.post("/api/v1/pc/sales", json=early)
     assert response.status_code == 422 and "sold before it was bought" in response.json()["detail"]
     assert api.get("/pc/parts")[0]["sale_id"] is None  # nothing saved
+
+
+def test_lists_load_parts_with_a_fixed_number_of_queries(api, engine):
+    """A part's purchase and sale are loaded together with the parts, not one query per part."""
+    from sqlalchemy import event
+
+    build = api.post("/pc/builds", {"name": "B"})
+
+    def add_parts(count):
+        purchase = api.post(
+            "/pc/purchases",
+            {
+                "name": "PC",
+                "buy_date": "2024-01-01",
+                "total_price_cents": 1000,
+                "parts": [{"name": f"P{i}", "build_id": build["id"]} for i in range(count)],
+            },
+        )
+        api.post(
+            "/pc/sales",
+            {"sell_date": "2024-02-01", "total_price_cents": 10, "parts": [{"id": purchase["parts"][0]["id"]}]},
+        )
+
+    def queries(url):
+        statements = []
+        listener = lambda *args: statements.append(args[2])  # noqa: E731
+        event.listen(engine, "before_cursor_execute", listener)
+        try:
+            api.get(url)
+        finally:
+            event.remove(engine, "before_cursor_execute", listener)
+        return len(statements)
+
+    add_parts(2)
+    few = {url: queries(url) for url in ("/pc/builds", "/pc/parts", "/pc/purchases")}
+    add_parts(6)
+    assert {url: queries(url) for url in few} == few

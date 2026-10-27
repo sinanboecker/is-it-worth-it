@@ -1,5 +1,6 @@
 import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { api, unwrap } from "./client";
 import type { paths } from "./schema";
 
@@ -168,4 +169,23 @@ export function useApiMutation<TVariables, TResult>(
       notifications.show({ title: "Not saved", message: error.message, color: "red", autoClose: 8000 });
     },
   });
+}
+
+/** A result loaded on demand, e.g. an import preview: run(task) keeps the last result if the task fails. */
+export function usePreviewRequest<T>() {
+  const [result, setResult] = useState<T | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const run = async (task: () => Promise<T>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      setResult(await task());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  return { result, setResult, error, loading, run };
 }

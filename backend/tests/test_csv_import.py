@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from app.csv_import import parse_hours, parse_money
+from app.parsing import parse_hours, parse_money
 
 FIXTURE = Path(__file__).parent / "fixtures" / "test_pc.csv"
 
@@ -189,6 +189,13 @@ def test_accounting_zero_price_is_a_free_copy(api, pc):
     result = ok_preview(api, pc["category"]["id"], content.encode(), hardware_id=pc["device"]["id"])
     (row,) = result["rows"]
     assert (row["action"], row["buy_price_cents"], row["status"], row["errors"]) == ("create", 0, "finished", [])
+
+
+def test_existing_game_found_despite_other_punctuation(api, pc):
+    api.game(pc["category"]["id"], name="Marvel’s Spider-Man")
+    content = "Spiel;Kaufdatum;Preis\nMarvel's Spider-Man;01.01.2024;20\n"
+    (row,) = ok_preview(api, pc["category"]["id"], content.encode())["rows"]
+    assert row["action"] == "add_copy"
 
 
 def test_hours_need_a_device(api):

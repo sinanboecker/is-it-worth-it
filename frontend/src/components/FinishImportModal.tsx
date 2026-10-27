@@ -2,7 +2,7 @@ import { Alert, Badge, Button, FileInput, Group, Modal, ScrollArea, SegmentedCon
 import { IconFileText } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { api, unwrap, upload } from "@/api/client";
-import { useApiMutation, useCategories, useItems } from "@/api/queries";
+import { useApiMutation, useCategories, useItems, usePreviewRequest } from "@/api/queries";
 import type { FinishImportPreview, FinishRow } from "@/api/types";
 import { day } from "@/lib/format";
 
@@ -38,9 +38,7 @@ export function FinishImportModal({ onClose }: { onClose: () => void }) {
   const games = useItems({ kind: "game" });
   const categories = useCategories();
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<FinishImportPreview | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { result: preview, setResult: setPreview, error, loading, run } = usePreviewRequest<FinishImportPreview>();
   const [show, setShow] = useState<"all" | "look">("look");
 
   const gameOptions = useMemo(() => {
@@ -50,17 +48,6 @@ export function FinishImportModal({ onClose }: { onClose: () => void }) {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [games.data, categories.data]);
 
-  const run = async (task: () => Promise<FinishImportPreview>) => {
-    setLoading(true);
-    setError(null);
-    try {
-      setPreview(await task());
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
   const runPreview = () =>
     run(() => {
       const form = new FormData();

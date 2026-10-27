@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 
 from app import csv_import as ci
+from app import parsing
 
 
 @pytest.mark.parametrize(
@@ -27,13 +28,13 @@ from app import csv_import as ci
     ],
 )
 def test_parse_money(raw, cents):
-    assert ci.parse_money(raw) == cents
+    assert parsing.parse_money(raw) == cents
 
 
 @pytest.mark.parametrize("raw", ["abc", "12,3,4", "-5,00"])
 def test_parse_money_errors(raw):
     with pytest.raises(ValueError):
-        ci.parse_money(raw)
+        parsing.parse_money(raw)
 
 
 @pytest.mark.parametrize(
@@ -42,19 +43,19 @@ def test_parse_money_errors(raw):
      ("31/12/2024", date(2024, 12, 31)), ("", None)],
 )  # fmt: skip
 def test_parse_date(raw, expected):
-    assert ci.parse_date(raw) == expected
+    assert parsing.parse_date(raw) == expected
 
 
 def test_parse_date_error():
     with pytest.raises(ValueError, match="unreadable date"):
-        ci.parse_date("31.02.2024")
+        parsing.parse_date("31.02.2024")
 
 
 @pytest.mark.parametrize(
     ("raw", "hours"), [("10,5", 10.5), ("6", 6.0), ("12:30", 12.5), ("3h", 3.0), ("", 0.0), ("-", 0.0)]
 )
 def test_parse_hours(raw, hours):
-    assert ci.parse_hours(raw) == hours
+    assert parsing.parse_hours(raw) == hours
 
 
 @pytest.mark.parametrize(
@@ -63,24 +64,24 @@ def test_parse_hours(raw, hours):
      ("03.05.2024", (True, date(2024, 5, 3)))],
 )  # fmt: skip
 def test_parse_finished(raw, expected):
-    assert ci.parse_finished(raw) == expected
+    assert parsing.parse_finished(raw) == expected
 
 
 def test_parse_rating():
-    assert ci.parse_rating("4,5") == 4.5
-    assert ci.parse_rating("") is None
+    assert parsing.parse_rating("4,5") == 4.5
+    assert parsing.parse_rating("") is None
     with pytest.raises(ValueError):
-        ci.parse_rating("4,3")
+        parsing.parse_rating("4,3")
 
 
 def test_decode_and_sniff():
-    text, encoding = ci.decode("Spiel,Preis\nÜber,5\n".encode("cp1252"))
+    text, encoding = parsing.decode("Spiel,Preis\nÜber,5\n".encode("cp1252"))
     assert (encoding, text.splitlines()[1]) == ("cp1252", "Über,5")
-    text, encoding = ci.decode(b"\xef\xbb\xbfSpiel;Preis")  # UTF-8 BOM
+    text, encoding = parsing.decode(b"\xef\xbb\xbfSpiel;Preis")  # UTF-8 BOM
     assert (encoding, text) == ("utf-8", "Spiel;Preis")
-    assert ci.sniff_delimiter("a;b;c\n1,5;2;3") == ";"
-    assert ci.sniff_delimiter("a,b,c") == ","
-    assert ci.sniff_delimiter("a\tb") == "\t"
+    assert parsing.sniff_delimiter("a;b;c\n1,5;2;3") == ";"
+    assert parsing.sniff_delimiter("a,b,c") == ","
+    assert parsing.sniff_delimiter("a\tb") == "\t"
 
 
 def test_auto_mapping_german_and_english():

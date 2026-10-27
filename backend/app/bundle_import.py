@@ -21,16 +21,6 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.bundles import apply_split
-from app.csv_import import (
-    _norm,
-    decode,
-    name_key,
-    parse_date,
-    parse_finished,
-    parse_hours,
-    parse_money,
-    sniff_delimiter,
-)
 from app.models import (
     Bundle,
     Category,
@@ -44,6 +34,8 @@ from app.models import (
     PlayLink,
     SplitMode,
 )
+from app.names import name_key
+from app.parsing import decode, norm, parse_date, parse_finished, parse_hours, parse_money, sniff_delimiter
 from app.schemas import hours_to_minutes
 
 COLUMNS = ["name", "date", "price", "sold", "hours", "finished", "comment"]
@@ -125,7 +117,7 @@ def _blocks(text: str) -> list[list[tuple[int, list[str]]]]:
         current.append((line, cells + [""] * (len(COLUMNS) - len(cells))))
     if current:
         blocks.append(current)
-    if blocks and _norm(blocks[0][0][1][0]) in HEADER_NAMES:
+    if blocks and norm(blocks[0][0][1][0]) in HEADER_NAMES:
         blocks[0] = blocks[0][1:]
         if not blocks[0]:
             blocks.pop(0)

@@ -1,6 +1,5 @@
 /** Dialogs for PC builds and parts. */
-import { Button, Group, Modal, Select, Stack, Text, Textarea, TextInput } from "@mantine/core";
-import { modals } from "@mantine/modals";
+import { Button, Group, Modal, Select, Stack, Textarea, TextInput } from "@mantine/core";
 import {
   IconBolt,
   IconBox,
@@ -19,6 +18,7 @@ import { useApiMutation, usePcBuilds } from "@/api/queries";
 import type { PcBuild, PcPart, PcPartCategory } from "@/api/types";
 import { todayIso } from "@/lib/format";
 import { PC_PART_CATEGORY } from "@/lib/labels";
+import { confirmDelete } from "./common";
 import { DateField, DeviceSelect, MoneyInput } from "./inputs";
 
 export const PC_PART_ICON: Record<PcPartCategory, ComponentType<{ size?: number | string }>> = {
@@ -72,16 +72,6 @@ export function PartCategorySelect({
       required
     />
   );
-}
-
-export function confirmDelete(title: string, text: string, onConfirm: () => void) {
-  modals.openConfirmModal({
-    title,
-    children: <Text size="sm">{text}</Text>,
-    labels: { confirm: "Delete", cancel: "Cancel" },
-    confirmProps: { color: "red" },
-    onConfirm,
-  });
 }
 
 /** New or edit a build: name, linked device (its game hours), notes. */

@@ -3,54 +3,7 @@
 from datetime import date
 
 from app.models import Bundle, SplitMode
-
-
-class BundleSplitError(ValueError):
-    pass
-
-
-def split_amount(
-    total_cents: int,
-    mode: SplitMode,
-    *,
-    reference_prices: list[int | None] | None = None,
-    manual_shares: list[int | None] | None = None,
-    count: int | None = None,
-) -> list[int]:
-    """Split `total_cents` into shares that always add up exactly to the total.
-
-    Rounding remainders go to the largest share (proportional) or the first one (equal).
-    """
-    n = count if count is not None else len(reference_prices or manual_shares or [])
-    if n == 0:
-        raise BundleSplitError("a bundle needs at least one copy")
-    if total_cents < 0:
-        raise BundleSplitError("the total must not be negative")
-
-    if mode is SplitMode.manual:
-        if manual_shares is None or len(manual_shares) != n or any(s is None or s < 0 for s in manual_shares):
-            raise BundleSplitError("manual split: every item needs a price ≥ 0")
-        left = total_cents - sum(manual_shares)
-        if left != 0:
-            raise BundleSplitError(f"manual split: {left / 100:.2f} € left to assign")
-        return list(manual_shares)
-
-    if mode is SplitMode.equal:
-        base, remainder = divmod(total_cents, n)
-        shares = [base] * n
-        shares[0] += remainder
-        return shares
-
-    # proportional
-    if reference_prices is None or len(reference_prices) != n or any(p is None or p < 0 for p in reference_prices):
-        raise BundleSplitError("proportional split: every item needs a reference price ≥ 0")
-    weight_sum = sum(reference_prices)
-    if weight_sum == 0:
-        raise BundleSplitError("proportional split: the reference prices must not all be 0")
-    shares = [total_cents * p // weight_sum for p in reference_prices]
-    largest = max(range(n), key=lambda i: reference_prices[i])
-    shares[largest] += total_cents - sum(shares)
-    return shares
+from app.split import SplitError, split_amount
 
 
 def cost_to_split(bundle: Bundle) -> int:
@@ -84,7 +37,7 @@ def apply_split(bundle: Bundle, manual_shares: list[int | None] | None = None) -
 
     if bundle.sold_as_bundle:
         if bundle.sell_total_cents is None:
-            raise BundleSplitError("a bundle sold as a whole needs a sell total")
+            raise SplitError("a bundle sold as a whole needs a sell total")
         if bundle.split_mode is SplitMode.manual:
             # No separate manual sell shares: split the sale like the purchase.
             sell_shares = (

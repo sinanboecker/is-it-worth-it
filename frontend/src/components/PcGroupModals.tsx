@@ -8,7 +8,8 @@ import type { PcPart, PcPartCategory, PcPurchase, PcSale, SplitMode } from "@/ap
 import { euros, todayIso } from "@/lib/format";
 import { useSplitPreview } from "./Bundles";
 import { DateField, MoneyInput, StoreInput } from "./inputs";
-import { confirmDelete, PartCategorySelect } from "./PcModals";
+import { confirmDelete } from "./common";
+import { PartCategorySelect } from "./PcModals";
 
 const PURCHASE_SPLIT: Record<SplitMode, string> = {
   equal: "Equal shares",

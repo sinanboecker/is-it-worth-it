@@ -1,5 +1,6 @@
 import { Alert, Box, Center, Group, Loader, Paper, Stack, Text, Title } from "@mantine/core";
 import type { UseQueryResult } from "@tanstack/react-query";
+import { modals } from "@mantine/modals";
 import type { ReactNode } from "react";
 
 /** Renders loading / error states of a query, then `children(data)`. */
@@ -52,6 +53,34 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
       )}
     </Paper>
   );
+}
+
+/** A label with a value (and an optional hint below), for the figures at the top of a card. */
+export function Figure({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div>
+      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+        {label}
+      </Text>
+      <Text fw={600}>{value}</Text>
+      {hint && (
+        <Text size="xs" c="dimmed">
+          {hint}
+        </Text>
+      )}
+    </div>
+  );
+}
+
+/** Asks before something is deleted (or replaced); the confirm button is red. */
+export function confirmDelete(title: string, text: string | null, onConfirm: () => void, confirm = "Delete") {
+  modals.openConfirmModal({
+    title,
+    children: text ? <Text size="sm">{text}</Text> : undefined,
+    labels: { confirm, cancel: "Cancel" },
+    confirmProps: { color: "red" },
+    onConfirm,
+  });
 }
 
 export function Empty({ children }: { children: ReactNode }) {

@@ -14,7 +14,6 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { modals } from "@mantine/modals";
 import { IconBrandGithub, IconDownload, IconEdit, IconPlus, IconSearch, IconTrash, IconUpload } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
@@ -23,7 +22,7 @@ import { api, unwrap, upload } from "@/api/client";
 import { useApiMutation, useCategories, useHardware, useMetadataStatus, useSettings } from "@/api/queries";
 import { FetchMissingModal, RawgAttribution, RawgNotConfigured } from "@/components/MetadataModals";
 import type { AppSettings, Category, SplitMode } from "@/api/types";
-import { PageHeader, QueryView } from "@/components/common";
+import { confirmDelete, PageHeader, QueryView } from "@/components/common";
 import { CategoryIconFor } from "@/components/CategoryIcon";
 import { CategoryModal } from "@/components/CategoryModal";
 import { MoneyInput } from "@/components/inputs";
@@ -139,13 +138,7 @@ function CategoriesSettings({ settings }: { settings: AppSettings }) {
                         color="red"
                         aria-label="Delete category"
                         onClick={() =>
-                          modals.openConfirmModal({
-                            title: `Delete ${c.name}?`,
-                            children: <Text size="sm">Only empty categories can be deleted.</Text>,
-                            labels: { confirm: "Delete", cancel: "Cancel" },
-                            confirmProps: { color: "red" },
-                            onConfirm: () => remove.mutate(c),
-                          })
+                          confirmDelete(`Delete ${c.name}?`, "Only empty categories can be deleted.", () => remove.mutate(c))
                         }
                       >
                         <IconTrash size={16} />
@@ -196,13 +189,7 @@ function DataSettings() {
 
   const confirmImport = () =>
     mode === "replace"
-      ? modals.openConfirmModal({
-          title: "Replace everything?",
-          children: <Text size="sm">All current data is deleted and replaced by the file's content.</Text>,
-          labels: { confirm: "Replace", cancel: "Cancel" },
-          confirmProps: { color: "red" },
-          onConfirm: runImport,
-        })
+      ? confirmDelete("Replace everything?", "All current data is deleted and replaced by the file's content.", runImport, "Replace")
       : runImport();
 
   return (

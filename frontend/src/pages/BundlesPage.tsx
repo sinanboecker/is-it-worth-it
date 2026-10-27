@@ -7,24 +7,8 @@ import type { Bundle } from "@/api/types";
 import { StatusBadge, WorthItBadge } from "@/components/badges";
 import { BundleImportModal } from "@/components/BundleImportModal";
 import { AddBundleModal, EditBundleModal } from "@/components/Bundles";
-import { Cover, Empty, imageOf, PageHeader, QueryView } from "@/components/common";
+import { Cover, Empty, Figure, imageOf, PageHeader, QueryView } from "@/components/common";
 import { day, euros, hours, perHour } from "@/lib/format";
-
-function Figure({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div>
-      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-        {label}
-      </Text>
-      <Text fw={600}>{value}</Text>
-      {hint && (
-        <Text size="xs" c="dimmed">
-          {hint}
-        </Text>
-      )}
-    </div>
-  );
-}
 
 function BundleCard({ bundle, onEdit }: { bundle: Bundle; onEdit: () => void }) {
   const v = bundle.value;

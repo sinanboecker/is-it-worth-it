@@ -2,7 +2,7 @@ import { Alert, Badge, Button, FileInput, Group, Modal, ScrollArea, Select, Stac
 import { IconFileTypeCsv } from "@tabler/icons-react";
 import { useState } from "react";
 import { upload } from "@/api/client";
-import { useApiMutation, useCategories } from "@/api/queries";
+import { useApiMutation, useCategories, usePreviewRequest } from "@/api/queries";
 import type { BundleImportPreview, BundleImportResult, GamePlan } from "@/api/types";
 import { day, euros, hours } from "@/lib/format";
 import { DeviceSelect, StoreInput } from "./inputs";
@@ -24,9 +24,7 @@ export function BundleImportModal({ onClose }: { onClose: () => void }) {
   const [deviceChoice, setDeviceChoice] = useState<number | null | undefined>(undefined);
   const device = deviceChoice === undefined ? (category?.default_device_id ?? null) : deviceChoice;
   const [store, setStore] = useState<string | null>("Humble Bundle");
-  const [preview, setPreview] = useState<BundleImportPreview | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { result: preview, setResult: setPreview, error, loading, run } = usePreviewRequest<BundleImportPreview>();
 
   const form = () => {
     const data = new FormData();
@@ -37,18 +35,7 @@ export function BundleImportModal({ onClose }: { onClose: () => void }) {
     data.append("format", "digital");
     return data;
   };
-  const runPreview = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setPreview(await upload<BundleImportPreview>("/api/v1/bundles/import/preview", form()));
-    } catch (e) {
-      setPreview(null);
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const runPreview = () => run(() => upload<BundleImportPreview>("/api/v1/bundles/import/preview", form()));
   const changed = () => setPreview(null);
   const commit = useApiMutation(() => upload<BundleImportResult>("/api/v1/bundles/import/commit", form()), {
     success: (r) =>

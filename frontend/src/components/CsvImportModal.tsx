@@ -18,7 +18,7 @@ import {
 import { IconFileTypeCsv } from "@tabler/icons-react";
 import { useState } from "react";
 import { api, unwrap, upload } from "@/api/client";
-import { useApiMutation } from "@/api/queries";
+import { useApiMutation, usePreviewRequest } from "@/api/queries";
 import type { Category, CommitResult, CopyFormat, ImportPreview, ImportRow } from "@/api/types";
 import { day, euros, hours } from "@/lib/format";
 import { FORMAT, options, STATUS } from "@/lib/labels";
@@ -70,10 +70,8 @@ export function CsvImportModal({
   const [store, setStore] = useState<string | null>(null);
   const [format, setFormat] = useState<CopyFormat>("digital");
   const [mapping, setMapping] = useState<Record<string, string | null>>({});
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const { result: preview, setResult: setPreview, error, loading, run } = usePreviewRequest<ImportPreview>();
   const [rows, setRows] = useState<ImportRow[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const runPreview = async (overrides = mapping) => {
     if (!file) return;
@@ -83,17 +81,11 @@ export function CsvImportModal({
     if (store) form.append("default_store", store);
     form.append("default_format", format);
     if (Object.keys(overrides).length) form.append("mapping", JSON.stringify(overrides));
-    setLoading(true);
-    setError(null);
-    try {
+    await run(async () => {
       const result = await upload<ImportPreview>(`/api/v1/categories/${category.id}/import-csv/preview`, form);
-      setPreview(result);
       setRows(result.rows);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
+      return result;
+    });
   };
 
   const commit = useApiMutation(

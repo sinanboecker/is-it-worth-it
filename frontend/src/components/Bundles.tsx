@@ -16,7 +16,6 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import { modals } from "@mantine/modals";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +24,7 @@ import { useApiMutation, useCategories, useItems } from "@/api/queries";
 import type { Bundle, BundleEntryIn, CopyFormat, ItemKind, SplitMode } from "@/api/types";
 import { day, euros, todayIso } from "@/lib/format";
 import { FORMAT, options, SPLIT_MODE } from "@/lib/labels";
+import { confirmDelete } from "./common";
 import { DateField, MoneyInput, StoreInput } from "./inputs";
 
 /** Live preview of the split while editing (computed by the server, same algorithm as on save). */
@@ -475,13 +475,9 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
           color="red"
           leftSection={<IconTrash size={16} />}
           onClick={() =>
-            modals.openConfirmModal({
-              title: `Delete ${bundle.name}?`,
-              children: <Text size="sm">The copies bought in this bundle are deleted; the games and devices stay.</Text>,
-              labels: { confirm: "Delete", cancel: "Cancel" },
-              confirmProps: { color: "red" },
-              onConfirm: () => remove.mutate(undefined),
-            })
+            confirmDelete(`Delete ${bundle.name}?`, "The copies bought in this bundle are deleted; the games and devices stay.", () =>
+              remove.mutate(undefined),
+            )
           }
         >
           Delete bundle

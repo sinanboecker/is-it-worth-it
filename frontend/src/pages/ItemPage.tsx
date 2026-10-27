@@ -18,7 +18,6 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { modals } from "@mantine/modals";
 import {
   IconCheck,
   IconDots,
@@ -38,7 +37,7 @@ import { api, unwrap, upload } from "@/api/client";
 import { useApiMutation, useCategories, useItem } from "@/api/queries";
 import type { CompletionRead, CopyRead, DlcRead, GameStatus, ItemRead, PlayLinkIn } from "@/api/types";
 import { CopyBadges, StatusBadge, WorthItBadge } from "@/components/badges";
-import { Cover, Empty, imageOf, QueryView, StatTile } from "@/components/common";
+import { confirmDelete, Cover, Empty, imageOf, QueryView, StatTile } from "@/components/common";
 import { DateField, DeviceSelect, FavoriteHeart, HoursInput, MoneyInput, Stars, StatusSelect } from "@/components/inputs";
 import { EditBundleModal } from "@/components/Bundles";
 import { AddHoursModal, CopyModal, DlcModal, FinishModal } from "@/components/ItemModals";
@@ -141,12 +140,7 @@ function CopiesSection({ item }: { item: ItemRead }) {
                           color="red"
                           aria-label="Delete copy"
                           onClick={() =>
-                            modals.openConfirmModal({
-                              title: "Delete this copy?",
-                              labels: { confirm: "Delete", cancel: "Cancel" },
-                              confirmProps: { color: "red" },
-                              onConfirm: () => remove.mutate(copy),
-                            })
+                            confirmDelete("Delete this copy?", null, () => remove.mutate(copy))
                           }
                         >
                           <IconTrash size={16} />
@@ -698,13 +692,7 @@ function ItemView({ item }: { item: ItemRead }) {
                 color="red"
                 leftSection={<IconTrash size={14} />}
                 onClick={() =>
-                  modals.openConfirmModal({
-                    title: `Delete ${item.name}?`,
-                    children: <Text size="sm">Copies, hours, DLC and finishes are deleted too.</Text>,
-                    labels: { confirm: "Delete", cancel: "Cancel" },
-                    confirmProps: { color: "red" },
-                    onConfirm: () => remove.mutate(undefined),
-                  })
+                  confirmDelete(`Delete ${item.name}?`, "Copies, hours, DLC and finishes are deleted too.", () => remove.mutate(undefined))
                 }
               >
                 Delete

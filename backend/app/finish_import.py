@@ -25,9 +25,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
-from app.csv_import import decode
 from app.models import Completion, GameStatus, Item, ItemKind, PlayLink
-from app.rawg import normalize
+from app.names import name_key
+from app.parsing import decode
 
 MONTHS = {name.lower(): number for number, name in enumerate(calendar.month_name) if name}
 HEADING = re.compile(r"^([A-Za-z]+),?\s+(\d{4})$")
@@ -124,7 +124,7 @@ def parse(data: bytes) -> list[FinishRow]:
 
 
 def platform_key(text: str) -> str:
-    key = normalize(text)
+    key = name_key(text)
     for pattern, replacement in PLATFORM_WORDS:
         key = re.sub(pattern, replacement, key)
     return re.sub(r"\s+", " ", key).strip()
@@ -153,7 +153,7 @@ def _load_games(session: Session) -> list[Item]:
 def _match(row: FinishRow, by_name: dict[str, list[Item]]) -> None:
     full = f"{row.name}, {row.platform}" if row.platform else row.name
     for name in (row.name, full):
-        found = by_name.get(normalize(name), [])
+        found = by_name.get(name_key(name), [])
         if len(found) > 1 and row.platform:
             found = [g for g in found if _on_platform(g, row.platform)] or found
         if len(found) == 1:
@@ -163,7 +163,7 @@ def _match(row: FinishRow, by_name: dict[str, list[Item]]) -> None:
             row.match = "ambiguous"
             row.candidates = [Candidate(id=g.id, name=g.name, category=g.category.name) for g in found]
             return
-    target = normalize(row.name)
+    target = name_key(row.name)
     scored = [(difflib.SequenceMatcher(None, target, key).ratio(), key) for key in by_name]
     close = [key for ratio, key in scored if ratio >= 0.85]
     ratio, key = max(scored, default=(0.0, ""))
@@ -176,7 +176,7 @@ def plan(session: Session, rows_in: list[FinishRowIn]) -> FinishImportPreview:
     by_id = {g.id: g for g in games}
     by_name: dict[str, list[Item]] = defaultdict(list)
     for game in games:
-        by_name[normalize(game.name)].append(game)
+        by_name[name_key(game.name)].append(game)
 
     rows = []
     for row_in in rows_in:

@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from app import calc, status
-from app.bundles import BundleSplitError, apply_split, split_amount
+from app.bundles import apply_split
 from app.models import Bundle, Copy, Item, ItemKind, SplitMode
 from app.routers.deps import (
     SessionDep,
@@ -17,6 +17,7 @@ from app.routers.deps import (
     load_category,
     load_item,
     not_found,
+    split_errors_as_invalid,
 )
 from app.schemas import (
     BundleCopyRead,
@@ -28,6 +29,7 @@ from app.schemas import (
     SplitPreviewOut,
     ValueRead,
 )
+from app.split import split_amount
 
 router = APIRouter(prefix="/bundles", tags=["bundles"])
 
@@ -65,13 +67,6 @@ def _read(bundle: Bundle, global_break_even_cph: int) -> BundleRead:
         sold_cents=sum(c.sell_price_cents for c in bundle.copies if c.is_sold) + bundle.other_sales_cents,
         value=ValueRead.build(calc.bundle_value(bundle, global_break_even_cph)),
     )
-
-
-def _split(bundle: Bundle, manual_shares: list[int | None] | None = None) -> None:
-    try:
-        apply_split(bundle, manual_shares)
-    except BundleSplitError as e:
-        raise invalid(str(e)) from e
 
 
 def _add_entry(session: Session, bundle: Bundle, entry: BundleEntryIn) -> Copy:
@@ -113,7 +108,7 @@ def list_bundles(session: SessionDep, settings: SettingsDep):
 @router.post("/preview-split", response_model=SplitPreviewOut)
 def preview_split(data: SplitPreviewIn):
     """Shares for a given total and mode, before saving (also for the "New bundle" form)."""
-    try:
+    with split_errors_as_invalid():
         shares = split_amount(
             data.total_price_cents,
             data.split_mode,
@@ -121,8 +116,6 @@ def preview_split(data: SplitPreviewIn):
             manual_shares=data.manual_shares,
             count=data.count,
         )
-    except BundleSplitError as e:
-        raise invalid(str(e)) from e
     return SplitPreviewOut(shares_cents=shares)
 
 
@@ -136,7 +129,8 @@ def create_bundle(data: BundleCreate, session: SessionDep, settings: SettingsDep
     for entry in data.entries:
         _add_entry(session, bundle, entry)
     manual = [e.buy_price_cents for e in data.entries] if bundle.split_mode is SplitMode.manual else None
-    _split(bundle, manual)
+    with split_errors_as_invalid():
+        apply_split(bundle, manual)
     session.commit()
     return _read(_load_bundle(session, bundle.id), settings.break_even_cph)
 
@@ -174,7 +168,8 @@ def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep, setti
     manual = None
     if manual_shares is not None:
         manual = [manual_shares.get(c.id, c.buy_price_cents) for c in bundle.copies]
-    _split(bundle, manual)
+    with split_errors_as_invalid():
+        apply_split(bundle, manual)
     session.commit()
     return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 
@@ -183,7 +178,8 @@ def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep, setti
 def add_bundle_entry(bundle_id: int, entry: BundleEntryIn, session: SessionDep, settings: SettingsDep):
     bundle = _load_bundle(session, bundle_id)
     _add_entry(session, bundle, entry)
-    _split(bundle)
+    with split_errors_as_invalid():
+        apply_split(bundle)
     session.commit()
     return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 
@@ -197,7 +193,8 @@ def remove_bundle_copy(bundle_id: int, copy_id: int, session: SessionDep, settin
         raise not_found("copy")
     bundle.copies.remove(copy)
     session.delete(copy)
-    _split(bundle)
+    with split_errors_as_invalid():
+        apply_split(bundle)
     session.commit()
     return _read(_load_bundle(session, bundle_id), settings.break_even_cph)
 

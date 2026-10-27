@@ -110,3 +110,10 @@ def test_games_sold_for_more_than_the_bundle_total_is_an_error(api, pc):
 def test_no_bundle_import_into_hardware_only_category(api):
     response = run(api, "preview", api.handhelds_id(), SHEET)
     assert response.status_code == 422
+
+
+def test_existing_game_found_despite_other_punctuation(api, pc):
+    existing = api.game(pc["category"]["id"], name="Death's Door")
+    sheet = "Humble Choice July 2025;01.07.2025;8;;;;\nDeath’s Door;01.07.2025;;;;;\n"
+    (bundle,) = run(api, "preview", pc["category"]["id"], sheet).json()["bundles"]
+    assert (bundle["games"][0]["action"], bundle["games"][0]["existing_item_id"]) == ("move", existing["id"])

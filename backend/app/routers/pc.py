@@ -8,7 +8,15 @@ from sqlmodel import Session, select
 
 from app import pc
 from app.models import Item, PcBuild, PcPart, PcPurchase, PcSale, PlayLink
-from app.routers.deps import SessionDep, SettingsDep, TodayDep, invalid, load_hardware, not_found
+from app.routers.deps import (
+    SessionDep,
+    SettingsDep,
+    TodayDep,
+    invalid,
+    load_hardware,
+    not_found,
+    split_errors_as_invalid,
+)
 from app.schemas import (
     PcBuildCreate,
     PcBuildRead,
@@ -24,8 +32,11 @@ from app.schemas import (
 
 router = APIRouter(prefix="/pc", tags=["pc builds"])
 
+# a part's purchase and sale are shown with it: load them with the parts, not one query per part
+PART_LOAD_OPTIONS = (selectinload(PcPart.build), selectinload(PcPart.purchase), selectinload(PcPart.sale))
+
 BUILD_LOAD_OPTIONS = (
-    selectinload(PcBuild.parts),
+    selectinload(PcBuild.parts).options(*PART_LOAD_OPTIONS),
     selectinload(PcBuild.hardware).selectinload(Item.device_links).selectinload(PlayLink.game),
     selectinload(PcBuild.hardware).selectinload(Item.copies),
 )
@@ -146,9 +157,7 @@ def delete_build(build_id: int, session: SessionDep):
 def list_parts(session: SessionDep, today: TodayDep):
     """All parts, the newest first."""
     parts = session.exec(
-        select(PcPart)
-        .options(selectinload(PcPart.build), selectinload(PcPart.purchase), selectinload(PcPart.sale))
-        .order_by(PcPart.buy_date.desc(), PcPart.id.desc())
+        select(PcPart).options(*PART_LOAD_OPTIONS).order_by(PcPart.buy_date.desc(), PcPart.id.desc())
     ).all()
     return [_part_read(p, today) for p in parts]
 
@@ -195,22 +204,17 @@ def delete_part(part_id: int, session: SessionDep):
     purchase, sale = part.purchase, part.sale
     if purchase is not None:
         purchase.parts.remove(part)
-        _split(pc.split_purchase, purchase)
+        with split_errors_as_invalid():
+            pc.split_purchase(purchase)
     if sale is not None:
         sale.parts.remove(part)
         if sale.parts:
-            _split(pc.split_sale, sale)
+            with split_errors_as_invalid():
+                pc.split_sale(sale)
         else:
             session.delete(sale)
     session.delete(part)
     session.commit()
-
-
-def _split(split, group) -> None:
-    try:
-        split(group)
-    except pc.SplitError as e:
-        raise invalid(str(e)) from e
 
 
 # --- bought together --------------------------------------------------------------------------
@@ -254,7 +258,8 @@ def _apply_purchase(session: Session, purchase: PcPurchase, data: PcPurchaseIn) 
             part.buy_price_cents = row.buy_price_cents
         kept.append(part)
     purchase.parts = kept
-    _split(pc.split_purchase, purchase)
+    with split_errors_as_invalid():
+        pc.split_purchase(purchase)
 
 
 @router.get("/purchases", response_model=list[PcPurchaseRead])
@@ -262,7 +267,7 @@ def list_purchases(session: SessionDep, today: TodayDep):
     """Parts bought together (e.g. whole PCs), the newest first."""
     purchases = session.exec(
         select(PcPurchase)
-        .options(selectinload(PcPurchase.parts).selectinload(PcPart.build))
+        .options(selectinload(PcPurchase.parts).options(*PART_LOAD_OPTIONS))
         .order_by(PcPurchase.buy_date.desc(), PcPurchase.id.desc())
     ).all()
     return [_purchase_read(p, today) for p in purchases]
@@ -329,7 +334,8 @@ def _apply_sale(session: Session, sale: PcSale, data: PcSaleIn) -> None:
         if part not in wanted:
             pc.unsell(part, old_date)
     sale.parts = wanted
-    _split(pc.split_sale, sale)
+    with split_errors_as_invalid():
+        pc.split_sale(sale)
 
 
 @router.get("/sales/{sale_id}", response_model=PcSaleRead)

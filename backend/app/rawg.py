@@ -11,6 +11,7 @@ from datetime import date
 import httpx
 
 from app import cache, config, http
+from app.names import name_key
 
 DAY = 24 * 3600
 STEAM_APP_URL = re.compile(r"store\.steampowered\.com/app/(\d+)")
@@ -145,22 +146,15 @@ def additions(rawg_id: int) -> list[Candidate]:
 # --- matching ---------------------------------------------------------------------------------
 
 
-def normalize(name: str) -> str:
-    name = name.casefold().replace("&", " and ")
-    name = re.sub(r"[™®©]", "", name)
-    name = re.sub(r"[^\w\s]", " ", name)
-    return re.sub(r"\s+", " ", name).strip()
-
-
 def best_match(name: str, candidates: list[Candidate]) -> Candidate | None:
     """A confident match for automatic use, or None (then the user picks)."""
-    target = normalize(name)
-    exact = [c for c in candidates if normalize(c.name) == target]
+    target = name_key(name)
+    exact = [c for c in candidates if name_key(c.name) == target]
     if len(exact) == 1:
         return exact[0]
     if exact:  # same name several times (remakes): too ambiguous
         return None
-    scored = [(difflib.SequenceMatcher(None, target, normalize(c.name)).ratio(), c) for c in candidates]
+    scored = [(difflib.SequenceMatcher(None, target, name_key(c.name)).ratio(), c) for c in candidates]
     close = [c for ratio, c in scored if ratio >= 0.85]
     best = max(scored, key=lambda pair: pair[0], default=(0, None))
     return best[1] if len(close) == 1 and best[0] >= 0.92 else None

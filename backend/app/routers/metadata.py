@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 
 from app import media, rawg, steam_store
 from app.models import Item, ItemKind
+from app.names import name_key
 from app.routers.deps import SessionDep, SettingsDep, TodayDep, load_game, load_item
 from app.routers.items import read_item
 from app.schemas import ItemRead
@@ -225,16 +226,16 @@ def available_dlc(item_id: int, session: SessionDep, settings: SettingsDep, q: s
             DlcSuggestion(name=a.name, source="rawg", rawg_id=a.rawg_id)
             for a in _rawg_call(rawg.additions, game.rawg_id)
         ]
-    owned_names = {rawg.normalize(d.name) for d in game.dlcs}
+    owned_names = {name_key(d.name) for d in game.dlcs}
     owned_steam = {d.steam_app_id for d in game.dlcs if d.steam_app_id}
     owned_rawg = {d.rawg_id for d in game.dlcs if d.rawg_id}
     for s in suggestions:
         s.owned = (
-            rawg.normalize(s.name) in owned_names
+            name_key(s.name) in owned_names
             or (s.steam_app_id is not None and s.steam_app_id in owned_steam)
             or (s.rawg_id is not None and s.rawg_id in owned_rawg)
         )
     if q:
-        needle = rawg.normalize(q)
-        suggestions = [s for s in suggestions if needle in rawg.normalize(s.name)]
+        needle = name_key(q)
+        suggestions = [s for s in suggestions if needle in name_key(s.name)]
     return suggestions

@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from datetime import date
 
 from app import calc
-from app.bundles import BundleSplitError, split_amount
 from app.models import PcBuild, PcPart, PcPurchase, PcSale, SplitMode
+from app.split import SplitError, split_amount
 
 DAYS_PER_YEAR = 365.25
 
@@ -74,25 +74,18 @@ def build_totals(build: PcBuild, global_break_even_cph: int) -> BuildTotals:
 # --- bought / sold together -------------------------------------------------------------------
 
 
-class SplitError(ValueError):
-    pass
-
-
 def split_purchase(purchase: PcPurchase) -> None:
     """Set the buy price (its share) and buy date of every part of the purchase."""
     parts = purchase.parts
     if not parts:
         return
-    try:
-        shares = split_amount(
-            purchase.total_price_cents,
-            purchase.split_mode,
-            reference_prices=[p.value_cents for p in parts],
-            manual_shares=[p.buy_price_cents for p in parts],
-            count=len(parts),
-        )
-    except BundleSplitError as e:
-        raise SplitError(str(e)) from e
+    shares = split_amount(
+        purchase.total_price_cents,
+        purchase.split_mode,
+        reference_prices=[p.value_cents for p in parts],
+        manual_shares=[p.buy_price_cents for p in parts],
+        count=len(parts),
+    )
     for part, share in zip(parts, shares, strict=True):
         if part.used_until is not None and part.used_until < purchase.buy_date:
             raise SplitError(f"{part.name}: 'used until' is before the purchase date")
@@ -108,16 +101,13 @@ def split_sale(sale: PcSale) -> None:
         return
     weights = [p.buy_price_cents for p in parts]
     mode = SplitMode.equal if sale.split_mode is SplitMode.proportional and not any(weights) else sale.split_mode
-    try:
-        shares = split_amount(
-            sale.total_price_cents,
-            mode,
-            reference_prices=weights,
-            manual_shares=[p.sell_price_cents for p in parts],
-            count=len(parts),
-        )
-    except BundleSplitError as e:
-        raise SplitError(str(e)) from e
+    shares = split_amount(
+        sale.total_price_cents,
+        mode,
+        reference_prices=weights,
+        manual_shares=[p.sell_price_cents for p in parts],
+        count=len(parts),
+    )
     for part, share in zip(parts, shares, strict=True):
         if sale.sell_date < part.buy_date:
             raise SplitError(f"{part.name}: sold before it was bought")

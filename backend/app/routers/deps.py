@@ -1,5 +1,7 @@
 """Shared helpers for the routers: loading rows with their relations, 404/422/409 errors."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import date
 from typing import Annotated
 
@@ -10,6 +12,7 @@ from sqlmodel import Session, select
 from app.db import get_session
 from app.models import Category, CategoryType, Completion, Copy, CopyFormat, GameStatus, Item, ItemKind, PlayLink
 from app.settings import AppSettings, load_settings
+from app.split import SplitError
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -38,6 +41,15 @@ def invalid(detail: str) -> HTTPException:
 
 def conflict(detail: str) -> HTTPException:
     return HTTPException(status_code=409, detail=detail)
+
+
+@contextmanager
+def split_errors_as_invalid() -> Iterator[None]:
+    """A price that can't be split (e.g. manual shares that don't add up) is a 422 with the reason."""
+    try:
+        yield
+    except SplitError as e:
+        raise invalid(str(e)) from e
 
 
 ITEM_LOAD_OPTIONS = (

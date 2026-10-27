@@ -2,8 +2,9 @@ from datetime import date
 
 import pytest
 
-from app.bundles import BundleSplitError, apply_split, split_amount
+from app.bundles import apply_split
 from app.models import Bundle, Copy, SplitMode
+from app.split import SplitError, split_amount
 
 
 def test_proportional_example_from_plan():
@@ -31,7 +32,7 @@ def test_equal_split_with_odd_cents():
 
 def test_manual_split_must_match_total():
     assert split_amount(1000, SplitMode.manual, manual_shares=[600, 400]) == [600, 400]
-    with pytest.raises(BundleSplitError, match="1.00 € left to assign"):
+    with pytest.raises(SplitError, match="1.00 € left to assign"):
         split_amount(1000, SplitMode.manual, manual_shares=[600, 300])
 
 
@@ -44,7 +45,7 @@ def test_manual_split_must_match_total():
     ],
 )
 def test_proportional_needs_reference_prices(kwargs):
-    with pytest.raises(BundleSplitError):
+    with pytest.raises(SplitError):
         split_amount(1000, SplitMode.proportional, **kwargs)
 
 
@@ -101,5 +102,5 @@ def test_sold_as_bundle_manual_mode_splits_sale_like_purchase():
 
 
 def test_sold_as_bundle_needs_sell_total():
-    with pytest.raises(BundleSplitError):
+    with pytest.raises(SplitError):
         apply_split(_bundle(sold_as_bundle=True))
