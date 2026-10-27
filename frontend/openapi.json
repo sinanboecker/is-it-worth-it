@@ -2025,6 +2025,132 @@
         }
       }
     },
+    "/api/v1/import/finish-dates/preview": {
+      "post": {
+        "tags": [
+          "import & export"
+        ],
+        "summary": "Finish Dates Preview",
+        "description": "Read a list of finish dates and match the games. Nothing is saved.",
+        "operationId": "finish_dates_preview_api_v1_import_finish_dates_preview_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_finish_dates_preview_api_v1_import_finish_dates_preview_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishImportPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import/finish-dates/plan": {
+      "post": {
+        "tags": [
+          "import & export"
+        ],
+        "summary": "Finish Dates Plan",
+        "description": "The preview again for rows where the user picked (or cleared) the game.",
+        "operationId": "finish_dates_plan_api_v1_import_finish_dates_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishRows"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishImportPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import/finish-dates/commit": {
+      "post": {
+        "tags": [
+          "import & export"
+        ],
+        "summary": "Finish Dates Commit",
+        "description": "Save the finish dates: fill unknown dates, add finishes. All or nothing.",
+        "operationId": "finish_dates_commit_api_v1_import_finish_dates_commit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishRows"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishImportResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/import-csv/template": {
       "get": {
         "tags": [
@@ -4158,6 +4284,21 @@
         ],
         "title": "Body_csv_preview_api_v1_categories__category_id__import_csv_preview_post"
       },
+      "Body_finish_dates_preview_api_v1_import_finish_dates_preview_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "text: \"Month, YYYY\" headings, then \"DD Game name, Platform\" lines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_finish_dates_preview_api_v1_import_finish_dates_preview_post"
+      },
       "Body_import_json_api_v1_import_json_post": {
         "properties": {
           "file": {
@@ -4943,6 +5084,29 @@
         },
         "type": "object",
         "title": "BundleUpdate"
+      },
+      "Candidate": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category"
+        ],
+        "title": "Candidate"
       },
       "CandidateOut": {
         "properties": {
@@ -6366,6 +6530,265 @@
           "remaining"
         ],
         "title": "FetchMissingResult"
+      },
+      "FinishImportPreview": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/FinishRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "fill": {
+            "type": "integer",
+            "title": "Fill"
+          },
+          "add": {
+            "type": "integer",
+            "title": "Add"
+          },
+          "already": {
+            "type": "integer",
+            "title": "Already"
+          },
+          "skip": {
+            "type": "integer",
+            "title": "Skip"
+          },
+          "can_commit": {
+            "type": "boolean",
+            "title": "Can Commit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "fill",
+          "add",
+          "already",
+          "skip",
+          "can_commit"
+        ],
+        "title": "FinishImportPreview"
+      },
+      "FinishImportResult": {
+        "properties": {
+          "filled": {
+            "type": "integer",
+            "title": "Filled"
+          },
+          "added": {
+            "type": "integer",
+            "title": "Added"
+          },
+          "already": {
+            "type": "integer",
+            "title": "Already"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filled",
+          "added",
+          "already",
+          "skipped"
+        ],
+        "title": "FinishImportResult"
+      },
+      "FinishRow": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "picked": {
+            "type": "boolean",
+            "title": "Picked",
+            "default": false
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "default": []
+          },
+          "item_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Name"
+          },
+          "match": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "suggested",
+              "ambiguous",
+              "not_found",
+              "picked"
+            ],
+            "title": "Match",
+            "default": "not_found"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "fill",
+              "add",
+              "already",
+              "skip"
+            ],
+            "title": "Action",
+            "default": "skip"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "title": "Candidates",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "finished_on",
+          "name"
+        ],
+        "title": "FinishRow"
+      },
+      "FinishRowIn": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "picked": {
+            "type": "boolean",
+            "title": "Picked",
+            "default": false
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "finished_on",
+          "name"
+        ],
+        "title": "FinishRowIn"
+      },
+      "FinishRows": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/FinishRowIn"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "title": "FinishRows"
       },
       "FormatOut": {
         "properties": {

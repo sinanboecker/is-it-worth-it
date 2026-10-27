@@ -1,4 +1,4 @@
-"""CSV game import per category, bundle import, JSON export and import/restore."""
+"""CSV game import per category, bundle and finish-date import, JSON export and import/restore."""
 
 import json
 from datetime import date
@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, ValidationError
 
-from app import bundle_import, config, csv_import, json_io
+from app import bundle_import, config, csv_import, finish_import, json_io
 from app.models import CopyFormat
 from app.routers.deps import SessionDep, invalid, load_category, load_hardware
 
@@ -124,6 +124,40 @@ async def bundle_import_commit(
         raise invalid(e.problems) from e
     except ValueError as e:
         raise invalid(str(e)) from e
+
+
+# --- finish dates -----------------------------------------------------------------------------
+
+
+class FinishRows(BaseModel):
+    rows: list[finish_import.FinishRowIn]
+
+
+@router.post("/import/finish-dates/preview", response_model=finish_import.FinishImportPreview)
+async def finish_dates_preview(
+    session: SessionDep,
+    file: Annotated[UploadFile, File(description='text: "Month, YYYY" headings, then "DD Game name, Platform" lines')],
+):
+    """Read a list of finish dates and match the games. Nothing is saved."""
+    try:
+        return finish_import.preview(session, await _read_upload(file))
+    except ValueError as e:
+        raise invalid(str(e)) from e
+
+
+@router.post("/import/finish-dates/plan", response_model=finish_import.FinishImportPreview)
+def finish_dates_plan(data: FinishRows, session: SessionDep):
+    """The preview again for rows where the user picked (or cleared) the game."""
+    return finish_import.plan(session, data.rows)
+
+
+@router.post("/import/finish-dates/commit", response_model=finish_import.FinishImportResult)
+def finish_dates_commit(data: FinishRows, session: SessionDep):
+    """Save the finish dates: fill unknown dates, add finishes. All or nothing."""
+    try:
+        return finish_import.commit(session, data.rows)
+    except finish_import.FinishImportError as e:
+        raise invalid(e.problems) from e
 
 
 @router.get("/import-csv/template", response_class=Response)

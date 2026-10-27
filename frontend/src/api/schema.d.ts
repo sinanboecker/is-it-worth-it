@@ -455,6 +455,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/import/finish-dates/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish Dates Preview
+         * @description Read a list of finish dates and match the games. Nothing is saved.
+         */
+        post: operations["finish_dates_preview_api_v1_import_finish_dates_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/finish-dates/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish Dates Plan
+         * @description The preview again for rows where the user picked (or cleared) the game.
+         */
+        post: operations["finish_dates_plan_api_v1_import_finish_dates_plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/finish-dates/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish Dates Commit
+         * @description Save the finish dates: fill unknown dates, add finishes. All or nothing.
+         */
+        post: operations["finish_dates_commit_api_v1_import_finish_dates_commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/import-csv/template": {
         parameters: {
             query?: never;
@@ -1174,6 +1234,14 @@ export interface components {
              */
             mapping?: string | null;
         };
+        /** Body_finish_dates_preview_api_v1_import_finish_dates_preview_post */
+        Body_finish_dates_preview_api_v1_import_finish_dates_preview_post: {
+            /**
+             * File
+             * @description text: "Month, YYYY" headings, then "DD Game name, Platform" lines
+             */
+            file: string;
+        };
         /** Body_import_json_api_v1_import_json_post */
         Body_import_json_api_v1_import_json_post: {
             /**
@@ -1412,6 +1480,15 @@ export interface components {
             manual_shares?: {
                 [key: string]: number;
             } | null;
+        };
+        /** Candidate */
+        Candidate: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
         };
         /** CandidateOut */
         CandidateOut: {
@@ -1796,6 +1873,102 @@ export interface components {
             review: components["schemas"]["ReviewItem"][];
             /** Remaining */
             remaining: number;
+        };
+        /** FinishImportPreview */
+        FinishImportPreview: {
+            /** Rows */
+            rows: components["schemas"]["FinishRow"][];
+            /** Fill */
+            fill: number;
+            /** Add */
+            add: number;
+            /** Already */
+            already: number;
+            /** Skip */
+            skip: number;
+            /** Can Commit */
+            can_commit: boolean;
+        };
+        /** FinishImportResult */
+        FinishImportResult: {
+            /** Filled */
+            filled: number;
+            /** Added */
+            added: number;
+            /** Already */
+            already: number;
+            /** Skipped */
+            skipped: number;
+        };
+        /** FinishRow */
+        FinishRow: {
+            /** Line */
+            line: number;
+            /** Finished On */
+            finished_on: string | null;
+            /** Name */
+            name: string;
+            /** Platform */
+            platform?: string | null;
+            /** Item Id */
+            item_id?: number | null;
+            /**
+             * Picked
+             * @default false
+             */
+            picked: boolean;
+            /**
+             * Errors
+             * @default []
+             */
+            errors: string[];
+            /** Item Name */
+            item_name?: string | null;
+            /**
+             * Match
+             * @default not_found
+             * @enum {string}
+             */
+            match: "exact" | "suggested" | "ambiguous" | "not_found" | "picked";
+            /**
+             * Action
+             * @default skip
+             * @enum {string}
+             */
+            action: "fill" | "add" | "already" | "skip";
+            /**
+             * Candidates
+             * @default []
+             */
+            candidates: components["schemas"]["Candidate"][];
+        };
+        /** FinishRowIn */
+        FinishRowIn: {
+            /** Line */
+            line: number;
+            /** Finished On */
+            finished_on: string | null;
+            /** Name */
+            name: string;
+            /** Platform */
+            platform?: string | null;
+            /** Item Id */
+            item_id?: number | null;
+            /**
+             * Picked
+             * @default false
+             */
+            picked: boolean;
+            /**
+             * Errors
+             * @default []
+             */
+            errors: string[];
+        };
+        /** FinishRows */
+        FinishRows: {
+            /** Rows */
+            rows: components["schemas"]["FinishRowIn"][];
         };
         /** FormatOut */
         FormatOut: {
@@ -4071,6 +4244,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BundleImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_dates_preview_api_v1_import_finish_dates_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_finish_dates_preview_api_v1_import_finish_dates_preview_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinishImportPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_dates_plan_api_v1_import_finish_dates_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishRows"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinishImportPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_dates_commit_api_v1_import_finish_dates_commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishRows"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinishImportResult"];
                 };
             };
             /** @description Validation Error */

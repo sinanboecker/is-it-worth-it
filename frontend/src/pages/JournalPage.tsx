@@ -1,6 +1,7 @@
 import {
   Anchor,
   Badge,
+  Button,
   Card,
   Checkbox,
   Group,
@@ -11,11 +12,13 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { IconFileImport } from "@tabler/icons-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCategories, useHeatmap, useJournal } from "@/api/queries";
 import type { JournalEntry } from "@/api/types";
 import { Cover, Empty, PageHeader, QueryView } from "@/components/common";
+import { FinishImportModal } from "@/components/FinishImportModal";
 import { HeatmapCalendar } from "@/components/HeatmapCalendar";
 import { DeviceSelect, Stars } from "@/components/inputs";
 import { day, hours, monthName, perHour } from "@/lib/format";
@@ -108,6 +111,7 @@ export function JournalPage() {
   const [ratingMin, setRatingMin] = useState<string | null>(null);
   const [mastered, setMastered] = useState(false);
   const [open, setOpen] = useState<JournalEntry | null>(null);
+  const [importing, setImporting] = useState(false);
   const journal = useJournal({
     year: year ?? undefined,
     category: category ?? undefined,
@@ -119,7 +123,12 @@ export function JournalPage() {
 
   return (
     <Stack>
-      <PageHeader title="Journal" />
+      <PageHeader title="Journal">
+        <Button variant="default" leftSection={<IconFileImport size={16} />} onClick={() => setImporting(true)}>
+          Import finish dates
+        </Button>
+      </PageHeader>
+      {importing && <FinishImportModal onClose={() => setImporting(false)} />}
 
       <QueryView query={heatmap}>
         {(h) => (
