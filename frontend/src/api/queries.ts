@@ -74,6 +74,15 @@ export const useTop = (query: TopQuery) =>
 export const usePcBuilds = () =>
   useQuery({ queryKey: ["pc", "builds"], queryFn: () => unwrap(api.GET("/api/v1/pc/builds")) });
 
+export const usePcPurchases = () =>
+  useQuery({ queryKey: ["pc", "purchases"], queryFn: () => unwrap(api.GET("/api/v1/pc/purchases")) });
+
+export const usePcSale = (saleId: number) =>
+  useQuery({
+    queryKey: ["pc", "sales", saleId],
+    queryFn: () => unwrap(api.GET("/api/v1/pc/sales/{sale_id}", { params: { path: { sale_id: saleId } } })),
+  });
+
 export const usePcParts = () => useQuery({ queryKey: ["pc", "parts"], queryFn: () => unwrap(api.GET("/api/v1/pc/parts")) });
 
 export const useBundles = () =>

@@ -29,7 +29,7 @@ def split_amount(
 
     if mode is SplitMode.manual:
         if manual_shares is None or len(manual_shares) != n or any(s is None or s < 0 for s in manual_shares):
-            raise BundleSplitError("manual split: every copy needs a price ≥ 0")
+            raise BundleSplitError("manual split: every item needs a price ≥ 0")
         left = total_cents - sum(manual_shares)
         if left != 0:
             raise BundleSplitError(f"manual split: {left / 100:.2f} € left to assign")
@@ -43,7 +43,7 @@ def split_amount(
 
     # proportional
     if reference_prices is None or len(reference_prices) != n or any(p is None or p < 0 for p in reference_prices):
-        raise BundleSplitError("proportional split: every copy needs a reference price ≥ 0")
+        raise BundleSplitError("proportional split: every item needs a reference price ≥ 0")
     weight_sum = sum(reference_prices)
     if weight_sum == 0:
         raise BundleSplitError("proportional split: the reference prices must not all be 0")

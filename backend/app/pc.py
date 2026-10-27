@@ -4,13 +4,18 @@ A part is used from its buy date until its "used until" date (or today while it'
 buy price minus the sell price. A sold part leaves its build, so a build only adds up what its parts cost; it runs from
 its first part's buy date until all of them are out of use, and with a linked device it also shows that device's game
 hours.
+
+Parts bought together (a purchase, e.g. a whole PC) share its price, and parts sold together (a sale) share its price,
+split like a game bundle: equally, proportionally (a purchase by the parts' values, a sale by their buy prices) or by
+hand.
 """
 
 from dataclasses import dataclass
 from datetime import date
 
 from app import calc
-from app.models import PcBuild, PcPart
+from app.bundles import BundleSplitError, split_amount
+from app.models import PcBuild, PcPart, PcPurchase, PcSale, SplitMode
 
 DAYS_PER_YEAR = 365.25
 
@@ -64,3 +69,67 @@ def build_totals(build: PcBuild, global_break_even_cph: int) -> BuildTotals:
         hours=hours,
         cost_per_hour_cents=cost_per_hour,
     )
+
+
+# --- bought / sold together -------------------------------------------------------------------
+
+
+class SplitError(ValueError):
+    pass
+
+
+def split_purchase(purchase: PcPurchase) -> None:
+    """Set the buy price (its share) and buy date of every part of the purchase."""
+    parts = purchase.parts
+    if not parts:
+        return
+    try:
+        shares = split_amount(
+            purchase.total_price_cents,
+            purchase.split_mode,
+            reference_prices=[p.value_cents for p in parts],
+            manual_shares=[p.buy_price_cents for p in parts],
+            count=len(parts),
+        )
+    except BundleSplitError as e:
+        raise SplitError(str(e)) from e
+    for part, share in zip(parts, shares, strict=True):
+        if part.used_until is not None and part.used_until < purchase.buy_date:
+            raise SplitError(f"{part.name}: 'used until' is before the purchase date")
+        part.buy_price_cents = share
+        part.buy_date = purchase.buy_date
+
+
+def split_sale(sale: PcSale) -> None:
+    """Set the sell price (its share) of every part of the sale; sold parts leave their build and are used until the
+    sale date (unless they were retired earlier)."""
+    parts = sale.parts
+    if not parts:
+        return
+    weights = [p.buy_price_cents for p in parts]
+    mode = SplitMode.equal if sale.split_mode is SplitMode.proportional and not any(weights) else sale.split_mode
+    try:
+        shares = split_amount(
+            sale.total_price_cents,
+            mode,
+            reference_prices=weights,
+            manual_shares=[p.sell_price_cents for p in parts],
+            count=len(parts),
+        )
+    except BundleSplitError as e:
+        raise SplitError(str(e)) from e
+    for part, share in zip(parts, shares, strict=True):
+        if sale.sell_date < part.buy_date:
+            raise SplitError(f"{part.name}: sold before it was bought")
+        part.sell_price_cents = share
+        part.build_id = None
+        if part.used_until is None:
+            part.used_until = sale.sell_date
+
+
+def unsell(part: PcPart, sale_date: date) -> None:
+    """Take a part out of its sale: it isn't sold any more (and in use again if the sale ended its use)."""
+    part.sale_id = None
+    part.sell_price_cents = None
+    if part.used_until == sale_date:
+        part.used_until = None

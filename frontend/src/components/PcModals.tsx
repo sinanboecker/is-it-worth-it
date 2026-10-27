@@ -41,7 +41,40 @@ export const byCategory = (parts: PcPart[]) =>
     (a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.buy_date.localeCompare(b.buy_date),
   );
 
-function confirmDelete(title: string, text: string, onConfirm: () => void) {
+/** Category picker with the category icons. */
+export function PartCategorySelect({
+  value,
+  onChange,
+  label = "Category",
+}: {
+  value: PcPartCategory | null;
+  onChange: (category: PcPartCategory) => void;
+  label?: string;
+}) {
+  return (
+    <Select
+      label={label}
+      placeholder="Choose one"
+      data={Object.entries(PC_PART_CATEGORY).map(([v, l]) => ({ value: v, label: l }))}
+      value={value}
+      onChange={(v) => v && onChange(v as PcPartCategory)}
+      renderOption={({ option }) => {
+        const Icon = PC_PART_ICON[option.value as PcPartCategory];
+        return (
+          <Group gap="xs">
+            <Icon size={16} />
+            {option.label}
+          </Group>
+        );
+      }}
+      leftSection={value ? createElement(PC_PART_ICON[value], { size: 16 }) : undefined}
+      allowDeselect={false}
+      required
+    />
+  );
+}
+
+export function confirmDelete(title: string, text: string, onConfirm: () => void) {
   modals.openConfirmModal({
     title,
     children: <Text size="sm">{text}</Text>,
@@ -101,7 +134,17 @@ export function PcBuildModal({ build, onClose }: { build?: PcBuild; onClose: () 
 }
 
 /** New or edit a part: name, build, bought / used until, buy and sell price, notes. */
-export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId?: number | null; onClose: () => void }) {
+export function PcPartModal({
+  part,
+  buildId,
+  onClose,
+  onEditSale,
+}: {
+  part?: PcPart;
+  buildId?: number | null;
+  onClose: () => void;
+  onEditSale?: (saleId: number) => void;
+}) {
   const builds = usePcBuilds();
   const [name, setName] = useState(part?.name ?? "");
   const [category, setCategory] = useState<PcPartCategory | null>(part?.category ?? null);
@@ -113,6 +156,8 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
   const [notes, setNotes] = useState(part?.notes ?? "");
   const datesWrong = Boolean(buyDate && usedUntil && usedUntil < buyDate);
   const sold = sellPrice !== null; // a sold part leaves its build
+  const fromPurchase = part?.purchase_id ? `Set by the purchase “${part.purchase_name}”.` : undefined;
+  const saleId = part?.sale_id;
   const save = useApiMutation(
     () => {
       const body = {
@@ -140,25 +185,7 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
       <Stack>
         <Group grow align="flex-start">
           <TextInput label="Name" placeholder="e.g. RTX 4070 Super" value={name} onChange={(e) => setName(e.currentTarget.value)} required data-autofocus />
-          <Select
-            label="Category"
-            placeholder="Choose one"
-            data={Object.entries(PC_PART_CATEGORY).map(([value, label]) => ({ value, label }))}
-            value={category}
-            onChange={(v) => setCategory(v as PcPartCategory | null)}
-            renderOption={({ option }) => {
-              const Icon = PC_PART_ICON[option.value as PcPartCategory];
-              return (
-                <Group gap="xs">
-                  <Icon size={16} />
-                  {option.label}
-                </Group>
-              );
-            }}
-            leftSection={category ? createElement(PC_PART_ICON[category], { size: 16 }) : undefined}
-            allowDeselect={false}
-            required
-          />
+          <PartCategorySelect value={category} onChange={setCategory} />
         </Group>
         <Select
           label="Build"
@@ -171,7 +198,7 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
           clearable
         />
         <Group grow align="flex-start">
-          <DateField label="Bought on" value={buyDate} onChange={setBuyDate} required />
+          <DateField label="Bought on" value={buyDate} onChange={setBuyDate} required disabled={Boolean(fromPurchase)} />
           <DateField
             label="Used until"
             placeholder="Still in use"
@@ -182,9 +209,29 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
           />
         </Group>
         <Group grow align="flex-start">
-          <MoneyInput label="Buy price" value={buyPrice} onChange={setBuyPrice} required />
-          <MoneyInput label="Sell price" value={sellPrice} onChange={setSellPrice} />
+          <MoneyInput
+            label="Buy price"
+            description={fromPurchase}
+            value={buyPrice}
+            onChange={setBuyPrice}
+            required
+            disabled={Boolean(fromPurchase)}
+          />
+          <MoneyInput
+            label="Sell price"
+            description={saleId ? `Sold together: “${part!.sale_name}”.` : undefined}
+            value={sellPrice}
+            onChange={setSellPrice}
+            disabled={Boolean(saleId)}
+          />
         </Group>
+        {saleId && onEditSale && (
+          <Group justify="flex-end" mt={-8}>
+            <Button size="xs" variant="subtle" onClick={() => onEditSale(saleId)}>
+              Edit sale
+            </Button>
+          </Group>
+        )}
         <Textarea label="Notes" value={notes} onChange={(e) => setNotes(e.currentTarget.value)} autosize minRows={2} />
         <Group justify={part ? "space-between" : "flex-end"}>
           {part && (

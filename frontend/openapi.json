@@ -3534,6 +3534,7 @@
           "pc builds"
         ],
         "summary": "Delete Part",
+        "description": "Deletes the part; its purchase and sale are split again across the other parts.",
         "operationId": "delete_part_api_v1_pc_parts__part_id__delete",
         "parameters": [
           {
@@ -3549,6 +3550,325 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/purchases": {
+      "get": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "List Purchases",
+        "description": "Parts bought together (e.g. whole PCs), the newest first.",
+        "operationId": "list_purchases_api_v1_pc_purchases_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PcPurchaseRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Purchases Api V1 Pc Purchases Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Create Purchase",
+        "operationId": "create_purchase_api_v1_pc_purchases_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcPurchaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcPurchaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/purchases/{purchase_id}": {
+      "put": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Update Purchase",
+        "operationId": "update_purchase_api_v1_pc_purchases__purchase_id__put",
+        "parameters": [
+          {
+            "name": "purchase_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Purchase Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcPurchaseIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcPurchaseRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Delete Purchase",
+        "description": "Deletes the purchase; its parts stay with the price and date they have now.",
+        "operationId": "delete_purchase_api_v1_pc_purchases__purchase_id__delete",
+        "parameters": [
+          {
+            "name": "purchase_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Purchase Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/sales/{sale_id}": {
+      "get": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Get Sale",
+        "operationId": "get_sale_api_v1_pc_sales__sale_id__get",
+        "parameters": [
+          {
+            "name": "sale_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sale Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcSaleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Update Sale",
+        "operationId": "update_sale_api_v1_pc_sales__sale_id__put",
+        "parameters": [
+          {
+            "name": "sale_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sale Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcSaleIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcSaleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Delete Sale",
+        "description": "Deletes the sale: its parts aren't sold any more.",
+        "operationId": "delete_sale_api_v1_pc_sales__sale_id__delete",
+        "parameters": [
+          {
+            "name": "sale_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sale Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pc/sales": {
+      "post": {
+        "tags": [
+          "pc builds"
+        ],
+        "summary": "Create Sale",
+        "description": "Sell parts together for one price, split across them; they leave their builds.",
+        "operationId": "create_sale_api_v1_pc_sales_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PcSaleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PcSaleRead"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -8126,6 +8446,64 @@
             ],
             "title": "Notes"
           },
+          "purchase_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Id"
+          },
+          "purchase_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Name",
+            "description": "bought together with other parts: buy price and date come from it"
+          },
+          "value_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Cents",
+            "description": "what the part alone was worth (splits its purchase proportionally)"
+          },
+          "sale_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Id"
+          },
+          "sale_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Name",
+            "description": "sold together with other parts: the sell price comes from it"
+          },
           "in_use": {
             "type": "boolean",
             "title": "In Use"
@@ -8169,6 +8547,11 @@
           "buy_price_cents",
           "sell_price_cents",
           "notes",
+          "purchase_id",
+          "purchase_name",
+          "value_cents",
+          "sale_id",
+          "sale_name",
           "in_use",
           "used_days",
           "used_years",
@@ -8274,6 +8657,369 @@
         },
         "type": "object",
         "title": "PcPartUpdate"
+      },
+      "PcPurchaseIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "buy_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Buy Date"
+          },
+          "total_price_cents": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Price Cents"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "split_mode": {
+            "$ref": "#/components/schemas/SplitMode",
+            "default": "equal"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/PcPurchasePartIn"
+            },
+            "type": "array",
+            "title": "Parts",
+            "description": "all parts; on update, parts left out stay without purchase",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "buy_date",
+          "total_price_cents"
+        ],
+        "title": "PcPurchaseIn"
+      },
+      "PcPurchasePartIn": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "an existing part; without it a new part is created"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PcPartCategory",
+            "default": "other"
+          },
+          "value_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Cents",
+            "description": "what the part alone is worth (split mode proportional)"
+          },
+          "buy_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Price Cents",
+            "description": "its share (split mode manual)"
+          },
+          "build_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PcPurchasePartIn"
+      },
+      "PcPurchaseRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "buy_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Buy Date"
+          },
+          "total_price_cents": {
+            "type": "integer",
+            "title": "Total Price Cents"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "split_mode": {
+            "$ref": "#/components/schemas/SplitMode"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/PcPartRead"
+            },
+            "type": "array",
+            "title": "Parts"
+          },
+          "sold_parts": {
+            "type": "integer",
+            "title": "Sold Parts"
+          },
+          "sold_cents": {
+            "type": "integer",
+            "title": "Sold Cents",
+            "description": "what its parts were sold for so far"
+          },
+          "left_cents": {
+            "type": "integer",
+            "title": "Left Cents",
+            "description": "price minus sold so far (negative: the purchase made a profit)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "buy_date",
+          "total_price_cents",
+          "store",
+          "split_mode",
+          "notes",
+          "parts",
+          "sold_parts",
+          "sold_cents",
+          "left_cents"
+        ],
+        "title": "PcPurchaseRead"
+      },
+      "PcSaleIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sell_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Sell Date"
+          },
+          "total_price_cents": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Price Cents"
+          },
+          "split_mode": {
+            "$ref": "#/components/schemas/SplitMode",
+            "description": "proportional = by the parts' buy prices",
+            "default": "proportional"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/PcSalePartIn"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Parts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sell_date",
+          "total_price_cents",
+          "parts"
+        ],
+        "title": "PcSaleIn"
+      },
+      "PcSalePartIn": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents",
+            "description": "its share (split mode manual)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "PcSalePartIn"
+      },
+      "PcSaleRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sell_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Sell Date"
+          },
+          "total_price_cents": {
+            "type": "integer",
+            "title": "Total Price Cents"
+          },
+          "split_mode": {
+            "$ref": "#/components/schemas/SplitMode"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/PcPartRead"
+            },
+            "type": "array",
+            "title": "Parts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "sell_date",
+          "total_price_cents",
+          "split_mode",
+          "notes",
+          "parts"
+        ],
+        "title": "PcSaleRead"
       },
       "PlayLinkIn": {
         "properties": {

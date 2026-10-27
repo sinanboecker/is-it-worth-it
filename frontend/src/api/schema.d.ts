@@ -948,12 +948,99 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Part */
+        /**
+         * Delete Part
+         * @description Deletes the part; its purchase and sale are split again across the other parts.
+         */
         delete: operations["delete_part_api_v1_pc_parts__part_id__delete"];
         options?: never;
         head?: never;
         /** Update Part */
         patch: operations["update_part_api_v1_pc_parts__part_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pc/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Purchases
+         * @description Parts bought together (e.g. whole PCs), the newest first.
+         */
+        get: operations["list_purchases_api_v1_pc_purchases_get"];
+        put?: never;
+        /** Create Purchase */
+        post: operations["create_purchase_api_v1_pc_purchases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pc/purchases/{purchase_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Purchase */
+        put: operations["update_purchase_api_v1_pc_purchases__purchase_id__put"];
+        post?: never;
+        /**
+         * Delete Purchase
+         * @description Deletes the purchase; its parts stay with the price and date they have now.
+         */
+        delete: operations["delete_purchase_api_v1_pc_purchases__purchase_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pc/sales/{sale_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sale */
+        get: operations["get_sale_api_v1_pc_sales__sale_id__get"];
+        /** Update Sale */
+        put: operations["update_sale_api_v1_pc_sales__sale_id__put"];
+        post?: never;
+        /**
+         * Delete Sale
+         * @description Deletes the sale: its parts aren't sold any more.
+         */
+        delete: operations["delete_sale_api_v1_pc_sales__sale_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pc/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Sale
+         * @description Sell parts together for one price, split across them; they leave their builds.
+         */
+        post: operations["create_sale_api_v1_pc_sales_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/health": {
@@ -2309,6 +2396,25 @@ export interface components {
             sell_price_cents: number | null;
             /** Notes */
             notes: string | null;
+            /** Purchase Id */
+            purchase_id: number | null;
+            /**
+             * Purchase Name
+             * @description bought together with other parts: buy price and date come from it
+             */
+            purchase_name: string | null;
+            /**
+             * Value Cents
+             * @description what the part alone was worth (splits its purchase proportionally)
+             */
+            value_cents: number | null;
+            /** Sale Id */
+            sale_id: number | null;
+            /**
+             * Sale Name
+             * @description sold together with other parts: the sell price comes from it
+             */
+            sale_name: string | null;
             /** In Use */
             in_use: boolean;
             /**
@@ -2346,6 +2452,139 @@ export interface components {
             sell_price_cents?: number | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** PcPurchaseIn */
+        PcPurchaseIn: {
+            /** Name */
+            name: string;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Total Price Cents */
+            total_price_cents: number;
+            /** Store */
+            store?: string | null;
+            /** @default equal */
+            split_mode: components["schemas"]["SplitMode"];
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Parts
+             * @description all parts; on update, parts left out stay without purchase
+             * @default []
+             */
+            parts: components["schemas"]["PcPurchasePartIn"][];
+        };
+        /** PcPurchasePartIn */
+        PcPurchasePartIn: {
+            /**
+             * Id
+             * @description an existing part; without it a new part is created
+             */
+            id?: number | null;
+            /** Name */
+            name: string;
+            /** @default other */
+            category: components["schemas"]["PcPartCategory"];
+            /**
+             * Value Cents
+             * @description what the part alone is worth (split mode proportional)
+             */
+            value_cents?: number | null;
+            /**
+             * Buy Price Cents
+             * @description its share (split mode manual)
+             */
+            buy_price_cents?: number | null;
+            /** Build Id */
+            build_id?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** PcPurchaseRead */
+        PcPurchaseRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Total Price Cents */
+            total_price_cents: number;
+            /** Store */
+            store: string | null;
+            split_mode: components["schemas"]["SplitMode"];
+            /** Notes */
+            notes: string | null;
+            /** Parts */
+            parts: components["schemas"]["PcPartRead"][];
+            /** Sold Parts */
+            sold_parts: number;
+            /**
+             * Sold Cents
+             * @description what its parts were sold for so far
+             */
+            sold_cents: number;
+            /**
+             * Left Cents
+             * @description price minus sold so far (negative: the purchase made a profit)
+             */
+            left_cents: number;
+        };
+        /** PcSaleIn */
+        PcSaleIn: {
+            /** Name */
+            name?: string | null;
+            /**
+             * Sell Date
+             * Format: date
+             */
+            sell_date: string;
+            /** Total Price Cents */
+            total_price_cents: number;
+            /**
+             * @description proportional = by the parts' buy prices
+             * @default proportional
+             */
+            split_mode: components["schemas"]["SplitMode"];
+            /** Notes */
+            notes?: string | null;
+            /** Parts */
+            parts: components["schemas"]["PcSalePartIn"][];
+        };
+        /** PcSalePartIn */
+        PcSalePartIn: {
+            /** Id */
+            id: number;
+            /**
+             * Sell Price Cents
+             * @description its share (split mode manual)
+             */
+            sell_price_cents?: number | null;
+        };
+        /** PcSaleRead */
+        PcSaleRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string | null;
+            /**
+             * Sell Date
+             * Format: date
+             */
+            sell_date: string;
+            /** Total Price Cents */
+            total_price_cents: number;
+            split_mode: components["schemas"]["SplitMode"];
+            /** Notes */
+            notes: string | null;
+            /** Parts */
+            parts: components["schemas"]["PcPartRead"][];
         };
         /** PlayLinkIn */
         PlayLinkIn: {
@@ -4791,6 +5030,251 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PcPartRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_purchases_api_v1_pc_purchases_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcPurchaseRead"][];
+                };
+            };
+        };
+    };
+    create_purchase_api_v1_pc_purchases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcPurchaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcPurchaseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_purchase_api_v1_pc_purchases__purchase_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchase_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcPurchaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcPurchaseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_purchase_api_v1_pc_purchases__purchase_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchase_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_sale_api_v1_pc_sales__sale_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcSaleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_sale_api_v1_pc_sales__sale_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcSaleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcSaleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_sale_api_v1_pc_sales__sale_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_sale_api_v1_pc_sales_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PcSaleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PcSaleRead"];
                 };
             };
             /** @description Validation Error */

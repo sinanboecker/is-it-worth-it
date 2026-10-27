@@ -36,6 +36,17 @@ def fill(api):
     )
     build = api.post("/pc/builds", {"name": "2024 build", "hardware_id": switch["id"]})
     api.post("/pc/parts", {"name": "GPU", "build_id": build["id"], "buy_date": "2024-01-01", "buy_price_cents": 50000})
+    purchase = api.post(
+        "/pc/purchases",
+        {
+            "name": "Used PC",
+            "buy_date": "2024-02-01",
+            "total_price_cents": 30000,
+            "parts": [{"name": "A"}, {"name": "B"}],
+        },
+    )
+    parts = [{"id": p["id"]} for p in purchase["parts"]]
+    api.post("/pc/sales", {"sell_date": "2024-05-01", "total_price_cents": 10000, "parts": parts})
     api.put("/settings", {"break_even_cph": 250})
     return game
 
@@ -61,8 +72,8 @@ def test_round_trip(api, data_dir):
     first = export(api).json()
     assert first["schema_version"] == 1
     assert len(first["tables"]["copies"]) == 4  # console, game, 2 bundle games
-    assert (len(first["tables"]["pc_builds"]), len(first["tables"]["pc_parts"])) == (1, 1)
-    builds_before = api.get("/pc/builds")
+    assert [len(first["tables"][t]) for t in ("pc_builds", "pc_purchases", "pc_sales", "pc_parts")] == [1, 1, 1, 3]
+    builds_before, parts_before = api.get("/pc/builds"), api.get("/pc/parts")
 
     response = upload(api, json.dumps(first).encode(), mode="replace")
     assert response.status_code == 200, response.text
@@ -72,7 +83,7 @@ def test_round_trip(api, data_dir):
     assert strip_time(first) == strip_time(second)
     assert api.get(f"/items/{game['id']}") == before_game  # derived values identical too
     assert api.get("/settings")["break_even_cph"] == 250
-    assert api.get("/pc/builds") == builds_before
+    assert (api.get("/pc/builds"), api.get("/pc/parts")) == (builds_before, parts_before)
 
 
 def test_empty_mode_refuses_existing_data(api, data_dir):

@@ -566,6 +566,11 @@ class PcPartRead(BaseModel):
     buy_price_cents: int
     sell_price_cents: int | None
     notes: str | None
+    purchase_id: int | None
+    purchase_name: str | None = Field(description="bought together with other parts: buy price and date come from it")
+    value_cents: int | None = Field(description="what the part alone was worth (splits its purchase proportionally)")
+    sale_id: int | None
+    sale_name: str | None = Field(description="sold together with other parts: the sell price comes from it")
     in_use: bool
     used_days: int = Field(description="from the buy date until 'used until', or today while in use")
     used_years: float
@@ -598,3 +603,61 @@ class PcBuildRead(BaseModel):
     in_use: bool
     hours: float | None = Field(description="game hours of the linked device")
     cost_per_hour_cents: int | None = Field(description="buy price of the parts per game hour")
+
+
+class PcPurchasePartIn(BaseModel):
+    id: int | None = Field(None, description="an existing part; without it a new part is created")
+    name: str = Field(min_length=1)
+    category: PcPartCategory = PcPartCategory.other
+    value_cents: Cents | None = Field(None, description="what the part alone is worth (split mode proportional)")
+    buy_price_cents: Cents | None = Field(None, description="its share (split mode manual)")
+    build_id: int | None = None
+    notes: str | None = None
+
+
+class PcPurchaseIn(BaseModel):
+    name: str = Field(min_length=1)
+    buy_date: date
+    total_price_cents: Cents
+    store: str | None = None
+    split_mode: SplitMode = SplitMode.equal
+    notes: str | None = None
+    parts: list[PcPurchasePartIn] = Field([], description="all parts; on update, parts left out stay without purchase")
+
+
+class PcPurchaseRead(BaseModel):
+    id: int
+    name: str
+    buy_date: date
+    total_price_cents: int
+    store: str | None
+    split_mode: SplitMode
+    notes: str | None
+    parts: list[PcPartRead]
+    sold_parts: int
+    sold_cents: int = Field(description="what its parts were sold for so far")
+    left_cents: int = Field(description="price minus sold so far (negative: the purchase made a profit)")
+
+
+class PcSalePartIn(BaseModel):
+    id: int
+    sell_price_cents: Cents | None = Field(None, description="its share (split mode manual)")
+
+
+class PcSaleIn(BaseModel):
+    name: str | None = None
+    sell_date: date
+    total_price_cents: Cents
+    split_mode: SplitMode = Field(SplitMode.proportional, description="proportional = by the parts' buy prices")
+    notes: str | None = None
+    parts: list[PcSalePartIn] = Field(min_length=1)
+
+
+class PcSaleRead(BaseModel):
+    id: int
+    name: str | None
+    sell_date: date
+    total_price_cents: int
+    split_mode: SplitMode
+    notes: str | None
+    parts: list[PcPartRead]

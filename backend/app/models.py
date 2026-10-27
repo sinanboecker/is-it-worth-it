@@ -278,6 +278,33 @@ class PcPartCategory(StrEnum):
     other = "other"
 
 
+class PcPurchase(SQLModel, table=True):
+    """Parts bought together, e.g. a whole PC: one price, split across the parts (like a game bundle)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    buy_date: date
+    total_price_cents: int
+    store: str | None = None
+    split_mode: SplitMode = SplitMode.equal
+    notes: str | None = None
+
+    parts: list["PcPart"] = Relationship(back_populates="purchase", sa_relationship_kwargs={"order_by": "PcPart.id"})
+
+
+class PcSale(SQLModel, table=True):
+    """Parts sold together: one price, split across the parts."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str | None = None
+    sell_date: date
+    total_price_cents: int
+    split_mode: SplitMode = SplitMode.proportional  # proportional = by the parts' buy prices
+    notes: str | None = None
+
+    parts: list["PcPart"] = Relationship(back_populates="sale", sa_relationship_kwargs={"order_by": "PcPart.id"})
+
+
 class PcPart(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
@@ -285,8 +312,13 @@ class PcPart(SQLModel, table=True):
     build_id: int | None = Field(default=None, foreign_key="pcbuild.id", index=True, ondelete="SET NULL")
     buy_date: date
     used_until: date | None = None  # None = still in use
-    buy_price_cents: int
-    sell_price_cents: int | None = None
+    buy_price_cents: int  # set by the purchase when bought together
+    sell_price_cents: int | None = None  # set by the sale when sold together
     notes: str | None = None
+    purchase_id: int | None = Field(default=None, foreign_key="pcpurchase.id", index=True, ondelete="SET NULL")
+    value_cents: int | None = None  # what the part alone was worth, for splitting its purchase proportionally
+    sale_id: int | None = Field(default=None, foreign_key="pcsale.id", index=True, ondelete="SET NULL")
 
     build: PcBuild | None = Relationship(back_populates="parts")
+    purchase: PcPurchase | None = Relationship(back_populates="parts")
+    sale: PcSale | None = Relationship(back_populates="parts")
