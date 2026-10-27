@@ -36,6 +36,7 @@ GAMES = {
     4: game(4, "Tetris", "1984-06-06"),
     5: game(5, "Tetris", "1989-06-14"),
     6: game(6, "Hades II", "2025-09-25", ("PC",)),
+    7: game(7, "Ghost Recon Phantoms", "2014-04-10", ("PC",)),  # found by search, but gone (see GONE)
     10: game(10, "The Witcher 3: Wild Hunt – Hearts of Stone", "2015-10-13", ("PC",)),
     11: game(11, "The Witcher 3: Wild Hunt – Blood and Wine", "2016-05-31", ("PC",)),
 }
@@ -54,6 +55,7 @@ STORES = {
     ],
 }
 ADDITIONS = {3: [10, 11], 1: []}
+GONE = {7}  # RAWG entries still in the search index whose details are gone (404), e.g. merged games
 STEAM_APPS = {
     292030: {"name": "The Witcher 3", "dlc": [378648, 378649, 999]},
     378648: {"name": "Hearts of Stone", "price_overview": {"currency": "EUR", "final": 999}},
@@ -98,10 +100,12 @@ class FakeServices:
             return httpx.Response(200, json={"count": len(hits), "results": hits})
         if m := re.fullmatch(r"/api/games/(\d+)", path):
             id_ = int(m.group(1))
-            if id_ not in GAMES:
+            if id_ not in GAMES or id_ in GONE:
                 return httpx.Response(404, json={"detail": "Not found."})
             return httpx.Response(200, json={**GAMES[id_], **DETAILS.get(id_, {})})
         if m := re.fullmatch(r"/api/games/(\d+)/stores", path):
+            if int(m.group(1)) in GONE:
+                return httpx.Response(404, json={"detail": "Not found."})
             results = STORES.get(int(m.group(1)), [])
             return httpx.Response(200, json={"count": len(results), "results": results})
         if m := re.fullmatch(r"/api/games/(\d+)/additions", path):

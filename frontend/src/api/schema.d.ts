@@ -2818,6 +2818,11 @@ export interface components {
             name: string;
             /** Candidates */
             candidates: components["schemas"]["CandidateOut"][];
+            /**
+             * Note
+             * @description why it needs a look, when it isn't just several candidates
+             */
+            note?: string | null;
         };
         /**
          * SplitMode

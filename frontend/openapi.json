@@ -9612,6 +9612,18 @@
             },
             "type": "array",
             "title": "Candidates"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "why it needs a look, when it isn't just several candidates"
           }
         },
         "type": "object",

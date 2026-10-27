@@ -110,6 +110,20 @@ def test_fetch_missing_applies_confident_matches(api, fake):
     assert api.get(f"/items/{zelda['id']}")["genres"] == "Adventure, Action"
 
 
+def test_fetch_missing_goes_on_when_rawgs_best_match_is_gone(api, fake):
+    """RAWG's search can return a game whose details are gone (404): the run must not stop there."""
+    pc = api.category("PC")
+    gone = api.game(pc["id"], name="Ghost Recon Phantoms")
+    zelda = api.game(pc["id"], name="The Legend of Zelda: Tears of the Kingdom")
+
+    result = api.post("/metadata/fetch-missing", {"limit": 8})
+    assert [a["item_id"] for a in result["applied"]] == [zelda["id"]]
+    (review,) = result["review"]
+    assert (review["item_id"], review["candidates"]) == (gone["id"], [])  # its only candidate is gone
+    assert "isn't on RAWG any more" in review["note"]
+    assert api.get(f"/items/{gone['id']}")["rawg_id"] is None
+
+
 def test_best_match_rules():
     def c(id_, name):
         return rawg.Candidate(rawg_id=id_, slug="", name=name, released=None)
@@ -185,3 +199,14 @@ def test_dlc_suggestions_without_any_source(api, fake):
     pc = api.category("PC")
     game = api.game(pc["id"])
     assert api.get(f"/items/{game['id']}/dlc/available") == []
+
+
+def test_info_is_saved_when_the_steam_link_cant_be_loaded(api, fake, monkeypatch):
+    def broken(rawg_id):
+        raise rawg.RawgError("RAWG request limit reached, try again later", 429)
+
+    monkeypatch.setattr(rawg, "steam_app_id", broken)
+    pc = api.category("PC")
+    hades = api.game(pc["id"], name="Hades")
+    hades = api.post(f"/items/{hades['id']}/metadata", {"rawg_id": 2})
+    assert (hades["rawg_id"], hades["steam_app_id"], hades["genres"]) == (2, None, "Roguelike")

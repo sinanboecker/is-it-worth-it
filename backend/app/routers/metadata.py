@@ -55,7 +55,10 @@ def search(q: Annotated[str, Query(min_length=1)]):
 def apply_metadata(session: Session, game: Item, rawg_id: int, rename: bool = False) -> None:
     """Fill the game's metadata from RAWG and store its image (replacing an older RAWG image)."""
     info = _rawg_call(rawg.details, rawg_id)
-    steam_id = _rawg_call(rawg.steam_app_id, rawg_id)
+    try:
+        steam_id = rawg.steam_app_id(rawg_id)
+    except rawg.RawgError:
+        steam_id = None  # the Steam link is extra: the game's info is complete without it
     cover = None
     if info.image_url:
         try:
@@ -121,6 +124,7 @@ class ReviewItem(BaseModel):
     item_id: int
     name: str
     candidates: list[CandidateOut]
+    note: str | None = Field(None, description="why it needs a look, when it isn't just several candidates")
 
 
 class FetchMissingResult(BaseModel):
@@ -148,7 +152,16 @@ def fetch_missing(data: FetchMissing, session: SessionDep):
                 ReviewItem(item_id=game.id, name=game.name, candidates=[_out(c) for c in candidates[:6]])
             )
             continue
-        apply_metadata(session, game, match.rawg_id)
+        try:
+            apply_metadata(session, game, match.rawg_id)
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise  # e.g. RAWG's request limit: stop, the run can go on later
+            # RAWG's search still lists a game whose details are gone (e.g. merged into another entry)
+            others = [_out(c) for c in candidates if c.rawg_id != match.rawg_id][:6]
+            note = f"The best match, “{match.name}”, isn't on RAWG any more. Pick another game or search by hand."
+            result.review.append(ReviewItem(item_id=game.id, name=game.name, candidates=others, note=note))
+            continue
         session.commit()
         result.applied.append(AppliedMatch(item_id=game.id, name=game.name, rawg_name=match.name))
     return result

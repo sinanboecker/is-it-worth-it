@@ -18,7 +18,7 @@ import {
 import { useDebouncedValue } from "@mantine/hooks";
 import { IconSearch } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation, useMetadataStatus, useRawgSearch } from "@/api/queries";
 import type { Candidate, ItemSummary, ReviewItem } from "@/api/types";
@@ -160,6 +160,11 @@ function ReviewStep({
       <Text fw={600}>
         Which game is “{item.name}”? <Text span c="dimmed" size="sm">({left} to review)</Text>
       </Text>
+      {item.note && (
+        <Text size="sm" c="orange">
+          {item.note}
+        </Text>
+      )}
       <TextInput
         aria-label="Search RAWG"
         description="Not the right games? Change the name to search again."
@@ -206,10 +211,11 @@ export function FetchMissingModal({ categoryId, onClose }: { categoryId?: number
   const [review, setReview] = useState<ReviewItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const skipped = useRef<number[]>([]);
   const run = async () => {
     setRunning(true);
     setError(null);
-    const skip: number[] = [];
+    const skip = skipped.current; // kept between runs: "Continue" after an error goes on where it stopped
     try {
       for (;;) {
         const result = await unwrap(
@@ -251,7 +257,7 @@ export function FetchMissingModal({ categoryId, onClose }: { categoryId?: number
             </Text>
             {!running && !done && (
               <Group>
-                <Button onClick={run}>Start</Button>
+                <Button onClick={run}>{error ? "Continue" : "Start"}</Button>
               </Group>
             )}
             {(running || done) && (

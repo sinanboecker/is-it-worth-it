@@ -108,3 +108,21 @@ test("add a game bundle (Humble style): equal split, RAWG info and status for th
   expect(byName[`Celeste ${suffix}`].copies_summary.formats).toEqual(["digital"]);
   for (const g of games) expect(g.value.net_cost_cents).toBe(400);
 });
+
+test("fetch missing info goes on when RAWG's best match is gone", async ({ page, request }) => {
+  const pc = await category(request, "PC");
+  for (const name of ["Ghost Recon Phantoms", "Hades"]) {
+    await request.post("/api/v1/items", {
+      data: { category_id: pc.id, kind: "game", name, first_copy: { buy_date: "2024-01-01", buy_price_cents: 1000 } },
+    });
+  }
+  await page.goto(`/categories/${pc.id}`);
+  await page.getByRole("button", { name: "Fetch info" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Start" }).click();
+  await expect(dialog.getByText(/1 matched automatically/)).toBeVisible(); // Hades
+  await expect(dialog.getByText("Which game is “Ghost Recon Phantoms”?")).toBeVisible();
+  await expect(dialog.getByText(/isn't on RAWG any more/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Skip" }).click();
+  await expect(dialog.getByText("Done. 1 games matched automatically.")).toBeVisible();
+});
