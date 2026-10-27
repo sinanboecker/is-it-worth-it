@@ -266,9 +266,22 @@ class PcBuild(SQLModel, table=True):
     )
 
 
+class PcPartCategory(StrEnum):
+    cpu = "cpu"
+    gpu = "gpu"
+    mainboard = "mainboard"
+    memory = "memory"
+    storage = "storage"
+    power_supply = "power_supply"
+    cooling = "cooling"
+    case = "case"
+    other = "other"
+
+
 class PcPart(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
+    category: PcPartCategory = PcPartCategory.other
     build_id: int | None = Field(default=None, foreign_key="pcbuild.id", index=True, ondelete="SET NULL")
     buy_date: date
     used_until: date | None = None  # None = still in use

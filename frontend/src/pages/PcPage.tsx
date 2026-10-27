@@ -5,8 +5,9 @@ import { Link } from "react-router-dom";
 import { usePcBuilds, usePcParts } from "@/api/queries";
 import type { PcBuild, PcPart } from "@/api/types";
 import { Empty, PageHeader, QueryView } from "@/components/common";
-import { PcBuildModal, PcPartModal } from "@/components/PcModals";
+import { byCategory, PC_PART_ICON, PcBuildModal, PcPartModal } from "@/components/PcModals";
 import { day, euros, hours, perDay, perHour, years } from "@/lib/format";
+import { PC_PART_CATEGORY } from "@/lib/labels";
 
 function Figure({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -24,12 +25,23 @@ function Figure({ label, value, hint }: { label: string; value: string; hint?: s
   );
 }
 
-function PartsTable({ parts, showBuild = false, onEdit }: { parts: PcPart[]; showBuild?: boolean; onEdit: (part: PcPart) => void }) {
+function PartsTable({
+  parts,
+  showBuild = false,
+  dimSold = false,
+  onEdit,
+}: {
+  parts: PcPart[];
+  showBuild?: boolean;
+  dimSold?: boolean; // grey out parts that have a sell price
+  onEdit: (part: PcPart) => void;
+}) {
   return (
     <ScrollArea>
-      <Table verticalSpacing={4} miw={showBuild ? 1020 : 880} layout="fixed" highlightOnHover>
+      <Table verticalSpacing={4} miw={showBuild ? 1150 : 1010} layout="fixed" highlightOnHover>
         <Table.Thead>
           <Table.Tr>
+            <Table.Th w={140}>Category</Table.Th>
             <Table.Th>Part</Table.Th>
             {showBuild && <Table.Th w={160}>Build</Table.Th>}
             <Table.Th w={100}>Bought</Table.Th>
@@ -53,42 +65,51 @@ function PartsTable({ parts, showBuild = false, onEdit }: { parts: PcPart[]; sho
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {parts.map((p) => (
-            <Table.Tr key={p.id}>
-              <Table.Td>
-                <Text size="sm" lineClamp={1} title={p.notes ?? undefined}>
-                  {p.name}
-                </Text>
-              </Table.Td>
-              {showBuild && (
+          {parts.map((p) => {
+            const Icon = PC_PART_ICON[p.category];
+            return (
+              <Table.Tr key={p.id} opacity={dimSold && p.sell_price_cents !== null ? 0.6 : 1}>
                 <Table.Td>
-                  <Text size="sm" c={p.build_name ? undefined : "dimmed"} lineClamp={1}>
-                    {p.build_name ?? "–"}
+                  <Group gap={6} wrap="nowrap" c="dimmed">
+                    <Icon size={16} />
+                    <Text size="sm">{PC_PART_CATEGORY[p.category]}</Text>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" lineClamp={1} title={p.notes ?? undefined}>
+                    {p.name}
                   </Text>
                 </Table.Td>
-              )}
-              <Table.Td>{day(p.buy_date)}</Table.Td>
-              <Table.Td>
-                {p.in_use ? (
-                  <Badge size="sm" variant="light" color="green" tt="none">
-                    in use
-                  </Badge>
-                ) : (
-                  day(p.used_until)
+                {showBuild && (
+                  <Table.Td>
+                    <Text size="sm" c={p.build_name ? undefined : "dimmed"} lineClamp={1}>
+                      {p.build_name ?? "–"}
+                    </Text>
+                  </Table.Td>
                 )}
-              </Table.Td>
-              <Table.Td ta="right">{euros(p.buy_price_cents)}</Table.Td>
-              <Table.Td ta="right">{p.sell_price_cents === null ? "–" : euros(p.sell_price_cents)}</Table.Td>
-              <Table.Td ta="right">{p.used_days}</Table.Td>
-              <Table.Td ta="right">{years(p.used_years)}</Table.Td>
-              <Table.Td ta="right">{perDay(p.cost_per_day_cents)}</Table.Td>
-              <Table.Td>
-                <ActionIcon variant="subtle" onClick={() => onEdit(p)} aria-label={`Edit ${p.name}`}>
-                  <IconEdit size={16} />
-                </ActionIcon>
-              </Table.Td>
-            </Table.Tr>
-          ))}
+                <Table.Td>{day(p.buy_date)}</Table.Td>
+                <Table.Td>
+                  {p.in_use ? (
+                    <Badge size="sm" variant="light" color="green" tt="none">
+                      in use
+                    </Badge>
+                  ) : (
+                    day(p.used_until)
+                  )}
+                </Table.Td>
+                <Table.Td ta="right">{euros(p.buy_price_cents)}</Table.Td>
+                <Table.Td ta="right">{p.sell_price_cents === null ? "–" : euros(p.sell_price_cents)}</Table.Td>
+                <Table.Td ta="right">{p.used_days}</Table.Td>
+                <Table.Td ta="right">{years(p.used_years)}</Table.Td>
+                <Table.Td ta="right">{perDay(p.cost_per_day_cents)}</Table.Td>
+                <Table.Td>
+                  <ActionIcon variant="subtle" onClick={() => onEdit(p)} aria-label={`Edit ${p.name}`}>
+                    <IconEdit size={16} />
+                  </ActionIcon>
+                </Table.Td>
+              </Table.Tr>
+            );
+          })}
         </Table.Tbody>
       </Table>
     </ScrollArea>
@@ -161,7 +182,7 @@ function BuildCard({
         </SimpleGrid>
       )}
       {build.parts.length > 0 ? (
-        <PartsTable parts={build.parts} onEdit={onEditPart} />
+        <PartsTable parts={byCategory(build.parts)} onEdit={onEditPart} />
       ) : (
         <Text size="sm" c="dimmed">
           Add the parts of this build with “Part”.
@@ -221,7 +242,7 @@ export function PcPage() {
                     <Title order={4} mb="sm">
                       Parts without a build
                     </Title>
-                    <PartsTable parts={loose} onEdit={editPart} />
+                    <PartsTable parts={byCategory(loose)} dimSold onEdit={editPart} />
                   </Card>
                 )}
               </>

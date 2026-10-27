@@ -149,7 +149,7 @@ def update_part(part_id: int, data: PcPartUpdate, session: SessionDep, today: To
     changes = data.model_dump(exclude_unset=True)
     if changes.get("build_id") is not None:
         _check_build(session, changes["build_id"])
-    for key in ("name", "buy_date", "buy_price_cents"):
+    for key in ("name", "category", "buy_date", "buy_price_cents"):
         if key in changes and changes[key] is None:
             raise invalid(f"{key} can't be empty")
     for key, value in changes.items():

@@ -1,13 +1,45 @@
 /** Dialogs for PC builds and parts. */
 import { Button, Group, Modal, Select, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
+import {
+  IconBolt,
+  IconBox,
+  IconCpu,
+  IconDatabase,
+  IconDeviceDesktop,
+  IconDots,
+  IconLayoutBoardSplit,
+  IconPropeller,
+  IconStack2,
+  IconTrash,
+} from "@tabler/icons-react";
+import { createElement, useState, type ComponentType } from "react";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation, usePcBuilds } from "@/api/queries";
-import type { PcBuild, PcPart } from "@/api/types";
+import type { PcBuild, PcPart, PcPartCategory } from "@/api/types";
 import { todayIso } from "@/lib/format";
+import { PC_PART_CATEGORY } from "@/lib/labels";
 import { DateField, DeviceSelect, MoneyInput } from "./inputs";
+
+export const PC_PART_ICON: Record<PcPartCategory, ComponentType<{ size?: number | string }>> = {
+  cpu: IconCpu,
+  gpu: IconDeviceDesktop,
+  mainboard: IconLayoutBoardSplit,
+  memory: IconStack2,
+  storage: IconDatabase,
+  power_supply: IconBolt,
+  cooling: IconPropeller,
+  case: IconBox,
+  other: IconDots,
+};
+
+const CATEGORY_ORDER = Object.keys(PC_PART_CATEGORY) as PcPartCategory[];
+
+/** Parts of a build in category order (CPU, GPU, mainboard, …), then by buy date. */
+export const byCategory = (parts: PcPart[]) =>
+  [...parts].sort(
+    (a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.buy_date.localeCompare(b.buy_date),
+  );
 
 function confirmDelete(title: string, text: string, onConfirm: () => void) {
   modals.openConfirmModal({
@@ -72,6 +104,7 @@ export function PcBuildModal({ build, onClose }: { build?: PcBuild; onClose: () 
 export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId?: number | null; onClose: () => void }) {
   const builds = usePcBuilds();
   const [name, setName] = useState(part?.name ?? "");
+  const [category, setCategory] = useState<PcPartCategory | null>(part?.category ?? null);
   const [build, setBuild] = useState<number | null>(part ? part.build_id : (buildId ?? null));
   const [buyDate, setBuyDate] = useState<string | null>(part?.buy_date ?? todayIso());
   const [usedUntil, setUsedUntil] = useState<string | null>(part?.used_until ?? null);
@@ -83,6 +116,7 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
     () => {
       const body = {
         name: name.trim(),
+        category: category!,
         build_id: build,
         buy_date: buyDate!,
         used_until: usedUntil,
@@ -103,7 +137,28 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
   return (
     <Modal opened onClose={onClose} title={part ? `Edit ${part.name}` : "Add PC part"}>
       <Stack>
-        <TextInput label="Name" placeholder="e.g. RTX 4070 Super" value={name} onChange={(e) => setName(e.currentTarget.value)} required data-autofocus />
+        <Group grow align="flex-start">
+          <TextInput label="Name" placeholder="e.g. RTX 4070 Super" value={name} onChange={(e) => setName(e.currentTarget.value)} required data-autofocus />
+          <Select
+            label="Category"
+            placeholder="Choose one"
+            data={Object.entries(PC_PART_CATEGORY).map(([value, label]) => ({ value, label }))}
+            value={category}
+            onChange={(v) => setCategory(v as PcPartCategory | null)}
+            renderOption={({ option }) => {
+              const Icon = PC_PART_ICON[option.value as PcPartCategory];
+              return (
+                <Group gap="xs">
+                  <Icon size={16} />
+                  {option.label}
+                </Group>
+              );
+            }}
+            leftSection={category ? createElement(PC_PART_ICON[category], { size: 16 }) : undefined}
+            allowDeselect={false}
+            required
+          />
+        </Group>
         <Select
           label="Build"
           placeholder="No build"
@@ -142,7 +197,7 @@ export function PcPartModal({ part, buildId, onClose }: { part?: PcPart; buildId
           <Button
             onClick={() => save.mutate(undefined)}
             loading={save.isPending}
-            disabled={!name.trim() || !buyDate || buyPrice === null || datesWrong}
+            disabled={!name.trim() || !category || !buyDate || buyPrice === null || datesWrong}
           >
             Save
           </Button>

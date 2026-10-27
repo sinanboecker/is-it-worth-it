@@ -353,6 +353,8 @@ test("create a PC build, add parts to it and see what they cost per day", async 
   await card.getByRole("button", { name: "Part" }).click();
   dialog = page.getByRole("dialog");
   await dialog.getByRole("textbox", { name: "Name" }).fill(`GPU ${device.id}`);
+  await dialog.getByRole("textbox", { name: "Category" }).click();
+  await page.getByRole("option", { name: "GPU" }).click();
   await dialog.getByRole("textbox", { name: "Bought on" }).fill("01.01.2021");
   await dialog.getByRole("textbox", { name: "Used until" }).fill("01.01.2023");
   await fillMoney(page, "Buy price", "800");
@@ -361,6 +363,7 @@ test("create a PC build, add parts to it and see what they cost per day", async 
   await expect(page.getByText(`GPU ${device.id} saved`)).toBeVisible();
 
   const gpu = card.getByRole("row", { name: new RegExp(`GPU ${device.id}`) });
+  await expect(gpu).toContainText("GPU"); // category
   await expect(gpu).toContainText("730"); // days
   await expect(gpu).toContainText("2 years");
   await expect(gpu).toContainText("0,51 €/day"); // (800 € − 430 €) / 730 days
@@ -371,12 +374,21 @@ test("create a PC build, add parts to it and see what they cost per day", async 
   await page.getByRole("button", { name: "Add part" }).click();
   dialog = page.getByRole("dialog");
   await dialog.getByRole("textbox", { name: "Name" }).fill(`Spare SSD ${device.id}`);
+  await dialog.getByRole("textbox", { name: "Category" }).click();
+  await page.getByRole("option", { name: "Storage" }).click();
   await fillMoney(page, "Buy price", "60");
   await dialog.getByRole("button", { name: "Save" }).click();
-  await expect(page.locator(".mantine-Card-root", { hasText: "Parts without a build" })).toContainText(`Spare SSD ${device.id}`);
+  const loose = page.locator(".mantine-Card-root", { hasText: "Parts without a build" });
+  await expect(loose.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toHaveCSS("opacity", "1");
+  await loose.getByRole("button", { name: `Edit Spare SSD ${device.id}` }).click();
+  await fillMoney(page, "Sell price", "40");
+  await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
+  await expect(loose.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toHaveCSS("opacity", "0.6"); // sold
   await page.getByText("All parts").click();
   await expect(page.getByRole("row", { name: new RegExp(`GPU ${device.id}`) })).toContainText(name);
+  await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toContainText("Storage");
   await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toContainText("in use");
+  await expect(page.getByRole("row", { name: new RegExp(`Spare SSD ${device.id}`) })).toHaveCSS("opacity", "1"); // only there
 });
 
 test("add a category from the sidebar", async ({ page }) => {

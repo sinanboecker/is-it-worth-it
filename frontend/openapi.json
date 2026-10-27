@@ -7986,12 +7986,31 @@
         "type": "object",
         "title": "PcBuildUpdate"
       },
+      "PcPartCategory": {
+        "type": "string",
+        "enum": [
+          "cpu",
+          "gpu",
+          "mainboard",
+          "memory",
+          "storage",
+          "power_supply",
+          "cooling",
+          "case",
+          "other"
+        ],
+        "title": "PcPartCategory"
+      },
       "PcPartCreate": {
         "properties": {
           "name": {
             "type": "string",
             "minLength": 1,
             "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PcPartCategory",
+            "default": "other"
           },
           "build_id": {
             "anyOf": [
@@ -8067,6 +8086,9 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PcPartCategory"
           },
           "build_id": {
             "anyOf": [
@@ -8168,6 +8190,7 @@
         "required": [
           "id",
           "name",
+          "category",
           "build_id",
           "build_name",
           "buy_date",
@@ -8196,6 +8219,16 @@
               }
             ],
             "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PcPartCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "build_id": {
             "anyOf": [

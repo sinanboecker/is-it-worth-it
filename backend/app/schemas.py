@@ -21,6 +21,7 @@ from app.models import (
     GameStatus,
     Item,
     ItemKind,
+    PcPartCategory,
     PlayLink,
     SplitMode,
 )
@@ -528,6 +529,7 @@ class SplitPreviewOut(BaseModel):
 
 class PcPartCreate(BaseModel):
     name: str = Field(min_length=1)
+    category: PcPartCategory = PcPartCategory.other
     build_id: int | None = None
     buy_date: date
     used_until: date | None = None  # empty = still in use
@@ -544,6 +546,7 @@ class PcPartCreate(BaseModel):
 
 class PcPartUpdate(BaseModel):
     name: str | None = Field(None, min_length=1)
+    category: PcPartCategory | None = None
     build_id: int | None = None
     buy_date: date | None = None
     used_until: date | None = None
@@ -555,6 +558,7 @@ class PcPartUpdate(BaseModel):
 class PcPartRead(BaseModel):
     id: int
     name: str
+    category: PcPartCategory
     build_id: int | None
     build_name: str | None
     buy_date: date

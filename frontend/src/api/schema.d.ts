@@ -2259,10 +2259,17 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /**
+         * PcPartCategory
+         * @enum {string}
+         */
+        PcPartCategory: "cpu" | "gpu" | "mainboard" | "memory" | "storage" | "power_supply" | "cooling" | "case" | "other";
         /** PcPartCreate */
         PcPartCreate: {
             /** Name */
             name: string;
+            /** @default other */
+            category: components["schemas"]["PcPartCategory"];
             /** Build Id */
             build_id?: number | null;
             /**
@@ -2285,6 +2292,7 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            category: components["schemas"]["PcPartCategory"];
             /** Build Id */
             build_id: number | null;
             /** Build Name */
@@ -2326,6 +2334,7 @@ export interface components {
         PcPartUpdate: {
             /** Name */
             name?: string | null;
+            category?: components["schemas"]["PcPartCategory"] | null;
             /** Build Id */
             build_id?: number | null;
             /** Buy Date */

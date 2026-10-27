@@ -23,8 +23,15 @@ def test_part_usage_and_cost_per_day(api, fixed_today):
     assert (gpu["used_days"], gpu["used_years"], gpu["in_use"]) == (730, 2.0, False)
     assert (gpu["net_cost_cents"], gpu["cost_per_day_cents"]) == (37000, 51)  # 370 € / 730 days
 
-    ssd = api.post("/pc/parts", {"name": "SSD", "buy_date": "2026-10-17", "buy_price_cents": 10000})
+    assert gpu["category"] == "other"  # when none is given
+    ssd = api.post(
+        "/pc/parts", {"name": "SSD", "category": "storage", "buy_date": "2026-10-17", "buy_price_cents": 10000}
+    )
     assert (ssd["used_days"], ssd["in_use"], ssd["cost_per_day_cents"]) == (10, True, 1000)  # in use until today
+    assert ssd["category"] == "storage"
+    assert api.patch(f"/pc/parts/{ssd['id']}", {"category": "cooling"})["category"] == "cooling"
+    bad = {"name": "X", "category": "monitor", "buy_date": "2024-01-01", "buy_price_cents": 1}
+    assert api.client.post("/api/v1/pc/parts", json=bad).status_code == 422
 
     same_day = api.post("/pc/parts", {"name": "Cable", "buy_date": "2026-10-27", "buy_price_cents": 500})
     assert same_day["cost_per_day_cents"] is None

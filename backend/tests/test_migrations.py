@@ -99,3 +99,14 @@ def test_no_migration_reuses_the_old_head_revision(engine):
 
     revisions = {s.revision for s in ScriptDirectory.from_config(alembic_config(engine)).walk_revisions()}
     assert OLD_HEAD not in revisions
+
+
+def test_0007_existing_pc_parts_get_category_other(engine):
+    command.upgrade(alembic_config(engine), "0006")
+    with engine.begin() as conn:
+        conn.execute(
+            text("INSERT INTO pcpart (id, name, buy_date, buy_price_cents) VALUES (1, 'GPU', '2024-01-01', 100)")
+        )
+    command.upgrade(alembic_config(engine), "0007")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT category FROM pcpart")).scalar() == "other"

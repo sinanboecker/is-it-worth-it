@@ -1,4 +1,4 @@
-import type { CopyCondition, CopyFormat, GameStatus, SplitMode } from "@/api/types";
+import type { CopyCondition, CopyFormat, GameStatus, PcPartCategory, SplitMode } from "@/api/types";
 
 export const STATUS: Record<GameStatus, { label: string; color: string }> = {
   wishlist: { label: "Wishlist", color: "grape" },
@@ -22,6 +22,19 @@ export const SPLIT_MODE: Record<SplitMode, string> = {
   proportional: "Proportional to standalone prices",
   equal: "Equal shares",
   manual: "Manual",
+};
+
+/** In the order parts are listed within a build. */
+export const PC_PART_CATEGORY: Record<PcPartCategory, string> = {
+  cpu: "CPU",
+  gpu: "GPU",
+  mainboard: "Mainboard",
+  memory: "Memory",
+  storage: "Storage",
+  power_supply: "Power supply",
+  cooling: "Cooling",
+  case: "Case",
+  other: "Other",
 };
 
 export const options = <T extends string>(labels: Record<T, string>) =>

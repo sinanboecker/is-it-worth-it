@@ -47,6 +47,7 @@ export type BundleImportResult = S["BundleImportResult"];
 export type BundlePlan = S["BundlePlan"];
 export type PcBuild = S["PcBuildRead"];
 export type PcPart = S["PcPartRead"];
+export type PcPartCategory = S["PcPartCategory"];
 export type GamePlan = S["GamePlan"];
 export type StoreRow = S["StoreOut"];
 export type FormatRow = S["FormatOut"];
