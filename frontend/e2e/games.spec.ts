@@ -307,3 +307,34 @@ test("rate a game and mark it as favorite right in the games list", async ({ pag
   await page.mouse.move(0, 0);
   await expect(row.getByLabel("Favorite", { exact: true })).toBeVisible(); // the filled heart, no longer hovered
 });
+
+test("tag a copy as won or traded and find it in the category's views", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const name = `Giveaway ${category.id}`;
+  await page.goto(`/categories/${category.id}`);
+  await expect(page.getByRole("radio", { name: "Won", exact: true })).toHaveCount(0); // nothing won yet
+  await page.getByRole("button", { name: "Game", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(name);
+  await fillMoney(page, "Buy price", "12");
+  await dialog.getByLabel("Won (e.g. in a giveaway)").check();
+  await expect(dialog.getByRole("textbox", { name: "Buy price", exact: true })).toHaveValue("0,00 €"); // won: free
+  await dialog.getByRole("button", { name: "Add" }).click();
+  await expect(page.getByText(`${name} added`)).toBeVisible();
+
+  await pickSegment(page, "Won");
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await expect(row.getByLabel("Won", { exact: true })).toBeVisible(); // the trophy
+  await expect(page.getByRole("radio", { name: "Traded", exact: true })).toHaveCount(0);
+
+  await row.click();
+  await page.getByRole("button", { name: "Edit copy" }).click();
+  await page.getByRole("dialog").getByLabel("Got it in a trade").check();
+  await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Copy saved")).toBeVisible();
+  await expect(page.getByRole("cell", { name: /won.*traded/ })).toBeVisible(); // both badges on the copy
+
+  await page.goto(`/categories/${category.id}`);
+  await pickSegment(page, "Traded");
+  await expect(page.getByRole("row", { name: new RegExp(name) })).toBeVisible();
+});

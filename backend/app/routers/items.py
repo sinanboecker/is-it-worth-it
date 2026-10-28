@@ -255,6 +255,9 @@ def update_copy(
     item = load_item(session, item_id)
     copy = _load_copy(item, copy_id)
     changes = data.model_dump(exclude_unset=True)
+    for tag in ("won", "traded"):
+        if tag in changes and changes[tag] is None:
+            del changes[tag]  # not a value to store: the tag stays as it is
     if copy.bundle_id is not None:
         if {"buy_date", "buy_price_cents"} & changes.keys():
             raise invalid("buy date and price of a bundle copy are set by the bundle")

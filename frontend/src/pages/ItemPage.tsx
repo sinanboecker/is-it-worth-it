@@ -103,6 +103,16 @@ function CopiesSection({ item }: { item: ItemRead }) {
                   <Table.Td>
                     {FORMAT[copy.format]}
                     {copy.condition && ` · ${CONDITION[copy.condition]}`}
+                    {copy.won && (
+                      <Badge ml={6} size="sm" variant="light" color="yellow" tt="none">
+                        won
+                      </Badge>
+                    )}
+                    {copy.traded && (
+                      <Badge ml={6} size="sm" variant="light" color="cyan" tt="none">
+                        traded
+                      </Badge>
+                    )}
                     {copy.bundle_id && (
                       <Button
                         size="compact-xs"

@@ -496,3 +496,23 @@ def test_bundle_other_sales_lower_the_shares_and_count_as_sold(api):
 
     response = api.client.post("/api/v1/bundles", json={**body, "url": "javascript:alert(1)"})
     assert response.status_code == 422
+
+
+def test_copies_can_be_tagged_as_won_or_traded(api):
+    pc = api.category("PC")
+    game = api.post(
+        "/items",
+        {"category_id": pc["id"], "kind": "game", "name": "Giveaway game",
+         "first_copy": {"buy_date": "2024-01-01", "buy_price_cents": 0, "won": True}},
+    )  # fmt: skip
+    (copy,) = game["copies"]
+    assert (copy["won"], copy["traded"], game["copies_summary"]["won"], game["copies_summary"]["traded"]) == (
+        True,
+        False,
+        True,
+        False,
+    )
+    game = api.patch(f"/items/{game['id']}/copies/{copy['id']}", {"traded": True, "won": None})  # null: unchanged
+    assert (game["copies"][0]["won"], game["copies"][0]["traded"]) == (True, True)
+    (listed,) = api.get("/items", params={"q": "Giveaway"})
+    assert listed["copies_summary"]["traded"]

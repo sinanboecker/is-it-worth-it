@@ -5629,6 +5629,16 @@
           "in_bundle": {
             "type": "boolean",
             "title": "In Bundle"
+          },
+          "won": {
+            "type": "boolean",
+            "title": "Won",
+            "default": false
+          },
+          "traded": {
+            "type": "boolean",
+            "title": "Traded",
+            "default": false
           }
         },
         "type": "object",
@@ -5733,6 +5743,16 @@
               }
             ],
             "title": "Note"
+          },
+          "won": {
+            "type": "boolean",
+            "title": "Won",
+            "default": false
+          },
+          "traded": {
+            "type": "boolean",
+            "title": "Traded",
+            "default": false
           }
         },
         "type": "object",
@@ -5829,6 +5849,14 @@
             ],
             "title": "Note"
           },
+          "won": {
+            "type": "boolean",
+            "title": "Won"
+          },
+          "traded": {
+            "type": "boolean",
+            "title": "Traded"
+          },
           "bundle_id": {
             "anyOf": [
               {
@@ -5879,6 +5907,8 @@
           "sell_price_cents",
           "sell_date",
           "note",
+          "won",
+          "traded",
           "bundle_id",
           "reference_price_cents",
           "is_sold",
@@ -5977,6 +6007,28 @@
               }
             ],
             "title": "Note"
+          },
+          "won": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Won"
+          },
+          "traded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traded"
           }
         },
         "type": "object",

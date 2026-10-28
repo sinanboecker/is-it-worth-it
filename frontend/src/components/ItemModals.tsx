@@ -160,6 +160,8 @@ type CopyDraft = {
   sell_price_cents: number | null;
   sell_date: string | null;
   note: string | null;
+  won: boolean;
+  traded: boolean;
 };
 
 function CopyFields({
@@ -179,6 +181,8 @@ function CopyFields({
   priceLabel?: string;
   requireDate?: boolean;
 }) {
+  // a copy you won or got in a trade cost nothing (a bundle copy's price comes from the bundle)
+  const setTag = (tag: "won" | "traded", on: boolean) => set(on && !inBundle ? { [tag]: true, buy_price_cents: 0 } : { [tag]: on });
   return (
     <Stack gap="sm">
       {inBundle && (
@@ -227,6 +231,10 @@ function CopyFields({
         </Group>
       )}
       <TextInput label="Note" placeholder="e.g. Collector's Edition" value={draft.note ?? ""} onChange={(e) => set({ note: e.currentTarget.value || null })} />
+      <Group>
+        <Checkbox label="Won (e.g. in a giveaway)" checked={draft.won} onChange={(e) => setTag("won", e.currentTarget.checked)} />
+        <Checkbox label="Got it in a trade" checked={draft.traded} onChange={(e) => setTag("traded", e.currentTarget.checked)} />
+      </Group>
     </Stack>
   );
 }
@@ -240,6 +248,8 @@ const emptyCopy = (kind: ItemKind): CopyDraft => ({
   sell_price_cents: null,
   sell_date: null,
   note: null,
+  won: false,
+  traded: false,
 });
 
 const copyBody = (d: CopyDraft) => ({ ...d, buy_price_cents: d.buy_price_cents! });

@@ -1629,6 +1629,16 @@ export interface components {
             stores: string[];
             /** In Bundle */
             in_bundle: boolean;
+            /**
+             * Won
+             * @default false
+             */
+            won: boolean;
+            /**
+             * Traded
+             * @default false
+             */
+            traded: boolean;
         };
         /**
          * CopyCondition
@@ -1652,6 +1662,16 @@ export interface components {
             sell_date?: string | null;
             /** Note */
             note?: string | null;
+            /**
+             * Won
+             * @default false
+             */
+            won: boolean;
+            /**
+             * Traded
+             * @default false
+             */
+            traded: boolean;
         };
         /**
          * CopyFormat
@@ -1676,6 +1696,10 @@ export interface components {
             sell_date: string | null;
             /** Note */
             note: string | null;
+            /** Won */
+            won: boolean;
+            /** Traded */
+            traded: boolean;
             /** Bundle Id */
             bundle_id: number | null;
             /** Reference Price Cents */
@@ -1704,6 +1728,10 @@ export interface components {
             sell_date?: string | null;
             /** Note */
             note?: string | null;
+            /** Won */
+            won?: boolean | null;
+            /** Traded */
+            traded?: boolean | null;
         };
         /** CsvCommit */
         CsvCommit: {

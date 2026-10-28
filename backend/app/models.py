@@ -190,6 +190,8 @@ class Copy(SQLModel, table=True):
     sell_price_cents: int | None = None  # set = sold
     sell_date: date | None = None
     note: str | None = None
+    won: bool = False  # e.g. in a giveaway
+    traded: bool = False  # got in a trade
     bundle_id: int | None = Field(default=None, foreign_key="bundle.id", index=True, ondelete="CASCADE")
     reference_price_cents: int | None = None
 
