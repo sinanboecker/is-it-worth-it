@@ -1,4 +1,4 @@
-import { Anchor, Button, Card, Group, ScrollArea, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { Anchor, Button, Card, Group, ScrollArea, Select, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { IconEdit, IconExternalLink, IconFileImport, IconPlus } from "@tabler/icons-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -8,6 +8,7 @@ import { StatusBadge, WorthItBadge } from "@/components/badges";
 import { BundleImportModal } from "@/components/BundleImportModal";
 import { AddBundleModal, EditBundleModal } from "@/components/Bundles";
 import { Cover, Empty, Figure, imageOf, PageHeader, QueryView } from "@/components/common";
+import { bundleTotals, bundleYears } from "@/lib/bundles";
 import { day, euros, hours, perHour } from "@/lib/format";
 
 function BundleCard({ bundle, onEdit }: { bundle: Bundle; onEdit: () => void }) {
@@ -100,6 +101,41 @@ function BundleCard({ bundle, onEdit }: { bundle: Bundle; onEdit: () => void }) 
   );
 }
 
+/** Money spent and earned, cost, hours and cost per hour of all bundles, or of the bundles bought in one year. */
+function BundleTotalsCard({ bundles }: { bundles: Bundle[] }) {
+  const [year, setYear] = useState("total");
+  const years = bundleYears(bundles);
+  const selected = year === "total" ? bundles : bundles.filter((b) => b.buy_date.startsWith(year));
+  const t = bundleTotals(selected);
+  return (
+    <Card withBorder padding="md">
+      <Group justify="space-between" align="flex-start" mb="sm">
+        <div>
+          <Title order={4}>{year === "total" ? "All bundles" : `Bundles bought in ${year}`}</Title>
+          <Text size="sm" c="dimmed">
+            {t.count} bundle{t.count === 1 ? "" : "s"}
+          </Text>
+        </div>
+        <Select
+          aria-label="Year"
+          w={120}
+          data={[{ value: "total", label: "Total" }, ...years.map((y) => ({ value: String(y), label: String(y) }))]}
+          value={year}
+          onChange={(v) => setYear(v ?? "total")}
+          allowDeselect={false}
+        />
+      </Group>
+      <SimpleGrid cols={{ base: 2, sm: 5 }}>
+        <Figure label="Money spent" value={euros(t.spentCents)} />
+        <Figure label="Money earned" value={t.earnedCents ? euros(t.earnedCents) : "–"} hint="games and keys sold" />
+        <Figure label="Total cost" value={euros(t.costCents)} hint="spent minus earned" />
+        <Figure label="Hours" value={hours(t.hours)} />
+        <Figure label="Cost per hour" value={perHour(t.costPerHourCents)} />
+      </SimpleGrid>
+    </Card>
+  );
+}
+
 export function BundlesPage() {
   const bundles = useBundles();
   const [editing, setEditing] = useState<number | null>(null);
@@ -120,7 +156,12 @@ export function BundlesPage() {
           // game bundles only; bundles with hardware (console + game) are left out
           const games = data.filter((b) => b.copies.every((c) => c.kind === "game"));
           return games.length ? (
-            games.map((b) => <BundleCard key={b.id} bundle={b} onEdit={() => setEditing(b.id)} />)
+            <>
+              <BundleTotalsCard bundles={games} />
+              {games.map((b) => (
+                <BundleCard key={b.id} bundle={b} onEdit={() => setEditing(b.id)} />
+              ))}
+            </>
           ) : (
             <Empty>No game bundles yet. Add one with “Add bundle”.</Empty>
           );

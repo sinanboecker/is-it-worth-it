@@ -134,3 +134,33 @@ test("add a bundle without games when all of them were sold", async ({ page }) =
   await expect(card.getByText("No games listed.")).toBeVisible();
   await expect(card.getByText("-2,00 €")).toBeVisible(); // net cost: 8 € − 10 €
 });
+
+test("the bundles page adds up all bundles, or the bundles of one year", async ({ page, request }) => {
+  const { category, device } = await setup(request);
+  const bundle = await (
+    await request.post("/api/v1/bundles", {
+      data: {
+        name: `Old bundle ${category.id}`,
+        buy_date: "2009-05-01",
+        total_price_cents: 2000,
+        other_sales_cents: 500,
+        split_mode: "equal",
+        entries: ["A", "B"].map((n) => ({ new_item: { category_id: category.id, kind: "game", name: `${n} ${category.id}` }, format: "digital" })),
+      },
+    })
+  ).json();
+  await request.post(`/api/v1/items/${bundle.copies[0].item_id}/hours`, { data: { hours: 6, hardware_id: device.id } });
+
+  await page.goto("/bundles");
+  const totals = page.locator(".mantine-Card-root", { hasText: "All bundles" });
+  await expect(totals.getByRole("textbox", { name: "Year" })).toHaveValue("Total");
+  await totals.getByRole("textbox", { name: "Year" }).click();
+  await page.getByRole("option", { name: "2009" }).click();
+  const year = page.locator(".mantine-Card-root", { hasText: "Bundles bought in 2009" });
+  await expect(year.getByText("1 bundle", { exact: true })).toBeVisible();
+  await expect(year).toContainText("Money spent20,00 €");
+  await expect(year).toContainText("Money earned5,00 €");
+  await expect(year).toContainText("Total cost15,00 €");
+  await expect(year).toContainText("Hours6 h");
+  await expect(year).toContainText("Cost per hour2,50 €/h"); // 15 € / 6 h
+});
