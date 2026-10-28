@@ -223,10 +223,9 @@ def get_journal(
     category_id: CategoryParam = None,
     device: Annotated[int | None, Query(description="hardware id the game was finished on")] = None,
     rating_min: Annotated[float | None, Query(ge=0, le=5)] = None,
-    mastered: bool | None = None,
 ) -> journal.Journal:
     """Finished games grouped by year → month, newest first. Finishes without date come in `unknown_date`."""
-    filters = journal.JournalFilter(year, category_id, device, rating_min, mastered)
+    filters = journal.JournalFilter(year, category_id, device, rating_min)
     return journal.build_journal(load_items(session, category_id), settings.break_even_cph, filters)
 
 

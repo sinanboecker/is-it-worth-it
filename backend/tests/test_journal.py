@@ -21,7 +21,7 @@ def journal_data(api):
         api.post(f"/items/{game['id']}/completions", body)
 
     finish(zelda, "2025-03-10", switch, review="Great", started_on="2025-01-02")
-    finish(zelda, "2026-08-01", switch, mastered=True)  # replay
+    finish(zelda, "2026-08-01", switch)  # replay
     finish(metroid, "2026-08-15", brick)
     finish(hades, "2026-08-15", gaming_pc)
     finish(hades, "2026-02-01", gaming_pc)  # earlier than the previous one: that one becomes the replay
@@ -58,7 +58,7 @@ def test_entry_details(api, journal_data):
     assert first_zelda["hours"] == 50 and first_zelda["cost_per_hour_cents"] == 120 and first_zelda["worth_it"]
 
     replay = entries[("Zelda", "2026-08-01")]
-    assert replay["replay"] and replay["mastered"]
+    assert replay["replay"]
     assert replay["rating"] == 4.0
 
     metroid = entries[("Metroid", "2026-08-15")]
@@ -85,4 +85,3 @@ def test_filters(api, journal_data):
     by_device = api.get("/journal", params={"device": journal_data["brick"]["id"]})
     assert flat(by_device) == [("Metroid", "2026-08-15")]
     assert flat(api.get("/journal", params={"rating_min": 4.5})) == [("Hades", "2026-08-15"), ("Hades", "2026-02-01")]
-    assert flat(api.get("/journal", params={"mastered": True})) == [("Zelda", "2026-08-01")]

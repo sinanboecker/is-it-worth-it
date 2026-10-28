@@ -237,7 +237,6 @@ class Completion(SQLModel, table=True):
     finished_on: date | None = None  # None = finished, date unknown (e.g. imported)
     started_on: date | None = None
     hardware_id: int | None = Field(default=None, foreign_key="item.id", ondelete="SET NULL")
-    mastered: bool = False
     review: str | None = None
     note: str | None = None
 

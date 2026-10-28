@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkbox,
   Collapse,
   Group,
   Modal,
@@ -46,11 +45,6 @@ function EntryCard({ entry, onOpen }: { entry: JournalEntry; onOpen: () => void 
           {entry.replay && (
             <Badge size="xs" variant="light">
               Replay
-            </Badge>
-          )}
-          {entry.mastered && (
-            <Badge size="xs" color="yellow">
-              100 %
             </Badge>
           )}
           {entry.emulated && (
@@ -190,7 +184,6 @@ export function JournalPage() {
   const [category, setCategory] = useState<number | null>(null);
   const [device, setDevice] = useState<number | null>(null);
   const [ratingMin, setRatingMin] = useState<string | null>(null);
-  const [mastered, setMastered] = useState(false);
   const [open, setOpen] = useState<JournalEntry | null>(null);
   const [importing, setImporting] = useState(false);
   const journal = useJournal({
@@ -198,7 +191,6 @@ export function JournalPage() {
     category: category ?? undefined,
     device: device ?? undefined,
     rating_min: ratingMin ? Number(ratingMin) : undefined,
-    mastered: mastered || undefined,
   });
   const all = useJournal({}); // for the totals and the years to filter by
 
@@ -246,7 +238,6 @@ export function JournalPage() {
           onChange={setRatingMin}
           clearable
         />
-        <Checkbox label="100 % only" checked={mastered} onChange={(e) => setMastered(e.currentTarget.checked)} mb={8} />
       </Group>
 
       <QueryView query={journal}>

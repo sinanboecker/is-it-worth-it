@@ -320,14 +320,13 @@ function CompletionEditModal({ game, completion, onClose }: { game: ItemRead; co
   const [finishedOn, setFinishedOn] = useState(completion.finished_on);
   const [startedOn, setStartedOn] = useState(completion.started_on);
   const [device, setDevice] = useState(completion.hardware_id);
-  const [mastered, setMastered] = useState(completion.mastered);
   const [review, setReview] = useState(completion.review ?? "");
   const save = useApiMutation(
     () =>
       unwrap(
         api.PATCH("/api/v1/items/{item_id}/completions/{completion_id}", {
           params: { path: { item_id: game.id, completion_id: completion.id } },
-          body: { finished_on: finishedOn, started_on: startedOn, hardware_id: device, mastered, review: review || null },
+          body: { finished_on: finishedOn, started_on: startedOn, hardware_id: device, review: review || null },
         }),
       ),
     { success: "Saved", onSuccess: onClose },
@@ -340,7 +339,6 @@ function CompletionEditModal({ game, completion, onClose }: { game: ItemRead; co
           <DateField label="Finished on" value={finishedOn} onChange={setFinishedOn} clearable placeholder="unknown" />
         </Group>
         <DeviceSelect value={device} onChange={setDevice} />
-        <Checkbox label="100 % / mastered" checked={mastered} onChange={(e) => setMastered(e.currentTarget.checked)} />
         <Textarea label="Review" autosize minRows={2} value={review} onChange={(e) => setReview(e.currentTarget.value)} />
         <Group justify="flex-end">
           <Button onClick={() => save.mutate(undefined)} loading={save.isPending}>
@@ -386,11 +384,6 @@ function CompletionsSection({ game, onFinish }: { game: ItemRead; onFinish: () =
                     </Text>
                   )}
                   {c.hardware_name && ` · ${c.hardware_name}`}
-                  {c.mastered && (
-                    <Badge ml="xs" size="sm" color="yellow">
-                      100 %
-                    </Badge>
-                  )}
                 </Text>
                 {c.review && (
                   <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>

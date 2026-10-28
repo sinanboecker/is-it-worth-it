@@ -206,7 +206,6 @@ A game entry can have **several copies**, e.g. bought physical in 2019, sold, re
 | **Abandoned** | Dropped, you won't come back | Yes, and also in its own "money spent on abandoned games" stat |
 | **Endless** | No real ending (multiplayer, roguelites, Minecraft…), so it never sits "unfinished" | Yes |
 
-*100 % / Mastered* is not a status but a checkbox on a completion (see `completion`).
 *Sold* is not a status either: it's derived from the copies, so a game can be e.g. **Finished + sold**.
 
 **Status rules** (server-side, the clients just show them)
@@ -260,7 +259,6 @@ Already-owned DLC is marked ✔ in the list.
 | finished_on | date, nullable | null = **finished, date unknown** (e.g. imported from a sheet that only has a ✓); the journal lists these under "Date unknown" |
 | started_on | date, nullable | copied from the game's `started_on`, or entered by hand; lets the journal show "played 12 Mar – 4 Apr" |
 | hardware_id | FK → item (hardware), nullable | device it was finished on (shown in the journal) |
-| mastered | bool | 100 % / all achievements |
 | review | text, nullable | short review, shown in the journal |
 | note | text, nullable | e.g. "NG+", "on Hard" |
 
@@ -388,14 +386,14 @@ All stats can be filtered by category.
 A chronological diary of finished games, built from `completion` rows (no extra data entry).
 
 - **Layout:** grouped by **year → month**, newest first. Each month shows a row/grid of **covers** with the day of the month on each card
-  (like Backloggd's journal). Re-finishes appear again with a "Replay" badge; 100 % runs get a "Mastered" badge.
+  (like Backloggd's journal). Re-finishes appear again with a "Replay" badge.
 - **Card details:** name, cover, finish date, (started → finished span if known), device + 🕹 emulated marker, hours, the game's **star rating**, cost/hr and worth-it badge.
   Clicking a card opens the completion with its **review**.
 - **Year header:** number of games finished, total hours of those games, average rating, most used device.
 - **Totals of all finished games** at the top (not affected by the filters): games finished (replays count once, the
   number of finishes is shown too), total hours of those games, average rating with the number of games per star, and
   games per category. (Replaced the earlier calendar heatmap.)
-- **Filters:** year picker, category, device, rating (e.g. ≥ 4★), mastered only.
+- **Filters:** year picker, category, device, rating (e.g. ≥ 4★).
 - **Quick add:** "Log a finish" button directly on the journal page (pick game → date → device → review; rate the game if not rated yet).
 - The journal only shows **finished** games. Games in progress have their own **Now Playing** page (§8).
 

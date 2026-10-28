@@ -25,7 +25,6 @@ class JournalEntry:
     rating: float | None  # stars; ratings belong to the game, not to a single finish
     review: str | None
     note: str | None
-    mastered: bool
     replay: bool  # not the first finish of this game
     cost_per_hour_cents: int | None
     worth_it: bool | None
@@ -59,7 +58,6 @@ class JournalFilter:
     category_id: int | None = None
     hardware_id: int | None = None
     rating_min: float | None = None
-    mastered: bool | None = None
 
     def keep(self, entry: JournalEntry) -> bool:
         if self.year is not None and (entry.finished_on is None or entry.finished_on.year != self.year):
@@ -68,9 +66,7 @@ class JournalFilter:
             return False
         if self.hardware_id is not None and entry.hardware_id != self.hardware_id:
             return False
-        if self.rating_min is not None and (entry.rating is None or entry.rating < self.rating_min):
-            return False
-        return self.mastered is None or entry.mastered == self.mastered
+        return self.rating_min is None or (entry.rating is not None and entry.rating >= self.rating_min)
 
 
 def _replay_ids(game: Item) -> set[int]:
@@ -96,7 +92,6 @@ def _entry(game: Item, completion: Completion, value: calc.Value | None, replays
         rating=None if game.rating is None else game.rating / 2,
         review=completion.review,
         note=completion.note,
-        mastered=completion.mastered,
         replay=completion.id in replays,
         cost_per_hour_cents=value.cost_per_hour_cents if value else None,
         worth_it=value.worth_it if value else None,

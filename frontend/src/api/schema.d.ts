@@ -1570,11 +1570,6 @@ export interface components {
             started_on?: string | null;
             /** Hardware Id */
             hardware_id?: number | null;
-            /**
-             * Mastered
-             * @default false
-             */
-            mastered: boolean;
             /** Review */
             review?: string | null;
             /** Note */
@@ -1592,8 +1587,6 @@ export interface components {
             hardware_id: number | null;
             /** Hardware Name */
             hardware_name: string | null;
-            /** Mastered */
-            mastered: boolean;
             /** Review */
             review: string | null;
             /** Note */
@@ -1607,8 +1600,6 @@ export interface components {
             started_on?: string | null;
             /** Hardware Id */
             hardware_id?: number | null;
-            /** Mastered */
-            mastered?: boolean | null;
             /** Review */
             review?: string | null;
             /** Note */
@@ -2362,8 +2353,6 @@ export interface components {
             review: string | null;
             /** Note */
             note: string | null;
-            /** Mastered */
-            mastered: boolean;
             /** Replay */
             replay: boolean;
             /** Cost Per Hour Cents */
@@ -4724,7 +4713,6 @@ export interface operations {
                 /** @description hardware id the game was finished on */
                 device?: number | null;
                 rating_min?: number | null;
-                mastered?: boolean | null;
             };
             header?: never;
             path?: never;

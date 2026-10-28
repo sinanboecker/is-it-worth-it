@@ -223,7 +223,6 @@ class CompletionCreate(BaseModel):
     finished_on: date | None  # null = date unknown
     started_on: date | None = None
     hardware_id: int | None = None
-    mastered: bool = False
     review: str | None = None
     note: str | None = None
 
@@ -232,7 +231,6 @@ class CompletionUpdate(BaseModel):
     finished_on: date | None = None
     started_on: date | None = None
     hardware_id: int | None = None
-    mastered: bool | None = None
     review: str | None = None
     note: str | None = None
 
@@ -243,7 +241,6 @@ class CompletionRead(BaseModel):
     started_on: date | None
     hardware_id: int | None
     hardware_name: str | None
-    mastered: bool
     review: str | None
     note: str | None
 
@@ -255,7 +252,6 @@ class CompletionRead(BaseModel):
             started_on=c.started_on,
             hardware_id=c.hardware_id,
             hardware_name=c.hardware.name if c.hardware else None,
-            mastered=c.mastered,
             review=c.review,
             note=c.note,
         )

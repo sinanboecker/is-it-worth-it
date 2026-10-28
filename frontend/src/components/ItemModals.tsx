@@ -104,7 +104,6 @@ export function FinishModal({ game, opened, onClose }: ModalProps & { game: Item
   const [finishedOn, setFinishedOn] = useState<string | null>(todayIso());
   const [unknownDate, setUnknownDate] = useState(false);
   const [device, setDevice] = useState<number | null>(lastUsedDevice(game));
-  const [mastered, setMastered] = useState(false);
   const [review, setReview] = useState("");
   const [rating, setRating] = useState<number | null>(game.rating);
   const mutation = useApiMutation(
@@ -115,7 +114,6 @@ export function FinishModal({ game, opened, onClose }: ModalProps & { game: Item
           body: {
             finished_on: unknownDate ? null : finishedOn,
             hardware_id: device,
-            mastered,
             review: review.trim() || null,
           },
         }),
@@ -134,7 +132,6 @@ export function FinishModal({ game, opened, onClose }: ModalProps & { game: Item
         <DateField label="Finished on" value={finishedOn} onChange={setFinishedOn} disabled={unknownDate} />
         <Checkbox label="Date unknown" checked={unknownDate} onChange={(e) => setUnknownDate(e.currentTarget.checked)} />
         <DeviceSelect label="Finished on device" value={device} onChange={setDevice} />
-        <Checkbox label="100 % / mastered" checked={mastered} onChange={(e) => setMastered(e.currentTarget.checked)} />
         <Textarea label="Review" placeholder="What did you think of this playthrough?" autosize minRows={2} value={review} onChange={(e) => setReview(e.currentTarget.value)} />
         <div>
           <Text size="sm" fw={500} mb={4}>

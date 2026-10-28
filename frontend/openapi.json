@@ -2900,22 +2900,6 @@
               ],
               "title": "Rating Min"
             }
-          },
-          {
-            "name": "mastered",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Mastered"
-            }
           }
         ],
         "responses": {
@@ -5407,11 +5391,6 @@
             ],
             "title": "Hardware Id"
           },
-          "mastered": {
-            "type": "boolean",
-            "title": "Mastered",
-            "default": false
-          },
           "review": {
             "anyOf": [
               {
@@ -5493,10 +5472,6 @@
             ],
             "title": "Hardware Name"
           },
-          "mastered": {
-            "type": "boolean",
-            "title": "Mastered"
-          },
           "review": {
             "anyOf": [
               {
@@ -5527,7 +5502,6 @@
           "started_on",
           "hardware_id",
           "hardware_name",
-          "mastered",
           "review",
           "note"
         ],
@@ -5569,17 +5543,6 @@
               }
             ],
             "title": "Hardware Id"
-          },
-          "mastered": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mastered"
           },
           "review": {
             "anyOf": [
@@ -8171,10 +8134,6 @@
             ],
             "title": "Note"
           },
-          "mastered": {
-            "type": "boolean",
-            "title": "Mastered"
-          },
           "replay": {
             "type": "boolean",
             "title": "Replay"
@@ -8218,7 +8177,6 @@
           "rating",
           "review",
           "note",
-          "mastered",
           "replay",
           "cost_per_hour_cents",
           "worth_it"

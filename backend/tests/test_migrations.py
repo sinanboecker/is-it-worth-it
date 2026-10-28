@@ -124,3 +124,21 @@ def test_0008_sold_pc_parts_leave_their_build(engine):
     command.upgrade(alembic_config(engine), "0008")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT id, build_id FROM pcpart ORDER BY id")).all() == [(1, 1), (2, None)]
+
+
+def test_0010_drops_mastered_and_keeps_finishes(engine):
+    command.upgrade(alembic_config(engine), "0009")
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO category (id, name, type, sort_order) VALUES (1, 'PC', 'platform', 0)"))
+        conn.execute(
+            text("INSERT INTO item (id, category_id, kind, name, favorite, created_at, updated_at)"
+                 " VALUES (1, 1, 'game', 'A', 0, '2024-01-01', '2024-01-01')")
+        )  # fmt: skip
+        conn.execute(text("INSERT INTO completion (id, item_id, finished_on, mastered) VALUES (1, 1, '2024-02-01', 1)"))
+    command.upgrade(alembic_config(engine), "0010")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT finished_on FROM completion")).scalar() == "2024-02-01"
+        assert "mastered" not in {c["name"] for c in inspect(engine).get_columns("completion")}
+    command.downgrade(alembic_config(engine), "0009")  # back again: the finish is kept, not mastered
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT mastered FROM completion")).scalar() == 0
