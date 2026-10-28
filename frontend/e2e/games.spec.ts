@@ -279,3 +279,30 @@ test("pick a category icon in the category dialog", async ({ page, request }) =>
   const categories = await (await request.get("/api/v1/categories")).json();
   expect(categories.find((c: { name: string }) => c.name === name).icon).toBe("playstation");
 });
+
+test("rate a game and mark it as favorite right in the games list", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const name = `Unrated ${category.id}`;
+  const game = await (
+    await request.post("/api/v1/items", {
+      data: { category_id: category.id, kind: "game", name, first_copy: { buy_date: "2024-01-01", buy_price_cents: 1000 } },
+    })
+  ).json();
+
+  await page.goto(`/categories/${category.id}`);
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await expect(row.getByText("–").first()).toBeVisible(); // no rating yet
+  await row.getByText("–").first().hover();
+  await pickSegment(row, "4"); // the fourth star
+  await row.getByRole("button", { name: "Add to favorites" }).click();
+  await expect(page).toHaveURL(new RegExp(`/categories/${category.id}$`)); // still in the list
+
+  await expect
+    .poll(async () => {
+      const item = await (await request.get(`/api/v1/items/${game.id}`)).json();
+      return [item.rating, item.favorite];
+    })
+    .toEqual([4, true]);
+  await page.mouse.move(0, 0);
+  await expect(row.getByLabel("Favorite", { exact: true })).toBeVisible(); // the filled heart, no longer hovered
+});

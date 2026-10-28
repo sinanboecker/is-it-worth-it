@@ -1,13 +1,51 @@
-import { Card, Group, ScrollArea, SimpleGrid, Stack, Table, Text, UnstyledButton } from "@mantine/core";
+import { Card, Group, Rating, ScrollArea, SimpleGrid, Stack, Table, Text, UnstyledButton } from "@mantine/core";
 import { IconChevronDown, IconChevronUp, IconSelector } from "@tabler/icons-react";
 import { useLocalStorage } from "@mantine/hooks";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { api, unwrap } from "@/api/client";
+import { useApiMutation } from "@/api/queries";
 import type { ItemSummary } from "@/api/types";
 import { day, euros, hours, perHour } from "@/lib/format";
 import { CopyBadges, StatusBadge, WorthItBadge } from "./badges";
 import { Cover, Empty, imageOf } from "./common";
 import { FavoriteHeart, Stars } from "./inputs";
+
+/** Rating and favorite heart; on hover the stars and the heart can be clicked (without opening the game). */
+function RatingCell({ item }: { item: ItemSummary }) {
+  const [hover, setHover] = useState(false);
+  const save = useApiMutation((body: { rating?: number | null; favorite?: boolean }) =>
+    unwrap(api.PATCH("/api/v1/items/{item_id}", { params: { path: { item_id: item.id } }, body })),
+  );
+  return (
+    <Group
+      gap={4}
+      wrap="nowrap"
+      miw={112} // room for the stars and the heart, so the row doesn't jump on hover
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {hover ? (
+        <>
+          <Rating
+            value={item.rating ?? 0}
+            fractions={2}
+            size="xs"
+            onChange={(stars) => save.mutate({ rating: stars || null })}
+            aria-label={`Rate ${item.name}`}
+          />
+          <FavoriteHeart value={item.favorite} size="sm" onChange={(favorite) => save.mutate({ favorite })} />
+        </>
+      ) : (
+        <>
+          <Stars value={item.rating} size="xs" />
+          <FavoriteHeart value={item.favorite} size="sm" />
+        </>
+      )}
+    </Group>
+  );
+}
 
 export type Column = {
   key: string;
@@ -39,12 +77,7 @@ export const COLUMNS: Record<string, Column> = {
   rating: {
     key: "rating",
     label: "Rating",
-    render: (i) => (
-      <Group gap={4} wrap="nowrap">
-        <Stars value={i.rating} size="xs" />
-        <FavoriteHeart value={i.favorite} size="sm" />
-      </Group>
-    ),
+    render: (i) => <RatingCell item={i} />,
     // favorites first among equal ratings
     sort: (i) => (i.rating ?? -1) + (i.favorite ? 0.01 : 0),
   },
