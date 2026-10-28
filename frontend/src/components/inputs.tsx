@@ -4,7 +4,7 @@ import { DateInput, type DateInputProps } from "@mantine/dates";
 import { useCategories, useHardware, useStores } from "@/api/queries";
 import { fromCents, parseTypedDate, toCents } from "@/lib/format";
 import { STATUS_OPTIONS } from "@/lib/labels";
-import type { GameStatus } from "@/api/types";
+import type { Category, GameStatus, ItemSummary } from "@/api/types";
 
 type MoneyInputProps = Omit<NumberInputProps, "value" | "onChange"> & {
   value: number | null | undefined; // cents
@@ -122,6 +122,17 @@ export function StoreInput({
 }
 
 /** Device picker over all hardware (any category), grouped by category. */
+/** Devices grouped by category, in the categories' sort order (like the sidebar); unknown categories last. */
+export function deviceGroups(devices: Pick<ItemSummary, "id" | "name" | "category_id">[], categories: Pick<Category, "id" | "name">[]) {
+  const groups = [...categories.map((c) => ({ id: c.id, group: c.name })), { id: null, group: "Other" }].map((g) => ({
+    group: g.group,
+    items: devices
+      .filter((d) => (g.id === null ? !categories.some((c) => c.id === d.category_id) : d.category_id === g.id))
+      .map((d) => ({ value: String(d.id), label: d.name })),
+  }));
+  return groups.filter((g) => g.items.length);
+}
+
 export function DeviceSelect({
   value,
   onChange,
@@ -141,19 +152,13 @@ export function DeviceSelect({
 }) {
   const hardware = useHardware();
   const categories = useCategories();
-  const names = new Map(categories.data?.map((c) => [c.id, c.name]));
-  const groups = new Map<string, { value: string; label: string }[]>();
-  for (const device of hardware.data ?? []) {
-    if (exclude.includes(device.id) && device.id !== value) continue;
-    const group = names.get(device.category_id) ?? "Other";
-    groups.set(group, [...(groups.get(group) ?? []), { value: String(device.id), label: device.name }]);
-  }
+  const devices = (hardware.data ?? []).filter((d) => !exclude.includes(d.id) || d.id === value);
   return (
     <Select
       label={label}
       description={description}
       placeholder={hardware.data?.length ? "Choose a device" : "No hardware yet"}
-      data={[...groups].map(([group, items]) => ({ group, items }))}
+      data={deviceGroups(devices, categories.data ?? [])}
       value={value ? String(value) : null}
       onChange={(v) => onChange(v ? Number(v) : null)}
       searchable
