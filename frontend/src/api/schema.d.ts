@@ -1992,7 +1992,7 @@ export interface components {
          * GameStatus
          * @enum {string}
          */
-        GameStatus: "wishlist" | "backlog" | "playing" | "on_hold" | "played" | "finished" | "abandoned" | "endless";
+        GameStatus: "wishlist" | "backlog" | "playing" | "on_hold" | "played" | "finished" | "abandoned" | "endless" | "not_redeemed";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */

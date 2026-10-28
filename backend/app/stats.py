@@ -231,6 +231,8 @@ def top_items(
     spec = TOP_METRICS[metric]
     candidates = []
     for item in items:
+        if item.status is GameStatus.not_redeemed and metric != "gain":
+            continue  # sold bundle keys only show up as sales
         value = calc.item_value(item, global_break_even_cph)
         if value is not None and spec.include(value):
             candidates.append((item, value))

@@ -6830,7 +6830,8 @@
           "played",
           "finished",
           "abandoned",
-          "endless"
+          "endless",
+          "not_redeemed"
         ],
         "title": "GameStatus"
       },

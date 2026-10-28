@@ -200,14 +200,17 @@ def category_totals(items: Iterable[Item], global_break_even_cph: int) -> Catego
             totals.hardware_cost_cents += value.net_cost_cents
             totals.hardware_count += 1
             continue
-        statuses[item.status.value] += 1
         value = game_value(item, global_break_even_cph)
+        if value is not None:
+            totals.games_cost_cents += value.net_cost_cents
+            totals.dlc_cost_cents += value.dlc_cost_cents
+            totals.minutes += value.minutes
+        if item.status is GameStatus.not_redeemed:
+            continue  # a sold bundle key: its money counts, but it isn't one of your games
+        statuses[item.status.value] += 1
         if value is None:
             continue
         totals.games_count += 1
-        totals.games_cost_cents += value.net_cost_cents
-        totals.dlc_cost_cents += value.dlc_cost_cents
-        totals.minutes += value.minutes
         worth_it += value.worth_it
         if item.status is GameStatus.backlog:
             totals.backlog_value_cents += value.total_paid_cents
@@ -273,9 +276,11 @@ def yearly_stats(items: Iterable[Item], global_break_even_cph: int) -> list[Year
         if value is None or first_bought is None:
             continue
         r = row(first_bought.year)
-        r.games_bought += 1
         r.minutes += value.minutes
         r.net_cost_of_year_games_cents += value.net_cost_cents
+        if game.status is GameStatus.not_redeemed:
+            continue  # a sold bundle key: money only, not a game bought
+        r.games_bought += 1
         worth_it[r.year] += value.worth_it
         if game.status is GameStatus.abandoned:
             r.abandoned_count += 1

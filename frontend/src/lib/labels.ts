@@ -9,6 +9,7 @@ export const STATUS: Record<GameStatus, { label: string; color: string }> = {
   finished: { label: "Finished", color: "green" },
   abandoned: { label: "Abandoned", color: "red" },
   endless: { label: "Endless", color: "teal" },
+  not_redeemed: { label: "Not redeemed", color: "dark" }, // a bundle key sold without playing
 };
 
 export const STATUS_OPTIONS = (Object.keys(STATUS) as GameStatus[]).map((value) => ({

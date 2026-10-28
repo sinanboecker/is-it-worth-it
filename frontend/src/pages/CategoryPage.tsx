@@ -21,7 +21,14 @@ import { CoverGrid, GAME_COLUMNS, HARDWARE_COLUMNS, ItemTable } from "@/componen
 import { euros, hours, perHour, percent } from "@/lib/format";
 import { STATUS_OPTIONS } from "@/lib/labels";
 
-type Ownership = "all" | "owned" | "sold";
+type Ownership = "all" | "owned" | "sold" | "not_redeemed";
+
+/** Sold bundle keys ("not redeemed") only show up in their own view, not with the other games. */
+function matchesOwnership(i: ItemSummary, ownership: Ownership) {
+  if (ownership === "not_redeemed") return i.status === "not_redeemed";
+  if (i.status === "not_redeemed") return false;
+  return ownership === "all" || (ownership === "owned" ? i.copies_summary.owned : i.copies_summary.sold);
+}
 
 function filterItems(
   items: ItemSummary[],
@@ -32,7 +39,7 @@ function filterItems(
     (i) =>
       (!q || i.name.toLowerCase().includes(q)) &&
       (!statuses.length || (i.status && statuses.includes(i.status))) &&
-      (ownership === "all" || (ownership === "owned" ? i.copies_summary.owned : i.copies_summary.sold)) &&
+      matchesOwnership(i, ownership) &&
       (worth === "all" || (worth === "yes" ? i.value?.worth_it : i.value && !i.value.worth_it)),
   );
 }
@@ -48,11 +55,13 @@ export function CategoryPage() {
   const [view, setView] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
   const [statuses, setStatuses] = useState<string[]>([]);
-  const [ownership, setOwnership] = useState<Ownership>("all");
+  const [chosenOwnership, setOwnership] = useState<Ownership>("all");
   const [worth, setWorth] = useState("all");
   const [modal, setModal] = useState<"game" | "hardware" | "csv" | "metadata" | null>(null);
   const metadata = useMetadataStatus();
   const activeTab: ItemKind = hardwareOnly ? "hardware" : tab;
+  // hardware has no "not redeemed" view
+  const ownership: Ownership = activeTab === "hardware" && chosenOwnership === "not_redeemed" ? "all" : chosenOwnership;
 
   if (!category) return <QueryView query={categories}>{() => "Category not found"}</QueryView>;
 
@@ -109,6 +118,7 @@ export function CategoryPage() {
             { value: "all", label: "All" },
             { value: "owned", label: "Owned" },
             { value: "sold", label: "Sold" },
+            ...(activeTab === "game" ? [{ value: "not_redeemed", label: "Not redeemed" }] : []),
           ]}
           value={ownership}
           onChange={(v) => setOwnership(v as Ownership)}

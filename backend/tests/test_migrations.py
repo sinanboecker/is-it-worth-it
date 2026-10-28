@@ -142,3 +142,44 @@ def test_0010_drops_mastered_and_keeps_finishes(engine):
     command.downgrade(alembic_config(engine), "0009")  # back again: the finish is kept, not mastered
     with engine.connect() as conn:
         assert conn.execute(text("SELECT mastered FROM completion")).scalar() == 0
+
+
+def test_0011_sold_bundle_keys_become_not_redeemed(engine):
+    command.upgrade(alembic_config(engine), "0010")
+    rows = {  # item: (status, [(bundle, sold)], hours, finished)
+        1: ("backlog", [(1, True)], 0, False),  # sold key: not redeemed
+        2: ("backlog", [(1, False)], 0, False),  # kept key
+        3: ("backlog", [(1, True)], 30, False),  # played
+        4: ("backlog", [(None, True)], 0, False),  # sold, but not from a bundle
+        5: ("played", [(1, True)], 0, True),  # finished
+    }
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO category (id, name, type, sort_order) VALUES (1, 'PC', 'platform', 0)"))
+        conn.execute(text("INSERT INTO item (id, category_id, kind, name, favorite, created_at, updated_at)"
+                          " VALUES (99, 1, 'hardware', 'PC', 0, '2024-01-01', '2024-01-01')"))  # fmt: skip
+        conn.execute(text("INSERT INTO bundle (id, name, buy_date, total_price_cents, split_mode, sold_as_bundle,"
+                          " other_sales_cents) VALUES (1, 'B', '2024-01-01', 800, 'equal', 0, 0)"))  # fmt: skip
+        for item_id, (status, copies, hours, finished) in rows.items():
+            conn.execute(
+                text("INSERT INTO item (id, category_id, kind, name, status, favorite, created_at, updated_at)"
+                     " VALUES (:id, 1, 'game', 'G', :status, 0, '2024-01-01', '2024-01-01')"),
+                {"id": item_id, "status": status},
+            )  # fmt: skip
+            for bundle_id, sold in copies:
+                conn.execute(
+                    text("INSERT INTO copy (item_id, buy_date, buy_price_cents, format, bundle_id, sell_price_cents)"
+                         " VALUES (:id, '2024-01-01', 100, 'digital', :bundle, :sold)"),
+                    {"id": item_id, "bundle": bundle_id, "sold": 150 if sold else None},
+                )  # fmt: skip
+            if hours:
+                link = "INSERT INTO playlink (game_id, hardware_id, emulated, minutes) VALUES (:id, 99, 0, :m)"
+                conn.execute(text(link), {"id": item_id, "m": hours * 60})
+            if finished:
+                conn.execute(text("INSERT INTO completion (item_id) VALUES (:id)"), {"id": item_id})
+    command.upgrade(alembic_config(engine), "0011")
+    with engine.connect() as conn:
+        statuses = dict(conn.execute(text("SELECT id, status FROM item WHERE kind = 'game'")).all())
+    assert statuses == {1: "not_redeemed", 2: "backlog", 3: "backlog", 4: "backlog", 5: "played"}
+    command.downgrade(alembic_config(engine), "0010")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT status FROM item WHERE id = 1")).scalar() == "backlog"

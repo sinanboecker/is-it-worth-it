@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { fillMoney, setup } from "./helpers";
+import { fillMoney, pickSegment, setup } from "./helpers";
 
 test("add a console as a bundle with a game, then edit the bundle", async ({ page, request }) => {
   const { category } = await setup(request);
@@ -174,4 +174,29 @@ test("the bundles page adds up all bundles, or the bundles of one year", async (
   await expect(games).toHaveText([`b game ${category.id}`, `A game ${category.id}`]); // b has the 6 h
   await page.reload();
   await expect(games).toHaveText([`b game ${category.id}`, `A game ${category.id}`]);
+});
+
+test("sold bundle keys are not redeemed and have their own view on the category page", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const [kept, sold] = [`Kept key ${category.id}`, `Sold key ${category.id}`];
+  const bundle = await (
+    await request.post("/api/v1/bundles", {
+      data: {
+        name: `Keys ${category.id}`,
+        buy_date: "2025-01-01",
+        total_price_cents: 1200,
+        split_mode: "equal",
+        entries: [kept, sold].map((name) => ({ new_item: { category_id: category.id, kind: "game", name }, format: "digital" })),
+      },
+    })
+  ).json();
+  const key = bundle.copies[1];
+  await request.patch(`/api/v1/items/${key.item_id}/copies/${key.copy_id}`, { data: { sell_price_cents: 500, sell_date: "2025-02-01" } });
+
+  await page.goto(`/categories/${category.id}`);
+  await expect(page.getByRole("row", { name: new RegExp(kept) })).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(sold) })).toHaveCount(0); // not with the other games
+  await pickSegment(page, "Not redeemed");
+  await expect(page.getByRole("row", { name: new RegExp(sold) })).toContainText("Not redeemed");
+  await expect(page.getByRole("row", { name: new RegExp(kept) })).toHaveCount(0);
 });

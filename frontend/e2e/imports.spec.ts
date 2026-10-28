@@ -42,7 +42,8 @@ test("import bundles from a CSV sheet", async ({ page, request }) => {
   const card = page.locator(".mantine-Card-root", { hasText: `Choice ${id}` });
   await expect(card.getByText("Bought 03.01.2023 at Humble Bundle")).toBeVisible();
   await expect(card.getByRole("row", { name: new RegExp(`Kept ${id}`) })).toContainText("2 h");
-  await expect(page.locator(".mantine-Card-root", { hasText: `All sold ${id}` }).getByText("No games listed.")).toBeVisible();
+  const allSold = page.locator(".mantine-Card-root").filter({ has: page.getByRole("heading", { name: `All sold ${id}`, exact: true }) });
+  await expect(allSold.getByText("No games listed.")).toBeVisible();
 });
 
 test("import finish dates: fill an unknown date and pick a game by hand", async ({ page, request }) => {

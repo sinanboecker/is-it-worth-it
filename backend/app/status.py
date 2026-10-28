@@ -2,7 +2,10 @@
 
 from datetime import date
 
-from app.models import Completion, GameStatus, Item, ItemKind
+from sqlalchemy import event
+from sqlmodel import Session
+
+from app.models import Completion, Copy, GameStatus, Item, ItemKind, PlayLink
 
 
 class StatusError(ValueError):
@@ -64,6 +67,48 @@ def hours_added(item: Item, played_on: date) -> GameStatus | None:
     """Returns a suggested new status (the client offers it), or None."""
     if item.last_played_on is None or played_on > item.last_played_on:
         item.last_played_on = played_on
-    if item.status in (GameStatus.backlog, GameStatus.on_hold):
+    if item.status in (GameStatus.backlog, GameStatus.on_hold, GameStatus.not_redeemed):
         return GameStatus.playing
     return None
+
+
+# --- not redeemed -----------------------------------------------------------------------------
+
+
+def is_sold_unredeemed(item: Item, gone: frozenset[int] = frozenset()) -> bool:
+    """All copies are bundle copies that were sold (keys sold on), and the game was never played or finished.
+    `gone`: id() of rows being deleted in this save."""
+    copies = [c for c in item.copies if id(c) not in gone]
+    return (
+        bool(copies)
+        and all((c.bundle_id is not None or c.bundle is not None) and c.is_sold for c in copies)  # new: no id yet
+        and not any(id(c) not in gone for c in item.completions)
+        and not any(link.minutes for link in item.play_links if id(link) not in gone)
+    )
+
+
+def update_redeemed(item: Item, gone: frozenset[int] = frozenset()) -> None:
+    """A backlog game that is only a sold bundle key becomes "not redeemed"; when that changes (sale undone, hours
+    logged) it is back in the backlog. Other statuses, and statuses set by hand, are left alone."""
+    if item.kind is not ItemKind.game:
+        return
+    sold_key = is_sold_unredeemed(item, gone)
+    if item.status is GameStatus.backlog and sold_key:
+        item.status = GameStatus.not_redeemed
+    elif item.status is GameStatus.not_redeemed and not sold_key:
+        item.status = GameStatus.backlog
+
+
+@event.listens_for(Session, "before_flush")
+def _update_redeemed_on_flush(session: Session, _flush_context, _instances) -> None:
+    """Copies, hours and finishes change in many places (copies, bundles, imports, play links): check the games they
+    belong to on every save, instead of in each endpoint."""
+    gone = frozenset(id(obj) for obj in session.deleted)  # models aren't hashable: compare by identity
+    games: dict[int, Item] = {}
+    with session.no_autoflush:
+        for obj in (*session.new, *session.dirty, *session.deleted):
+            game = obj.item if isinstance(obj, Copy) else obj.game if isinstance(obj, PlayLink | Completion) else None
+            if game is not None and id(game) not in gone:
+                games[id(game)] = game
+        for game in games.values():
+            update_redeemed(game, gone)

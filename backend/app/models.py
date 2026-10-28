@@ -52,6 +52,7 @@ class GameStatus(StrEnum):
     finished = "finished"
     abandoned = "abandoned"
     endless = "endless"
+    not_redeemed = "not_redeemed"  # a bundle key that was sold without playing (see status.update_redeemed)
 
 
 class CopyFormat(StrEnum):
