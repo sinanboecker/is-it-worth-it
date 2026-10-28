@@ -245,6 +245,16 @@ test("typed dates are read as day.month.year", async ({ page, request }) => {
   await date.fill("05.03.2024");
   await date.press("Tab");
   await expect(date).toHaveValue("05.03.2024");
+  // a short date, then a click on the day it shows in the calendar: the date stays
+  await date.click();
+  await date.fill("13.1.22");
+  await page.locator("[data-selected]").first().click();
+  await date.press("Tab"); // the text is written out in full when leaving the field
+  await expect(date).toHaveValue("13.01.2022");
+  await date.click();
+  await date.fill("5.3.24");
+  await date.press("Tab");
+  await expect(date).toHaveValue("05.03.2024");
   await fillMoney(page, "Buy price", "10");
   await dialog.getByRole("button", { name: "Add" }).click();
   await expect(page.getByText(`Date ${category.id} added`)).toBeVisible();

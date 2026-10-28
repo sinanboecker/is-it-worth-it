@@ -60,6 +60,8 @@ export function DateField({ value, onChange, ...props }: DateFieldProps) {
       valueFormat="DD.MM.YYYY"
       dateParser={parseTypedDate}
       firstDayOfWeek={1}
+      // clicking the date that's already chosen keeps it (Mantine would clear it); fields that may be empty have ×
+      allowDeselect={false}
       {...props}
       value={value ?? null}
       onChange={(v) => onChange(v ? String(v).slice(0, 10) : null)}
