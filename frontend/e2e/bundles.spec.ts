@@ -191,9 +191,15 @@ test("sold bundle keys are not redeemed and have their own view on the category 
     })
   ).json();
   const key = bundle.copies[1];
-  await request.patch(`/api/v1/items/${key.item_id}/copies/${key.copy_id}`, { data: { sell_price_cents: 500, sell_date: "2025-02-01" } });
 
+  // nothing sold yet: no "Sold" or "Not redeemed" to choose
   await page.goto(`/categories/${category.id}`);
+  await expect(page.getByRole("radio", { name: "Owned", exact: true })).toBeAttached();
+  await expect(page.getByRole("radio", { name: "Sold", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "Not redeemed", exact: true })).toHaveCount(0);
+
+  await request.patch(`/api/v1/items/${key.item_id}/copies/${key.copy_id}`, { data: { sell_price_cents: 500, sell_date: "2025-02-01" } });
+  await page.reload();
   await expect(page.getByRole("row", { name: new RegExp(kept) })).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(sold) })).toHaveCount(0); // not with the other games
   await pickSegment(page, "Not redeemed");

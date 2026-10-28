@@ -60,8 +60,13 @@ export function CategoryPage() {
   const [modal, setModal] = useState<"game" | "hardware" | "csv" | "metadata" | null>(null);
   const metadata = useMetadataStatus();
   const activeTab: ItemKind = hardwareOnly ? "hardware" : tab;
-  // hardware has no "not redeemed" view
-  const ownership: Ownership = activeTab === "hardware" && chosenOwnership === "not_redeemed" ? "all" : chosenOwnership;
+  // "Sold" and "Not redeemed" are only offered when the tab has such items; a choice that's gone falls back to "All"
+  const tabItems = (items.data ?? []).filter((i) => i.kind === activeTab);
+  const offered = new Set<Ownership>(["all", "owned"]);
+  for (const option of ["sold", "not_redeemed"] as const) {
+    if (tabItems.some((i) => matchesOwnership(i, option))) offered.add(option);
+  }
+  const ownership: Ownership = offered.has(chosenOwnership) || !items.data ? chosenOwnership : "all";
 
   if (!category) return <QueryView query={categories}>{() => "Category not found"}</QueryView>;
 
@@ -118,8 +123,8 @@ export function CategoryPage() {
             { value: "all", label: "All" },
             { value: "owned", label: "Owned" },
             { value: "sold", label: "Sold" },
-            ...(activeTab === "game" ? [{ value: "not_redeemed", label: "Not redeemed" }] : []),
-          ]}
+            { value: "not_redeemed", label: "Not redeemed" },
+          ].filter((o) => offered.has(o.value as Ownership))}
           value={ownership}
           onChange={(v) => setOwnership(v as Ownership)}
         />
