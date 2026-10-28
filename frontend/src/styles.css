@@ -1,3 +1,13 @@
 .candidate-row:hover:not(:disabled) {
   background: var(--mantine-color-default-hover);
 }
+
+/* Rating cell in the games lists: the clickable stars and heart replace the read-only ones while hovered.
+   CSS :hover follows the pointer even when the list re-renders (React's mouseleave can get lost then). */
+.rating-cell .rating-edit,
+.rating-cell:hover .rating-view {
+  display: none;
+}
+.rating-cell:hover .rating-edit {
+  display: flex;
+}

@@ -291,8 +291,9 @@ test("rate a game and mark it as favorite right in the games list", async ({ pag
 
   await page.goto(`/categories/${category.id}`);
   const row = page.getByRole("row", { name: new RegExp(name) });
-  await expect(row.getByText("–").first()).toBeVisible(); // no rating yet
-  await row.getByText("–").first().hover();
+  const rating = row.getByRole("cell").nth(2); // name, status, rating
+  await expect(rating).toHaveText("–"); // no rating yet
+  await rating.hover(); // the stars and the heart become clickable
   await pickSegment(row, "4"); // the fourth star
   await row.getByRole("button", { name: "Add to favorites" }).click();
   await expect(page).toHaveURL(new RegExp(`/categories/${category.id}$`)); // still in the list

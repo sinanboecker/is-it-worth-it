@@ -1,7 +1,7 @@
 import { Card, Group, Rating, ScrollArea, SimpleGrid, Stack, Table, Text, UnstyledButton } from "@mantine/core";
 import { IconChevronDown, IconChevronUp, IconSelector } from "@tabler/icons-react";
 import { useLocalStorage } from "@mantine/hooks";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation } from "@/api/queries";
@@ -13,37 +13,27 @@ import { FavoriteHeart, Stars } from "./inputs";
 
 /** Rating and favorite heart; on hover the stars and the heart can be clicked (without opening the game). */
 function RatingCell({ item }: { item: ItemSummary }) {
-  const [hover, setHover] = useState(false);
   const save = useApiMutation((body: { rating?: number | null; favorite?: boolean }) =>
     unwrap(api.PATCH("/api/v1/items/{item_id}", { params: { path: { item_id: item.id } }, body })),
   );
+  // both views are there; styles.css shows the clickable one while the cell is hovered
   return (
-    <Group
-      gap={4}
-      wrap="nowrap"
-      miw={112} // room for the stars and the heart, so the row doesn't jump on hover
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {hover ? (
-        <>
-          <Rating
-            value={item.rating ?? 0}
-            fractions={2}
-            size="xs"
-            onChange={(stars) => save.mutate({ rating: stars || null })}
-            aria-label={`Rate ${item.name}`}
-          />
-          <FavoriteHeart value={item.favorite} size="sm" onChange={(favorite) => save.mutate({ favorite })} />
-        </>
-      ) : (
-        <>
-          <Stars value={item.rating} size="xs" />
-          <FavoriteHeart value={item.favorite} size="sm" />
-        </>
-      )}
-    </Group>
+    <div className="rating-cell" style={{ minWidth: 112 }} onClick={(e) => e.stopPropagation()}>
+      <Group gap={4} wrap="nowrap" className="rating-view">
+        <Stars value={item.rating} size="xs" />
+        <FavoriteHeart value={item.favorite} size="sm" />
+      </Group>
+      <Group gap={4} wrap="nowrap" className="rating-edit">
+        <Rating
+          value={item.rating ?? 0}
+          fractions={2}
+          size="xs"
+          onChange={(stars) => save.mutate({ rating: stars || null })}
+          aria-label={`Rate ${item.name}`}
+        />
+        <FavoriteHeart value={item.favorite} size="sm" onChange={(favorite) => save.mutate({ favorite })} />
+      </Group>
+    </div>
   );
 }
 
