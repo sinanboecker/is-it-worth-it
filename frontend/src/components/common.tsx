@@ -1,7 +1,7 @@
-import { Alert, Box, Center, Group, Loader, Paper, Stack, Text, Title } from "@mantine/core";
+import { Alert, Box, Center, Group, Loader, Paper, Stack, Text, Title, VisuallyHidden } from "@mantine/core";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { modals } from "@mantine/modals";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 /** Renders loading / error states of a query, then `children(data)`. */
 export function QueryView<T>({
@@ -52,6 +52,16 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
         </Text>
       )}
     </Paper>
+  );
+}
+
+/** Icon for a view switch (grid / list) with a name for screen readers and tests. */
+export function ViewLabel({ icon: Icon, label }: { icon: ComponentType<{ size?: number }>; label: string }) {
+  return (
+    <>
+      <Icon size={16} />
+      <VisuallyHidden>{label}</VisuallyHidden>
+    </>
   );
 }
 

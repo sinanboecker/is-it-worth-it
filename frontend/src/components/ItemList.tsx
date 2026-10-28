@@ -48,6 +48,12 @@ export const COLUMNS: Record<string, Column> = {
     // favorites first among equal ratings
     sort: (i) => (i.rating ?? -1) + (i.favorite ? 0.01 : 0),
   },
+  released: {
+    key: "released",
+    label: "Released",
+    render: (i) => i.release_date?.slice(0, 4) ?? "–",
+    sort: (i) => i.release_date ?? "9999", // unknown release dates last
+  },
   bought: {
     key: "bought",
     label: "Bought",

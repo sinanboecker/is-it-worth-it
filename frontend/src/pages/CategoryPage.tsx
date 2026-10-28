@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useCategories, useItems, useMetadataStatus, useSummary } from "@/api/queries";
 import type { GameStatus, ItemKind, ItemSummary } from "@/api/types";
-import { PageHeader, QueryView, StatTile } from "@/components/common";
+import { PageHeader, QueryView, StatTile, ViewLabel } from "@/components/common";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { NewItemModal } from "@/components/ItemModals";
 import { CoverGrid, GAME_COLUMNS, HARDWARE_COLUMNS, ItemTable } from "@/components/ItemList";
@@ -125,8 +125,8 @@ export function CategoryPage() {
         {activeTab === "game" && (
           <SegmentedControl
             data={[
-              { value: "table", label: <IconList size={16} /> },
-              { value: "grid", label: <IconLayoutGrid size={16} /> },
+              { value: "table", label: <ViewLabel icon={IconList} label="List" /> },
+              { value: "grid", label: <ViewLabel icon={IconLayoutGrid} label="Grid" /> },
             ]}
             value={view}
             onChange={(v) => setView(v as "table" | "grid")}

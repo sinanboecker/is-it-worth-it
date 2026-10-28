@@ -1,9 +1,10 @@
 import { Button, SegmentedControl, Stack, Text } from "@mantine/core";
 import { IconLayoutGrid, IconList, IconPlus } from "@tabler/icons-react";
+import { useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";
 import { useCategories, useItems } from "@/api/queries";
 import type { Category } from "@/api/types";
-import { PageHeader, QueryView } from "@/components/common";
+import { PageHeader, QueryView, ViewLabel } from "@/components/common";
 import { NewItemModal } from "@/components/ItemModals";
 import { CoverGrid, ItemTable, type Column } from "@/components/ItemList";
 
@@ -44,14 +45,15 @@ export function WishlistPage() {
 export function FavoritesPage() {
   const items = useItems({ favorite: true });
   const categories = useCategories();
-  const [view, setView] = useState<"grid" | "table">("grid");
+  // grid or list, remembered in the browser
+  const [view, setView] = useLocalStorage<"grid" | "table">({ key: "favorites-view", defaultValue: "grid", getInitialValueInEffect: false });
   return (
     <Stack>
       <PageHeader title="Favorites">
         <SegmentedControl
           data={[
-            { value: "grid", label: <IconLayoutGrid size={16} /> },
-            { value: "table", label: <IconList size={16} /> },
+            { value: "grid", label: <ViewLabel icon={IconLayoutGrid} label="Grid" /> },
+            { value: "table", label: <ViewLabel icon={IconList} label="List" /> },
           ]}
           value={view}
           onChange={(v) => setView(v as "grid" | "table")}
@@ -64,7 +66,7 @@ export function FavoritesPage() {
           ) : (
             <ItemTable
               items={data}
-              columns={["name", categoryColumn(categories.data), "status", "rating", "hours", "cph", "finished"]}
+              columns={["name", categoryColumn(categories.data), "released", "status", "rating", "hours", "cph", "finished"]}
               initialSort="name"
               empty="No favorites yet. Click the heart next to a game's stars."
             />

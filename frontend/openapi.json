@@ -7474,6 +7474,18 @@
             ],
             "title": "Target Price Cents"
           },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
           "copies_summary": {
             "$ref": "#/components/schemas/CopiesSummary"
           },
@@ -7537,18 +7549,6 @@
               }
             ],
             "title": "Summary"
-          },
-          "release_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Release Date"
           },
           "genres": {
             "anyOf": [
@@ -7660,6 +7660,7 @@
           "cover_path",
           "image_path",
           "target_price_cents",
+          "release_date",
           "copies_summary",
           "devices",
           "value",
@@ -7667,7 +7668,6 @@
           "rawg_id",
           "rawg_slug",
           "summary",
-          "release_date",
           "genres",
           "developer",
           "steam_app_id",
@@ -7780,6 +7780,18 @@
             ],
             "title": "Target Price Cents"
           },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
           "copies_summary": {
             "$ref": "#/components/schemas/CopiesSummary"
           },
@@ -7815,6 +7827,7 @@
           "cover_path",
           "image_path",
           "target_price_cents",
+          "release_date",
           "copies_summary",
           "devices",
           "value"

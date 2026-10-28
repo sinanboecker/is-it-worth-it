@@ -210,3 +210,11 @@ def test_info_is_saved_when_the_steam_link_cant_be_loaded(api, fake, monkeypatch
     hades = api.game(pc["id"], name="Hades")
     hades = api.post(f"/items/{hades['id']}/metadata", {"rawg_id": 2})
     assert (hades["rawg_id"], hades["steam_app_id"], hades["genres"]) == (2, None, "Roguelike")
+
+
+def test_lists_include_the_release_date(api, fake):
+    pc = api.category("PC")
+    hades = api.game(pc["id"], name="Hades")
+    api.post(f"/items/{hades['id']}/metadata", {"rawg_id": 2})
+    (listed,) = api.get("/items", params={"q": "Hades"})
+    assert listed["release_date"] == "2020-09-17"

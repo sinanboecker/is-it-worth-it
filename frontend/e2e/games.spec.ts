@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import pkg from "../package.json" with { type: "json" };
-import { fillMoney, setup } from "./helpers";
+import { fillMoney, pickSegment, setup } from "./helpers";
 
 test("add a game, log hours, finish it, see it in the journal", async ({ page, request }) => {
   const { category } = await setup(request);
@@ -101,6 +101,7 @@ test("mark a game as favorite and find it on the favorites page", async ({ page,
     })
   ).json();
 
+  await request.patch(`/api/v1/items/${game.id}`, { data: { release_date: "2017-03-03" } });
   await page.goto(`/items/${game.id}`);
   await page.getByRole("button", { name: "Add to favorites" }).click();
   await expect(page.getByText(`${name} is a favorite ❤`)).toBeVisible();
@@ -109,6 +110,15 @@ test("mark a game as favorite and find it on the favorites page", async ({ page,
   await page.getByRole("link", { name: "Favorites" }).click();
   await expect(page.getByRole("heading", { name: "Favorites" })).toBeVisible();
   await expect(page.getByText(name, { exact: true })).toBeVisible();
+
+  // the list shows the release year, and stays the view after a reload
+  await pickSegment(page, "List");
+  await expect(page.getByRole("columnheader", { name: "Released" })).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(name) })).toContainText("2017");
+  await page.reload();
+  await expect(page.getByRole("radio", { name: "List", exact: true })).toBeChecked();
+  await expect(page.getByRole("columnheader", { name: "Released" })).toBeVisible();
+  await pickSegment(page, "Grid");
 
   await page.getByText(name, { exact: true }).click();
   await page.getByRole("button", { name: "Remove from favorites" }).click();

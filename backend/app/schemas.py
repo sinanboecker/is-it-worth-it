@@ -331,6 +331,7 @@ class ItemSummary(BaseModel):
     cover_path: str | None
     image_path: str | None
     target_price_cents: int | None
+    release_date: date | None
     copies_summary: CopiesSummary
     devices: list[PlayLinkRead]
     value: ValueRead | None
@@ -351,6 +352,7 @@ class ItemSummary(BaseModel):
             "cover_path": item.cover_path,
             "image_path": item.image_path,
             "target_price_cents": item.target_price_cents,
+            "release_date": item.release_date,
             "copies_summary": CopiesSummary(
                 **vars(stats),
                 formats=sorted({c.format for c in item.copies}),
@@ -371,7 +373,6 @@ class ItemRead(ItemSummary):
     rawg_id: int | None
     rawg_slug: str | None
     summary: str | None
-    release_date: date | None
     genres: str | None
     developer: str | None
     steam_app_id: int | None
@@ -403,7 +404,6 @@ class ItemRead(ItemSummary):
             rawg_id=item.rawg_id,
             rawg_slug=item.rawg_slug,
             summary=item.summary,
-            release_date=item.release_date,
             genres=item.genres,
             developer=item.developer,
             steam_app_id=item.steam_app_id,

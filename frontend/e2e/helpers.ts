@@ -1,4 +1,4 @@
-import type { APIRequestContext, Page } from "@playwright/test";
+import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
 /** Test data through the API; the flows under test go through the UI. */
 export async function setup(request: APIRequestContext) {
@@ -17,4 +17,10 @@ export async function setup(request: APIRequestContext) {
 export async function fillMoney(page: Page, label: string, value: string) {
   const input = page.getByRole("dialog").getByRole("textbox", { name: label, exact: true });
   await input.fill(value);
+}
+
+/** Mantine's SegmentedControl moves its radio inputs off-screen; click the visible label instead. */
+export async function pickSegment(scope: Locator | Page, name: string) {
+  const id = await scope.getByRole("radio", { name, exact: true }).getAttribute("id");
+  await scope.locator(`label[for="${id}"]`).click();
 }

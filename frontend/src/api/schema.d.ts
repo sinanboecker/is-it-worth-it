@@ -2212,6 +2212,8 @@ export interface components {
             image_path: string | null;
             /** Target Price Cents */
             target_price_cents: number | null;
+            /** Release Date */
+            release_date: string | null;
             copies_summary: components["schemas"]["CopiesSummary"];
             /** Devices */
             devices: components["schemas"]["PlayLinkRead"][];
@@ -2224,8 +2226,6 @@ export interface components {
             rawg_slug: string | null;
             /** Summary */
             summary: string | null;
-            /** Release Date */
-            release_date: string | null;
             /** Genres */
             genres: string | null;
             /** Developer */
@@ -2282,6 +2282,8 @@ export interface components {
             image_path: string | null;
             /** Target Price Cents */
             target_price_cents: number | null;
+            /** Release Date */
+            release_date: string | null;
             copies_summary: components["schemas"]["CopiesSummary"];
             /** Devices */
             devices: components["schemas"]["PlayLinkRead"][];
