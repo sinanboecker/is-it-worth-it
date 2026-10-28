@@ -16,7 +16,7 @@ def data_dir(tmp_path, monkeypatch):
 
 
 def fill(api):
-    """A bit of everything: categories, default device, copies, hours, DLC, completion, bundle, PC build."""
+    """A bit of everything: categories, default device, copies, hours, DLC, completion, bundle, PC build, camera."""
     nintendo = api.category()
     switch = api.hardware(nintendo["id"])
     api.patch(f"/categories/{nintendo['id']}", {"default_device_id": switch["id"]})
@@ -47,6 +47,7 @@ def fill(api):
     )
     parts = [{"id": p["id"]} for p in purchase["parts"]]
     api.post("/pc/sales", {"sell_date": "2024-05-01", "total_price_cents": 10000, "parts": parts})
+    api.post("/camera/gear", {"name": "X-T4", "category": "body", "buy_date": "2021-03-01", "buy_price_cents": 150000})
     api.put("/settings", {"break_even_cph": 250})
     return game
 
@@ -73,7 +74,9 @@ def test_round_trip(api, data_dir):
     assert first["schema_version"] == 1
     assert len(first["tables"]["copies"]) == 4  # console, game, 2 bundle games
     assert [len(first["tables"][t]) for t in ("pc_builds", "pc_purchases", "pc_sales", "pc_parts")] == [1, 1, 1, 3]
+    assert len(first["tables"]["camera_gear"]) == 1
     builds_before, parts_before = api.get("/pc/builds"), api.get("/pc/parts")
+    camera_before = api.get("/camera/gear")
 
     response = upload(api, json.dumps(first).encode(), mode="replace")
     assert response.status_code == 200, response.text
@@ -84,6 +87,7 @@ def test_round_trip(api, data_dir):
     assert api.get(f"/items/{game['id']}") == before_game  # derived values identical too
     assert api.get("/settings")["break_even_cph"] == 250
     assert (api.get("/pc/builds"), api.get("/pc/parts")) == (builds_before, parts_before)
+    assert api.get("/camera/gear") == camera_before
 
 
 def test_empty_mode_refuses_existing_data(api, data_dir):

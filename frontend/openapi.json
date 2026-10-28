@@ -3943,6 +3943,156 @@
         }
       }
     },
+    "/api/v1/camera/gear": {
+      "get": {
+        "tags": [
+          "camera gear"
+        ],
+        "summary": "List Gear",
+        "description": "All camera gear, the newest first (unknown buy dates last).",
+        "operationId": "list_gear_api_v1_camera_gear_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CameraGearRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Gear Api V1 Camera Gear Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "camera gear"
+        ],
+        "summary": "Create Gear",
+        "operationId": "create_gear_api_v1_camera_gear_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraGearCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraGearRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/camera/gear/{gear_id}": {
+      "patch": {
+        "tags": [
+          "camera gear"
+        ],
+        "summary": "Update Gear",
+        "operationId": "update_gear_api_v1_camera_gear__gear_id__patch",
+        "parameters": [
+          {
+            "name": "gear_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Gear Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraGearUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraGearRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "camera gear"
+        ],
+        "summary": "Delete Gear",
+        "operationId": "delete_gear_api_v1_camera_gear__gear_id__delete",
+        "parameters": [
+          {
+            "name": "gear_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Gear Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -5018,6 +5168,296 @@
         },
         "type": "object",
         "title": "BundleUpdate"
+      },
+      "CameraGearCategory": {
+        "type": "string",
+        "enum": [
+          "body",
+          "lens",
+          "adapter",
+          "other"
+        ],
+        "title": "CameraGearCategory"
+      },
+      "CameraGearCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CameraGearCategory",
+            "default": "other"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "buy_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Date"
+          },
+          "buy_price_cents": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Buy Price Cents"
+          },
+          "sell_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Date"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "buy_price_cents"
+        ],
+        "title": "CameraGearCreate"
+      },
+      "CameraGearRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CameraGearCategory"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "buy_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Date"
+          },
+          "buy_price_cents": {
+            "type": "integer",
+            "title": "Buy Price Cents"
+          },
+          "sell_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Date"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "sold": {
+            "type": "boolean",
+            "title": "Sold"
+          },
+          "net_cost_cents": {
+            "type": "integer",
+            "title": "Net Cost Cents",
+            "description": "buy price minus sell price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "manufacturer",
+          "buy_date",
+          "buy_price_cents",
+          "sell_date",
+          "sell_price_cents",
+          "notes",
+          "sold",
+          "net_cost_cents"
+        ],
+        "title": "CameraGearRead"
+      },
+      "CameraGearUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CameraGearCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "buy_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Date"
+          },
+          "buy_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy Price Cents"
+          },
+          "sell_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Date"
+          },
+          "sell_price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sell Price Cents"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "CameraGearUpdate"
       },
       "Candidate": {
         "properties": {

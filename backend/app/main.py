@@ -9,7 +9,7 @@ from app import config
 from app.db import get_engine
 from app.migrations import upgrade_database
 from app.netguard import DEFAULT_NETWORKS, NetworkGuard, parse_networks
-from app.routers import bundles, categories, items, metadata, pc, settings, stats, transfer
+from app.routers import bundles, camera, categories, items, metadata, pc, settings, stats, transfer
 from app.seed import seed
 
 
@@ -38,6 +38,7 @@ api.include_router(transfer.router)
 api.include_router(stats.router)
 api.include_router(metadata.router)
 api.include_router(pc.router)
+api.include_router(camera.router)
 
 
 @api.get("/health", tags=["health"])

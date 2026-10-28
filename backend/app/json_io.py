@@ -18,6 +18,7 @@ from sqlmodel import Session, SQLModel, select
 from app import media
 from app.models import (
     Bundle,
+    CameraGear,
     Category,
     Completion,
     Copy,
@@ -49,6 +50,7 @@ TABLES: list[tuple[str, type[SQLModel]]] = [
     ("pc_purchases", PcPurchase),
     ("pc_sales", PcSale),
     ("pc_parts", PcPart),
+    ("camera_gear", CameraGear),
 ]
 
 

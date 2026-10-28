@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { BundlesPage } from "./pages/BundlesPage";
+import { CameraPage } from "./pages/CameraPage";
 import { CategoryPage } from "./pages/CategoryPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ItemPage } from "./pages/ItemPage";
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: "/backlog", element: <BacklogPage /> },
       { path: "/bundles", element: <BundlesPage /> },
       { path: "/pc", element: <PcPage /> },
+      { path: "/camera", element: <CameraPage /> },
       { path: "/categories/:id", element: <CategoryPage /> },
       { path: "/items/:id", element: <ItemPage /> },
       { path: "/stats", element: <StatsPage /> },

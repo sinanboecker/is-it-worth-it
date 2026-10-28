@@ -78,6 +78,9 @@ export const usePcSale = (saleId: number) =>
     queryFn: () => unwrap(api.GET("/api/v1/pc/sales/{sale_id}", { params: { path: { sale_id: saleId } } })),
   });
 
+export const useCameraGear = () =>
+  useQuery({ queryKey: ["camera", "gear"], queryFn: () => unwrap(api.GET("/api/v1/camera/gear")) });
+
 export const usePcParts = () => useQuery({ queryKey: ["pc", "parts"], queryFn: () => unwrap(api.GET("/api/v1/pc/parts")) });
 
 export const useBundles = () =>

@@ -16,6 +16,7 @@ import { useDisclosure } from "@mantine/hooks";
 import {
   IconBook,
   IconBookmark,
+  IconCamera,
   IconChartBar,
   IconCpu,
   IconDeviceGamepad2,
@@ -47,6 +48,7 @@ const MAIN_LINKS = [
   { to: "/backlog", label: "Backlog", icon: IconStack2 },
   { to: "/bundles", label: "Bundles", icon: IconPackage },
   { to: "/pc", label: "PC builds", icon: IconCpu },
+  { to: "/camera", label: "Camera", icon: IconCamera },
 ];
 
 const MORE_LINKS = [

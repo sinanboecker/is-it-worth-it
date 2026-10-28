@@ -324,3 +324,24 @@ class PcPart(SQLModel, table=True):
     build: PcBuild | None = Relationship(back_populates="parts")
     purchase: PcPurchase | None = Relationship(back_populates="parts")
     sale: PcSale | None = Relationship(back_populates="parts")
+
+
+class CameraGearCategory(StrEnum):
+    body = "body"
+    lens = "lens"
+    adapter = "adapter"
+    other = "other"
+
+
+class CameraGear(SQLModel, table=True):
+    """Camera bodies, lenses and other camera gear (separate from games and their hardware)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    category: CameraGearCategory = CameraGearCategory.other
+    manufacturer: str | None = None
+    buy_date: date | None = None  # None = unknown
+    buy_price_cents: int
+    sell_date: date | None = None
+    sell_price_cents: int | None = None  # set = sold
+    notes: str | None = None

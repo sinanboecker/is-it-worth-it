@@ -1,4 +1,4 @@
-import type { CopyCondition, CopyFormat, GameStatus, PcPartCategory, SplitMode } from "@/api/types";
+import type { CameraGearCategory, CopyCondition, CopyFormat, GameStatus, PcPartCategory, SplitMode } from "@/api/types";
 
 export const STATUS: Record<GameStatus, { label: string; color: string }> = {
   wishlist: { label: "Wishlist", color: "grape" },
@@ -35,6 +35,13 @@ export const PC_PART_CATEGORY: Record<PcPartCategory, string> = {
   power_supply: "Power supply",
   cooling: "Cooling",
   case: "Case",
+  other: "Other",
+};
+
+export const CAMERA_GEAR_CATEGORY: Record<CameraGearCategory, string> = {
+  body: "Camera bodies",
+  lens: "Lenses",
+  adapter: "Adapters",
   other: "Other",
 };
 

@@ -1084,6 +1084,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/camera/gear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Gear
+         * @description All camera gear, the newest first (unknown buy dates last).
+         */
+        get: operations["list_gear_api_v1_camera_gear_get"];
+        put?: never;
+        /** Create Gear */
+        post: operations["create_gear_api_v1_camera_gear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/camera/gear/{gear_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Gear */
+        delete: operations["delete_gear_api_v1_camera_gear__gear_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Gear */
+        patch: operations["update_gear_api_v1_camera_gear__gear_id__patch"];
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1461,6 +1500,75 @@ export interface components {
             manual_shares?: {
                 [key: string]: number;
             } | null;
+        };
+        /**
+         * CameraGearCategory
+         * @enum {string}
+         */
+        CameraGearCategory: "body" | "lens" | "adapter" | "other";
+        /** CameraGearCreate */
+        CameraGearCreate: {
+            /** Name */
+            name: string;
+            /** @default other */
+            category: components["schemas"]["CameraGearCategory"];
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Buy Date */
+            buy_date?: string | null;
+            /** Buy Price Cents */
+            buy_price_cents: number;
+            /** Sell Date */
+            sell_date?: string | null;
+            /** Sell Price Cents */
+            sell_price_cents?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** CameraGearRead */
+        CameraGearRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            category: components["schemas"]["CameraGearCategory"];
+            /** Manufacturer */
+            manufacturer: string | null;
+            /** Buy Date */
+            buy_date: string | null;
+            /** Buy Price Cents */
+            buy_price_cents: number;
+            /** Sell Date */
+            sell_date: string | null;
+            /** Sell Price Cents */
+            sell_price_cents: number | null;
+            /** Notes */
+            notes: string | null;
+            /** Sold */
+            sold: boolean;
+            /**
+             * Net Cost Cents
+             * @description buy price minus sell price
+             */
+            net_cost_cents: number;
+        };
+        /** CameraGearUpdate */
+        CameraGearUpdate: {
+            /** Name */
+            name?: string | null;
+            category?: components["schemas"]["CameraGearCategory"] | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Buy Date */
+            buy_date?: string | null;
+            /** Buy Price Cents */
+            buy_price_cents?: number | null;
+            /** Sell Date */
+            sell_date?: string | null;
+            /** Sell Price Cents */
+            sell_price_cents?: number | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** Candidate */
         Candidate: {
@@ -5505,6 +5613,123 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PcSaleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_gear_api_v1_camera_gear_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraGearRead"][];
+                };
+            };
+        };
+    };
+    create_gear_api_v1_camera_gear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraGearCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraGearRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_gear_api_v1_camera_gear__gear_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gear_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_gear_api_v1_camera_gear__gear_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gear_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraGearUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraGearRead"];
                 };
             };
             /** @description Validation Error */

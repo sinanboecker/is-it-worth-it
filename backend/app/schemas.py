@@ -11,6 +11,8 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 
 from app import calc
 from app.models import (
+    CameraGear,
+    CameraGearCategory,
     CategoryIcon,
     CategoryType,
     Completion,
@@ -667,3 +669,60 @@ class PcSaleRead(BaseModel):
     split_mode: SplitMode
     notes: str | None
     parts: list[PcPartRead]
+
+
+# --- camera gear ------------------------------------------------------------------------------
+
+
+class CameraGearCreate(BaseModel):
+    name: str = Field(min_length=1)
+    category: CameraGearCategory = CameraGearCategory.other
+    manufacturer: str | None = None
+    buy_date: date | None = None
+    buy_price_cents: Cents
+    sell_date: date | None = None
+    sell_price_cents: Cents | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _dates_in_order(self):
+        check_camera_dates(self.buy_date, self.sell_date)
+        return self
+
+
+class CameraGearUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1)
+    category: CameraGearCategory | None = None
+    manufacturer: str | None = None
+    buy_date: date | None = None
+    buy_price_cents: Cents | None = None
+    sell_date: date | None = None
+    sell_price_cents: Cents | None = None
+    notes: str | None = None
+
+
+class CameraGearRead(BaseModel):
+    id: int
+    name: str
+    category: CameraGearCategory
+    manufacturer: str | None
+    buy_date: date | None
+    buy_price_cents: int
+    sell_date: date | None
+    sell_price_cents: int | None
+    notes: str | None
+    sold: bool
+    net_cost_cents: int = Field(description="buy price minus sell price")
+
+    @classmethod
+    def build(cls, gear: CameraGear) -> "CameraGearRead":
+        return cls(
+            **gear.model_dump(),
+            sold=gear.sell_price_cents is not None,
+            net_cost_cents=gear.buy_price_cents - (gear.sell_price_cents or 0),
+        )
+
+
+def check_camera_dates(buy_date: date | None, sell_date: date | None) -> None:
+    if buy_date is not None and sell_date is not None and sell_date < buy_date:
+        raise ValueError("the sell date is before the buy date")
