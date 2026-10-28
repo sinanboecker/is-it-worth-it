@@ -42,12 +42,6 @@ export const useJournal = (query: JournalQuery) =>
     queryFn: () => unwrap(api.GET("/api/v1/journal", { params: { query } })),
   });
 
-export const useHeatmap = (year?: number) =>
-  useQuery({
-    queryKey: ["heatmap", year],
-    queryFn: () => unwrap(api.GET("/api/v1/journal/heatmap", { params: { query: { year } } })),
-  });
-
 export const useSummary = (category?: number) =>
   useQuery({
     queryKey: ["stats", "summary", category],

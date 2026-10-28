@@ -2942,72 +2942,6 @@
         }
       }
     },
-    "/api/v1/journal/heatmap": {
-      "get": {
-        "tags": [
-          "stats"
-        ],
-        "summary": "Get Heatmap",
-        "description": "Games finished per day of `year` (default: this year).",
-        "operationId": "get_heatmap_api_v1_journal_heatmap_get",
-        "parameters": [
-          {
-            "name": "year",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Year"
-            }
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Category"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Heatmap"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/now-playing": {
       "get": {
         "tags": [
@@ -6949,45 +6883,6 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
-      },
-      "Heatmap": {
-        "properties": {
-          "year": {
-            "type": "integer",
-            "title": "Year"
-          },
-          "days": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "type": "object",
-            "title": "Days"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "max_per_day": {
-            "type": "integer",
-            "title": "Max Per Day"
-          },
-          "years_available": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Years Available"
-          }
-        },
-        "type": "object",
-        "required": [
-          "year",
-          "days",
-          "total",
-          "max_per_day",
-          "years_available"
-        ],
-        "title": "Heatmap"
       },
       "HoursAdd": {
         "properties": {

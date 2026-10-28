@@ -22,7 +22,7 @@ What is planned:
 - Break-even value (e.g. 3 €/h): one value used for games **and** hardware. Below it, the entry counts as "worth it".
 - Game status: wishlist, backlog, currently playing, on hold, played, finished, abandoned, endless
 - Mark games as finished (also add finish date), can be multiple
-- A **journal** (like Backloggd) that shows which games were finished when, with a calendar heatmap
+- A **journal** (like Backloggd) that shows which games were finished when, with totals of all finished games
 - A **Now Playing** page for games in progress
 - **Favorites:** a heart next to a game's stars, and a **Favorites** page listing all favorite games
 - **Ratings** 0–5 stars in 0.5 steps, **for the game** (a finish has no rating of its own), plus short reviews per completion (Backloggd-style)
@@ -392,8 +392,9 @@ A chronological diary of finished games, built from `completion` rows (no extra 
 - **Card details:** name, cover, finish date, (started → finished span if known), device + 🕹 emulated marker, hours, the game's **star rating**, cost/hr and worth-it badge.
   Clicking a card opens the completion with its **review**.
 - **Year header:** number of games finished, total hours of those games, average rating, most used device.
-- **Calendar heatmap:** a GitHub-style grid (one square per day, 53 weeks × 7 days) at the top of each year. Colour intensity = games finished that day.
-  Hovering/tapping a day shows the games; clicking jumps to that month in the journal. Year switcher next to it.
+- **Totals of all finished games** at the top (not affected by the filters): games finished (replays count once, the
+  number of finishes is shown too), total hours of those games, average rating with the number of games per star, and
+  games per category. (Replaced the earlier calendar heatmap.)
 - **Filters:** year picker, category, device, rating (e.g. ≥ 4★), mastered only.
 - **Quick add:** "Log a finish" button directly on the journal page (pick game → date → device → review; rate the game if not rated yet).
 - The journal only shows **finished** games. Games in progress have their own **Now Playing** page (§8).
@@ -485,7 +486,6 @@ All under `/api/v1`, JSON, **no login** (access is limited to the LAN/WireGuard,
 | POST | `/items/{id}/prices/refresh` | refresh gg.deals price of one game now |
 | GET | `/items/{id}/prices` | price history (snapshots) |
 | GET | `/journal?year=&category=&device=&rating_min=` | completions grouped by year/month with game cover, rating, review |
-| GET | `/journal/heatmap?year=` | `{date: count}` for the calendar heatmap |
 | GET | `/now-playing` | Currently playing + On hold games with hours per device, last played, break-even progress; plus "up next" backlog |
 | GET | `/metadata/search?q=` | RAWG search → candidate list with thumbnails |
 | POST | `/items/{id}/metadata` | apply a RAWG match: stores the fields (incl. Steam ID) and downloads the image |
@@ -590,7 +590,7 @@ Prices are shown in EUR with German formatting `1.234,56 €`. Responsive layout
 - Networking: Retrofit + OkHttp + kotlinx.serialization. API models can be written by hand or generated from `/api/openapi.json`.
 - Architecture: MVVM (ViewModel + StateFlow), Hilt for DI (optional for an app this size), DataStore for settings (server URL, notification settings).
 - Screens: **Setup** (server URL, connection test) → **Now Playing** (start screen; fastest way to log hours or a finish) → **Dashboard** → **Journal** → **Category** (totals header, Games/Hardware tabs, cover grid, search) → **Game/Hardware detail & edit** → **Wishlist/Backlog** → **Stats**.
-- Journal screen with the calendar heatmap (horizontally scrollable) above the month list.
+- Journal screen with the totals of all finished games above the month list.
 - Quick actions on a game: **"+ hours"** (device chips, last used pre-selected), **status change**, **"Finished"** (adds a completion with today's date + device, then asks for an optional review and the game rating if it has none yet), **"Sell copy"** (pick the copy if there are several → sell price).
 - Game detail: copies list with "Add copy" / "Sell".
 - Game detail: per-device hours with total, DLC list + "Add DLC" with the available-DLC dropdown.

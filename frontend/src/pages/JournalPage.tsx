@@ -4,24 +4,27 @@ import {
   Button,
   Card,
   Checkbox,
+  Collapse,
   Group,
   Modal,
+  Progress,
   Select,
   SimpleGrid,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
-import { IconFileImport } from "@tabler/icons-react";
+import { useLocalStorage } from "@mantine/hooks";
+import { IconChevronDown, IconChevronUp, IconFileImport } from "@tabler/icons-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useCategories, useHeatmap, useJournal } from "@/api/queries";
-import type { JournalEntry } from "@/api/types";
-import { Cover, Empty, PageHeader, QueryView } from "@/components/common";
+import { useCategories, useJournal } from "@/api/queries";
+import type { Category, Journal, JournalEntry } from "@/api/types";
+import { Cover, Empty, Figure, PageHeader, QueryView } from "@/components/common";
 import { FinishImportModal } from "@/components/FinishImportModal";
-import { HeatmapCalendar } from "@/components/HeatmapCalendar";
 import { DeviceSelect, Stars } from "@/components/inputs";
 import { day, hours, monthName, perHour } from "@/lib/format";
+import { allEntries, journalTotals } from "@/lib/journal";
 
 function EntryCard({ entry, onOpen }: { entry: JournalEntry; onOpen: () => void }) {
   return (
@@ -102,10 +105,88 @@ function EntryModal({ entry, onClose }: { entry: JournalEntry; onClose: () => vo
   );
 }
 
+/** A label, a bar for its share of the largest value, and the value. */
+function BarRow({ label, value, max }: { label: string; value: number; max: number }) {
+  return (
+    <Group gap="sm" wrap="nowrap">
+      <Text size="sm" w={150} lineClamp={1} title={label}>
+        {label}
+      </Text>
+      <Progress value={max ? (value / max) * 100 : 0} style={{ flex: 1 }} aria-hidden />
+      <Text size="sm" w={36} ta="right" fw={600}>
+        {value}
+      </Text>
+    </Group>
+  );
+}
+
+/** Totals of all finished games (not affected by the filters below). */
+function JournalTotalsCard({ journal, categories }: { journal: Journal; categories: Category[] }) {
+  const t = journalTotals(journal);
+  const names = new Map(categories.map((c) => [c.id, c.name]));
+  const maxCategory = Math.max(0, ...t.perCategory.map((c) => c.games));
+  const stars = [5, 4, 3, 2, 1] as const;
+  const maxStars = Math.max(0, ...stars.map((s) => t.ratingCounts[s]));
+  // per-browser convenience: whether the lists below the figures are shown
+  const [open, setOpen] = useLocalStorage({ key: "journal-totals-open", defaultValue: true, getInitialValueInEffect: false });
+  return (
+    <Card withBorder padding="md">
+      <Group justify="space-between" mb="sm">
+        <Title order={4}>All finished games</Title>
+        <Button
+          size="xs"
+          variant="subtle"
+          rightSection={open ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+        >
+          {open ? "Hide details" : "Categories & ratings"}
+        </Button>
+      </Group>
+      <SimpleGrid cols={{ base: 2, sm: 3 }}>
+        <Figure
+          label="Games finished"
+          value={String(t.games)}
+          hint={t.finishes > t.games ? `${t.finishes} finishes incl. replays` : undefined}
+        />
+        <Figure label="Total hours" value={hours(t.hours)} />
+        <Figure
+          label="Average rating"
+          value={t.averageRating === null ? "–" : `${t.averageRating.toLocaleString("de-DE")} ★`}
+          hint={`${t.rated} of ${t.games} games rated`}
+        />
+      </SimpleGrid>
+      <Collapse in={open}>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl" mt="md">
+          <Stack gap={6}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+              Games per category
+            </Text>
+            {t.perCategory.map((c) => (
+              <BarRow key={c.categoryId} label={names.get(c.categoryId) ?? "?"} value={c.games} max={maxCategory} />
+            ))}
+          </Stack>
+          <Stack gap={6}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+              Ratings
+            </Text>
+            {t.rated ? (
+              stars.map((s) => <BarRow key={s} label={`${"★".repeat(s)}${"☆".repeat(5 - s)}`} value={t.ratingCounts[s]} max={maxStars} />)
+            ) : (
+              <Text size="sm" c="dimmed">
+                No ratings yet.
+              </Text>
+            )}
+          </Stack>
+        </SimpleGrid>
+      </Collapse>
+    </Card>
+  );
+}
+
 export function JournalPage() {
   const categories = useCategories();
   const [year, setYear] = useState<number | null>(null);
-  const [heatmapYear, setHeatmapYear] = useState<number | undefined>(undefined);
   const [category, setCategory] = useState<number | null>(null);
   const [device, setDevice] = useState<number | null>(null);
   const [ratingMin, setRatingMin] = useState<string | null>(null);
@@ -119,7 +200,7 @@ export function JournalPage() {
     rating_min: ratingMin ? Number(ratingMin) : undefined,
     mastered: mastered || undefined,
   });
-  const heatmap = useHeatmap(heatmapYear);
+  const all = useJournal({}); // for the totals and the years to filter by
 
   return (
     <Stack>
@@ -130,33 +211,8 @@ export function JournalPage() {
       </PageHeader>
       {importing && <FinishImportModal onClose={() => setImporting(false)} />}
 
-      <QueryView query={heatmap}>
-        {(h) => (
-          <Card withBorder padding="md">
-            <Group justify="space-between" mb="xs">
-              <Text fw={600}>
-                {h.total} games finished in {h.year}
-              </Text>
-              <Select
-                size="xs"
-                w={110}
-                data={[...new Set([new Date().getFullYear(), ...h.years_available])]
-                  .sort((a, b) => b - a)
-                  .map((y) => String(y))}
-                value={String(h.year)}
-                onChange={(v) => v && setHeatmapYear(Number(v))}
-                allowDeselect={false}
-              />
-            </Group>
-            <HeatmapCalendar
-              heatmap={h}
-              onDayClick={(date) => {
-                setYear(Number(date.slice(0, 4)));
-                document.getElementById(`month-${date.slice(0, 7)}`)?.scrollIntoView({ behavior: "smooth" });
-              }}
-            />
-          </Card>
-        )}
+      <QueryView query={all}>
+        {(data) => (allEntries(data).length ? <JournalTotalsCard journal={data} categories={categories.data ?? []} /> : null)}
       </QueryView>
 
       <Group wrap="wrap" align="flex-end">
@@ -164,7 +220,7 @@ export function JournalPage() {
           label="Year"
           placeholder="All years"
           w={120}
-          data={(heatmap.data?.years_available ?? []).map(String)}
+          data={(all.data?.years ?? []).map((y) => String(y.year))}
           value={year ? String(year) : null}
           onChange={(v) => setYear(v ? Number(v) : null)}
           clearable

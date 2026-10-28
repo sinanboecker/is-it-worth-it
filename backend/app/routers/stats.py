@@ -1,4 +1,4 @@
-"""Statistics, journal, calendar heatmap and Now Playing (PLANNING.md §3, §4, §8)."""
+"""Statistics, journal and Now Playing (PLANNING.md §3, §4, §8)."""
 
 from dataclasses import asdict
 from typing import Annotated, Literal
@@ -212,7 +212,7 @@ def dlc(session: SessionDep, category_id: CategoryParam = None, limit: Annotated
     return asdict(stats.dlc_stats(load_items(session, category_id), limit))
 
 
-# --- journal & heatmap ------------------------------------------------------------------------
+# --- journal ----------------------------------------------------------------------------------
 
 
 @router.get("/journal")
@@ -228,14 +228,6 @@ def get_journal(
     """Finished games grouped by year → month, newest first. Finishes without date come in `unknown_date`."""
     filters = journal.JournalFilter(year, category_id, device, rating_min, mastered)
     return journal.build_journal(load_items(session, category_id), settings.break_even_cph, filters)
-
-
-@router.get("/journal/heatmap")
-def get_heatmap(
-    session: SessionDep, today: TodayDep, year: int | None = None, category_id: CategoryParam = None
-) -> journal.Heatmap:
-    """Games finished per day of `year` (default: this year)."""
-    return journal.heatmap(load_items(session, category_id), year or today.year)
 
 
 # --- now playing ------------------------------------------------------------------------------

@@ -36,7 +36,6 @@ export type CategoryTotals = S["CategoryTotalsOut"];
 export type YearRow = S["YearOut"];
 export type Journal = S["Journal"];
 export type JournalEntry = S["JournalEntry"];
-export type Heatmap = S["Heatmap"];
 export type NowPlaying = S["NowPlayingOut"];
 export type NowPlayingCard = S["NowPlayingCard"];
 export type ImportPreview = S["ImportPreview"];

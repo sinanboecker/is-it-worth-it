@@ -86,11 +86,3 @@ def test_filters(api, journal_data):
     assert flat(by_device) == [("Metroid", "2026-08-15")]
     assert flat(api.get("/journal", params={"rating_min": 4.5})) == [("Hades", "2026-08-15"), ("Hades", "2026-02-01")]
     assert flat(api.get("/journal", params={"mastered": True})) == [("Zelda", "2026-08-01")]
-
-
-def test_heatmap(api, journal_data):
-    heatmap = api.get("/journal/heatmap", params={"year": 2026})
-    assert heatmap["days"] == {"2026-02-01": 1, "2026-08-01": 1, "2026-08-15": 2}
-    assert (heatmap["total"], heatmap["max_per_day"]) == (4, 2)
-    assert heatmap["years_available"] == [2026, 2025]
-    assert api.get("/journal/heatmap", params={"year": 2020})["days"] == {}

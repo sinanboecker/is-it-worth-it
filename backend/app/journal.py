@@ -1,4 +1,4 @@
-"""Backloggd-style journal of finished games, and the calendar heatmap (PLANNING.md §4)."""
+"""Backloggd-style journal of finished games (PLANNING.md §4)."""
 
 from collections import Counter
 from collections.abc import Iterable
@@ -140,30 +140,3 @@ def build_journal(items: Iterable[Item], global_break_even_cph: int, filters: Jo
     unknown = [] if filters.year is not None else [e for e in all_entries if e.finished_on is None]
     unknown.sort(key=lambda e: e.name.lower())
     return Journal(years=years, unknown_date=unknown)
-
-
-@dataclass
-class Heatmap:
-    year: int
-    days: dict[str, int]  # ISO date → games finished that day (only days with finishes)
-    total: int
-    max_per_day: int
-    years_available: list[int]
-
-
-def heatmap(items: Iterable[Item], year: int, filters: JournalFilter | None = None) -> Heatmap:
-    finishes = [
-        c.finished_on
-        for game in items
-        if game.kind is ItemKind.game and (filters is None or filters.category_id in (None, game.category_id))
-        for c in game.completions
-        if c.finished_on is not None
-    ]
-    days = Counter(d.isoformat() for d in finishes if d.year == year)
-    return Heatmap(
-        year=year,
-        days=dict(sorted(days.items())),
-        total=sum(days.values()),
-        max_per_day=max(days.values(), default=0),
-        years_available=sorted({d.year for d in finishes}, reverse=True),
-    )

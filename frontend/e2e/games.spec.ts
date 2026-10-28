@@ -41,6 +41,18 @@ test("add a game, log hours, finish it, see it in the journal", async ({ page, r
 
   await page.getByRole("link", { name: "Journal" }).click();
   await expect(page.getByText(name).first()).toBeVisible();
+  // totals of all finished games instead of the calendar, the game's category among them
+  const totals = page.locator(".mantine-Card-root", { hasText: "All finished games" });
+  await expect(totals.getByText("Games finished")).toBeVisible();
+  await expect(totals.getByText(category.name)).toBeVisible();
+  // the lists can be folded away (remembered in the browser)
+  await totals.getByRole("button", { name: "Hide details" }).click();
+  await expect(totals.getByText(category.name)).toBeHidden();
+  await page.reload();
+  await expect(totals.getByText("Games finished")).toBeVisible();
+  await expect(totals.getByText(category.name)).toBeHidden();
+  await totals.getByRole("button", { name: "Categories & ratings" }).click();
+  await expect(totals.getByText(category.name)).toBeVisible();
 });
 
 test("add a second copy and sell the first one", async ({ page, request }) => {
