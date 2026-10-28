@@ -42,10 +42,10 @@ export const useJournal = (query: JournalQuery) =>
     queryFn: () => unwrap(api.GET("/api/v1/journal", { params: { query } })),
   });
 
-export const useSummary = (category?: number) =>
+export const useSummary = (category?: number, year?: number) =>
   useQuery({
-    queryKey: ["stats", "summary", category],
-    queryFn: () => unwrap(api.GET("/api/v1/stats/summary", { params: { query: { category } } })),
+    queryKey: ["stats", "summary", category, year],
+    queryFn: () => unwrap(api.GET("/api/v1/stats/summary", { params: { query: { category, year } } })),
   });
 
 export const useCategoryTotals = () =>

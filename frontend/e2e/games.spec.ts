@@ -338,3 +338,27 @@ test("tag a copy as won or traded and find it in the category's views", async ({
   await pickSegment(page, "Traded");
   await expect(page.getByRole("row", { name: new RegExp(name) })).toBeVisible();
 });
+
+test("pick a year in a category: games first bought then and their totals", async ({ page, request }) => {
+  const { category, device } = await setup(request); // the device was bought in 2022
+  const post = (name: string, buy_date: string, buy_price_cents: number) =>
+    request.post("/api/v1/items", {
+      data: { category_id: category.id, kind: "game", name, status: "backlog", first_copy: { buy_date, buy_price_cents } },
+    });
+  await post(`Old ${category.id}`, "2023-03-01", 2000);
+  await post(`New ${category.id}`, "2025-06-01", 5000);
+  await page.goto(`/categories/${category.id}`);
+  const year = page.getByRole("textbox", { name: "Year" });
+  await expect(year).toHaveValue("All years");
+  await expect(page.getByText("games 70,00 € · hardware 300,00 €")).toBeVisible();
+
+  await year.click();
+  await expect(page.getByRole("option")).toHaveText(["All years", "2025", "2023", "2022"]);
+  await page.getByRole("option", { name: "2023" }).click();
+  await expect(page.getByRole("row", { name: new RegExp(`Old ${category.id}`) })).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(`New ${category.id}`) })).toHaveCount(0);
+  await expect(page.getByText("games 20,00 € · hardware 0,00 €")).toBeVisible(); // only the 2023 game
+
+  await page.getByRole("tab", { name: "Hardware" }).click();
+  await expect(page.getByRole("row", { name: new RegExp(device.name) })).toHaveCount(0); // bought in 2022
+});

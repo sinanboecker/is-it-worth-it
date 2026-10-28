@@ -71,9 +71,13 @@ class YearOut(BaseModel):
 
 
 @router.get("/stats/summary", response_model=Totals)
-def summary(session: SessionDep, settings: SettingsDep, category_id: CategoryParam = None):
-    """Lifetime totals, including hardware. Without `category`: everything."""
-    return Totals.build(calc.category_totals(load_items(session, category_id), settings.break_even_cph))
+def summary(session: SessionDep, settings: SettingsDep, category_id: CategoryParam = None, year: int | None = None):
+    """Lifetime totals, including hardware. Without `category`: everything. With `year`: only the items first bought
+    in that year (like the yearly stats; items without a buy date are left out)."""
+    items = load_items(session, category_id)
+    if year is not None:
+        items = [i for i in items if (bought := calc.copy_stats(i.copies).first_bought_on) and bought.year == year]
+    return Totals.build(calc.category_totals(items, settings.break_even_cph))
 
 
 @router.get("/stats/categories", response_model=list[CategoryTotalsOut])

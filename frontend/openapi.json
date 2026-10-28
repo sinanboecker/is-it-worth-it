@@ -2269,7 +2269,7 @@
           "stats"
         ],
         "summary": "Summary",
-        "description": "Lifetime totals, including hardware. Without `category`: everything.",
+        "description": "Lifetime totals, including hardware. Without `category`: everything. With `year`: only the items first bought\nin that year (like the yearly stats; items without a buy date are left out).",
         "operationId": "summary_api_v1_stats_summary_get",
         "parameters": [
           {
@@ -2286,6 +2286,22 @@
                 }
               ],
               "title": "Category"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
             }
           }
         ],

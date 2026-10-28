@@ -3,6 +3,7 @@ import {
   Group,
   MultiSelect,
   SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Tabs,
@@ -31,14 +32,24 @@ function matchesOwnership(i: ItemSummary, ownership: Ownership) {
   return { all: true, owned: c.owned, sold: c.sold, won: c.won, traded: c.traded }[ownership];
 }
 
+/** The year an item was first bought in (like the yearly stats); null without a buy date. */
+const boughtYear = (i: ItemSummary) => i.copies_summary.first_bought_on?.slice(0, 4) ?? null;
+
 function filterItems(
   items: ItemSummary[],
-  { search, statuses, ownership, worth }: { search: string; statuses: string[]; ownership: Ownership; worth: string },
+  {
+    search,
+    statuses,
+    ownership,
+    worth,
+    year,
+  }: { search: string; statuses: string[]; ownership: Ownership; worth: string; year: string },
 ) {
   const q = search.trim().toLowerCase();
   return items.filter(
     (i) =>
       (!q || i.name.toLowerCase().includes(q)) &&
+      (year === "all" || boughtYear(i) === year) &&
       (!statuses.length || (i.status && statuses.includes(i.status))) &&
       matchesOwnership(i, ownership) &&
       (worth === "all" || (worth === "yes" ? i.value?.worth_it : i.value && !i.value.worth_it)),
@@ -51,7 +62,11 @@ export function CategoryPage() {
   const category = categories.data?.find((c) => c.id === id);
   const hardwareOnly = category?.type === "hardware_only";
   const items = useItems({ category: id });
-  const summary = useSummary(id);
+  const [chosenYear, setYear] = useState("all");
+  // years with items first bought in them, newest first; a year that's gone falls back to "All years"
+  const years = [...new Set((items.data ?? []).map(boughtYear).filter((y) => y !== null))].sort().reverse();
+  const year = chosenYear === "all" || years.includes(chosenYear) || !items.data ? chosenYear : "all";
+  const summary = useSummary(id, year === "all" ? undefined : Number(year));
   const [tab, setTab] = useState<ItemKind>("game");
   const [view, setView] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
@@ -120,6 +135,14 @@ export function CategoryPage() {
         {activeTab === "game" && (
           <MultiSelect placeholder="Status" data={STATUS_OPTIONS} value={statuses} onChange={setStatuses} clearable w={260} />
         )}
+        <Select
+          aria-label="Year"
+          w={130}
+          data={[{ value: "all", label: "All years" }, ...years.map((y) => ({ value: y, label: y }))]}
+          value={year}
+          onChange={(v) => setYear(v ?? "all")}
+          allowDeselect={false}
+        />
         <SegmentedControl
           data={[
             { value: "all", label: "All" },
@@ -157,7 +180,7 @@ export function CategoryPage() {
         {(data) => {
           const visible = filterItems(
             data.filter((i) => i.kind === activeTab),
-            { search, statuses: statuses as GameStatus[], ownership, worth },
+            { search, statuses: statuses as GameStatus[], ownership, worth, year },
           );
           if (activeTab === "game" && view === "grid") return <CoverGrid items={visible} />;
           return (

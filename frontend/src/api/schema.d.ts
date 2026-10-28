@@ -578,7 +578,8 @@ export interface paths {
         };
         /**
          * Summary
-         * @description Lifetime totals, including hardware. Without `category`: everything.
+         * @description Lifetime totals, including hardware. Without `category`: everything. With `year`: only the items first bought
+         *     in that year (like the yearly stats; items without a buy date are left out).
          */
         get: operations["summary_api_v1_stats_summary_get"];
         put?: never;
@@ -4433,6 +4434,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: number | null;
+                year?: number | null;
             };
             header?: never;
             path?: never;

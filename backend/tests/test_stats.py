@@ -69,6 +69,16 @@ def test_summary_and_categories(api, world):
     assert api.client.get("/api/v1/stats/summary", params={"category": 999}).status_code == 404
 
 
+def test_summary_of_one_year(api, world):
+    """A year counts the items first bought in it, with all their money and hours."""
+    years = {r["year"]: r for r in api.get("/stats/yearly")}
+    for year in years:
+        summary = api.get("/stats/summary", params={"year": year})
+        assert summary["games_count"] == years[year]["games_bought"]
+    nothing = api.get("/stats/summary", params={"year": 1999})
+    assert (nothing["games_count"], nothing["hardware_count"], nothing["total_cost_cents"]) == (0, 0, 0)
+
+
 def test_yearly(api, world):
     years = {r["year"]: r for r in api.get("/stats/yearly")}
     assert years[2023]["spent_cents"] == 3000 + 1000  # Witcher + Hearts of Stone
