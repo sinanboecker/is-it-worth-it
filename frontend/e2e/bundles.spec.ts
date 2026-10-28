@@ -145,7 +145,7 @@ test("the bundles page adds up all bundles, or the bundles of one year", async (
         total_price_cents: 2000,
         other_sales_cents: 500,
         split_mode: "equal",
-        entries: ["A", "B"].map((n) => ({ new_item: { category_id: category.id, kind: "game", name: `${n} ${category.id}` }, format: "digital" })),
+        entries: ["b game", "A game"].map((n) => ({ new_item: { category_id: category.id, kind: "game", name: `${n} ${category.id}` }, format: "digital" })),
       },
     })
   ).json();
@@ -163,4 +163,15 @@ test("the bundles page adds up all bundles, or the bundles of one year", async (
   await expect(year).toContainText("Total cost15,00 €");
   await expect(year).toContainText("Hours6 h");
   await expect(year).toContainText("Cost per hour2,50 €/h"); // 15 € / 6 h
+
+  // each bundle's games are sorted by name, or by the column picked (remembered for all bundles)
+  const card = page.locator(".mantine-Card-root", { hasText: `Old bundle ${category.id}` });
+  const games = card.getByRole("link", { name: /game/ });
+  await expect(games).toHaveText([`A game ${category.id}`, `b game ${category.id}`]);
+  await card.getByRole("button", { name: "Hours", exact: true }).click();
+  await card.getByRole("button", { name: "Hours", exact: true }).click(); // most hours first
+  await expect(card.getByRole("columnheader", { name: "Hours" })).toHaveAttribute("aria-sort", "descending");
+  await expect(games).toHaveText([`b game ${category.id}`, `A game ${category.id}`]); // b has the 6 h
+  await page.reload();
+  await expect(games).toHaveText([`b game ${category.id}`, `A game ${category.id}`]);
 });

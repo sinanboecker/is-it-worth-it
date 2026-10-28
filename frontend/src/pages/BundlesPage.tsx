@@ -1,5 +1,6 @@
 import { Anchor, Button, Card, Group, ScrollArea, Select, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { IconEdit, IconExternalLink, IconFileImport, IconPlus } from "@tabler/icons-react";
+import { useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useBundles } from "@/api/queries";
@@ -8,11 +9,38 @@ import { StatusBadge, WorthItBadge } from "@/components/badges";
 import { BundleImportModal } from "@/components/BundleImportModal";
 import { AddBundleModal, EditBundleModal } from "@/components/Bundles";
 import { Cover, Empty, Figure, imageOf, PageHeader, QueryView } from "@/components/common";
+import { compareSortKeys, SortHeader, type Sort } from "@/components/ItemList";
 import { bundleTotals, bundleYears } from "@/lib/bundles";
 import { day, euros, hours, perHour } from "@/lib/format";
+import { STATUS } from "@/lib/labels";
 
-function BundleCard({ bundle, onEdit }: { bundle: Bundle; onEdit: () => void }) {
+type BundleGame = Bundle["copies"][number];
+
+/** Sort keys of the games table; null values (not sold, no hours) go last. */
+const GAME_SORT: Record<string, (c: BundleGame) => number | string> = {
+  name: (c) => c.item_name,
+  status: (c) => (c.status ? STATUS[c.status].label : ""),
+  share: (c) => c.buy_price_cents,
+  sold: (c) => c.sell_price_cents ?? Number.MAX_SAFE_INTEGER,
+  hours: (c) => c.value?.hours ?? -1,
+  worth: (c) => (c.value?.worth_it ? 0 : (c.value?.hours_to_break_even ?? 1e9)),
+};
+
+const sortGames = (copies: BundleGame[], sort: Sort) => {
+  const key = GAME_SORT[sort.key] ?? GAME_SORT.name;
+  return [...copies].sort((a, b) => (sort.desc ? -1 : 1) * compareSortKeys(key(a), key(b)));
+};
+
+/** How the games of all bundles are sorted: by name until another column is picked (remembered in the browser). */
+function useGameSort() {
+  return useLocalStorage<Sort>({ key: "bundle-games-sort", defaultValue: { key: "name", desc: false }, getInitialValueInEffect: false });
+}
+
+function BundleCard({ bundle, onEdit, sort, onSort }: { bundle: Bundle; onEdit: () => void; sort: Sort; onSort: (sort: Sort) => void }) {
   const v = bundle.value;
+  const header = (label: string, key: string, w?: number, align?: "right") => (
+    <SortHeader label={label} sortKey={key} sort={sort} onSort={onSort} w={w} align={align} />
+  );
   return (
     <Card withBorder padding="md">
       <Group justify="space-between" align="flex-start" wrap="nowrap" mb="sm">
@@ -52,25 +80,19 @@ function BundleCard({ bundle, onEdit }: { bundle: Bundle; onEdit: () => void }) 
         </Text>
       ) : (
         <ScrollArea>
-          <Table verticalSpacing={4} miw={860} layout="fixed">
+          <Table verticalSpacing={4} miw={870} layout="fixed">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Game</Table.Th>
-                <Table.Th w={150}>Status</Table.Th>
-                <Table.Th w={100} ta="right">
-                  Share
-                </Table.Th>
-                <Table.Th w={170} ta="right">
-                  Sold for
-                </Table.Th>
-                <Table.Th w={80} ta="right">
-                  Hours
-                </Table.Th>
-                <Table.Th w={120} />
+                {header("Game", "name")}
+                {header("Status", "status", 150)}
+                {header("Share", "share", 100, "right")}
+                {header("Sold for", "sold", 170, "right")}
+                {header("Hours", "hours", 80, "right")}
+                {header("Worth it?", "worth", 130, "right")}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {bundle.copies.map((c) => (
+              {sortGames(bundle.copies, sort).map((c) => (
                 <Table.Tr key={c.copy_id}>
                   <Table.Td>
                     <Group gap="xs" wrap="nowrap">
@@ -101,14 +123,15 @@ function BundleCard({ bundle, onEdit }: { bundle: Bundle; onEdit: () => void }) 
   );
 }
 
-/** Money spent and earned, cost, hours and cost per hour of all bundles, or of the bundles bought in one year. */
+/** Money spent and earned, cost, hours and cost per hour of all bundles, or of the bundles bought in one year.
+ * Tinted, so it reads as a summary and not as one more bundle. */
 function BundleTotalsCard({ bundles }: { bundles: Bundle[] }) {
   const [year, setYear] = useState("total");
   const years = bundleYears(bundles);
   const selected = year === "total" ? bundles : bundles.filter((b) => b.buy_date.startsWith(year));
   const t = bundleTotals(selected);
   return (
-    <Card withBorder padding="md">
+    <Card withBorder padding="md" bg="var(--mantine-color-default-hover)" mb="sm">
       <Group justify="space-between" align="flex-start" mb="sm">
         <div>
           <Title order={4}>{year === "total" ? "All bundles" : `Bundles bought in ${year}`}</Title>
@@ -141,6 +164,7 @@ export function BundlesPage() {
   const [editing, setEditing] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [gameSort, setGameSort] = useGameSort();
   return (
     <Stack>
       <PageHeader title="Bundles">
@@ -159,7 +183,7 @@ export function BundlesPage() {
             <>
               <BundleTotalsCard bundles={games} />
               {games.map((b) => (
-                <BundleCard key={b.id} bundle={b} onEdit={() => setEditing(b.id)} />
+                <BundleCard key={b.id} bundle={b} onEdit={() => setEditing(b.id)} sort={gameSort} onSort={setGameSort} />
               ))}
             </>
           ) : (

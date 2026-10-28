@@ -108,7 +108,46 @@ export const COLUMNS: Record<string, Column> = {
 export const GAME_COLUMNS = ["name", "status", "rating", "bought", "hours", "cost", "cph", "worth", "finished", "devices", "copies"];
 export const HARDWARE_COLUMNS = ["name", "bought", "cost", "hours", "games", "cph", "worth", "copies"];
 
-type Sort = { key: string; desc: boolean };
+export type Sort = { key: string; desc: boolean };
+
+/** Ascending comparison for sort keys (numbers, or text with natural numbers: "Halo 2" before "Halo 10"). */
+export function compareSortKeys(x: number | string, y: number | string): number {
+  if (typeof x === "string" && typeof y === "string") return x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" });
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+/** Column header that sorts by its column: click to sort, click again to reverse; the sorted column is highlighted. */
+export function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  align,
+  w,
+}: {
+  label: string;
+  sortKey: string;
+  sort: Sort;
+  onSort: (sort: Sort) => void;
+  align?: "right";
+  w?: number;
+}) {
+  const active = sort.key === sortKey;
+  const Icon = active ? (sort.desc ? IconChevronDown : IconChevronUp) : IconSelector;
+  const color = active ? "var(--mantine-primary-color-filled)" : undefined;
+  return (
+    <Table.Th w={w} style={{ textAlign: align, whiteSpace: "nowrap" }} aria-sort={active ? (sort.desc ? "descending" : "ascending") : undefined}>
+      <UnstyledButton onClick={() => onSort({ key: sortKey, desc: active ? !sort.desc : false })}>
+        <Group gap={4} wrap="nowrap" justify={align === "right" ? "flex-end" : undefined}>
+          <Text size="sm" fw={active ? 700 : 600} c={color}>
+            {label}
+          </Text>
+          <Icon size={14} color={color} stroke={active ? 2.5 : 2} opacity={active ? 1 : 0.5} />
+        </Group>
+      </UnstyledButton>
+    </Table.Th>
+  );
+}
 
 /** The last sort picked in any list, used by all lists (a list without that column uses its own default). */
 function useSavedSort() {
@@ -136,39 +175,19 @@ export function ItemTable({
   const column = byKey.get(sort.key);
   const sorted = column?.sort
     ? [...items].sort((a, b) => {
-        const x = column.sort!(a);
-        const y = column.sort!(b);
-        const result = x < y ? -1 : x > y ? 1 : 0;
+        const result = compareSortKeys(column.sort!(a), column.sort!(b));
         return sort.desc ? -result : result;
       })
     : items;
 
-  const header = (col: Column) => {
-    const key = col.key;
-    const active = sort.key === key;
-    const Icon = active ? (sort.desc ? IconChevronDown : IconChevronUp) : IconSelector;
-    const color = active ? "var(--mantine-primary-color-filled)" : undefined;
-    return (
-      <Table.Th
-        key={key}
-        style={{ textAlign: col.align, whiteSpace: "nowrap" }}
-        aria-sort={active ? (sort.desc ? "descending" : "ascending") : undefined}
-      >
-        {col.sort ? (
-          <UnstyledButton onClick={() => setSaved({ key, desc: active ? !sort.desc : false })}>
-            <Group gap={4} wrap="nowrap" justify={col.align === "right" ? "flex-end" : undefined}>
-              <Text size="sm" fw={active ? 700 : 600} c={color}>
-                {col.label}
-              </Text>
-              <Icon size={14} color={color} stroke={active ? 2.5 : 2} opacity={active ? 1 : 0.5} />
-            </Group>
-          </UnstyledButton>
-        ) : (
-          col.label
-        )}
+  const header = (col: Column) =>
+    col.sort ? (
+      <SortHeader key={col.key} label={col.label} sortKey={col.key} sort={sort} onSort={setSaved} align={col.align} />
+    ) : (
+      <Table.Th key={col.key} style={{ textAlign: col.align, whiteSpace: "nowrap" }}>
+        {col.label}
       </Table.Th>
     );
-  };
 
   return (
     <ScrollArea>
