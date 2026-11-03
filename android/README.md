@@ -10,10 +10,13 @@ A native Android app (Kotlin, Jetpack Compose) for the Is It Worth It? server. I
 - **Library:** search your games, filter by status and sort by name, last played, hours, cost per hour, rating or purchase date.
 - **Game page:** hours, net cost, cost per hour, break-even, devices and dates. You can also change the status and log hours.
   When logging hours makes the server suggest a new status (for example backlog → playing), the app offers it.
+- **Add game:** the Library's "Add game" button opens a form for the category, name, status, price, purchase date,
+  store and format. Switch off "Bought" to put the game on the wishlist with an optional target price. When the server
+  has a RAWG key, the app suggests matches as you type; picking one loads the game's info and cover.
 - **Journal:** finished games by year and month, with each year's count, hours, average rating and main device.
 - **Dark mode:** Settings → Appearance switches between System, Light and Dark.
 
-Everything else (adding games, copies, bundles, PC parts, the full stats page) is still done in the web UI.
+Everything else (hardware, extra copies, DLC, bundles, PC parts, camera gear, the full stats page) is still done in the web UI.
 
 ## Requirements
 

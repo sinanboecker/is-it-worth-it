@@ -97,7 +97,7 @@ data class Item(
 }
 
 @Serializable
-data class Category(val id: Int, val name: String, val defaultDeviceId: Int? = null)
+data class Category(val id: Int, val name: String, val type: String = "platform", val defaultDeviceId: Int? = null)
 
 @Serializable
 data class BreakEven(val hours: Double, val targetHours: Double, val hoursLeft: Double, val progress: Double)
@@ -181,3 +181,37 @@ data class JournalYear(
 
 @Serializable
 data class Journal(val years: List<JournalYear> = emptyList(), val unknownDate: List<JournalEntry> = emptyList())
+
+@Serializable
+data class CopyCreate(
+    val buyPriceCents: Int,
+    val buyDate: String? = null,
+    val store: String? = null,
+    val format: String = "digital",
+)
+
+@Serializable
+data class ItemCreate(
+    val categoryId: Int,
+    val name: String,
+    val kind: String = "game",
+    val status: GameStatus? = null,
+    val targetPriceCents: Int? = null,
+    val firstCopy: CopyCreate? = null,
+)
+
+/** A RAWG search result: picking one loads the game's info and cover. */
+@Serializable
+data class RawgCandidate(
+    val rawgId: Int,
+    val name: String,
+    val released: String? = null,
+    val platforms: List<String> = emptyList(),
+    val imageUrl: String? = null,
+)
+
+@Serializable
+data class MetadataStatus(val rawg: Boolean = false)
+
+@Serializable
+data class ApplyMetadata(val rawgId: Int, val rename: Boolean = false)

@@ -63,6 +63,21 @@ interface Api {
         @Query("limit") limit: Int = 5,
     ): List<ItemSummary>
 
+    @POST("items")
+    suspend fun createItem(@Body body: ItemCreate): Item
+
+    @GET("stores")
+    suspend fun stores(): List<String>
+
+    @GET("metadata/status")
+    suspend fun metadataStatus(): MetadataStatus
+
+    @GET("metadata/search")
+    suspend fun searchMetadata(@Query("q") q: String): List<RawgCandidate>
+
+    @POST("items/{id}/metadata")
+    suspend fun applyMetadata(@Path("id") id: Int, @Body body: ApplyMetadata): Item
+
     @GET("journal")
     suspend fun journal(): Journal
 
@@ -70,6 +85,8 @@ interface Api {
         @OptIn(ExperimentalSerializationApi::class)
         val json = Json {
             ignoreUnknownKeys = true
+            // Defaults such as ItemCreate.kind are sent; nulls are left out.
+            encodeDefaults = true
             explicitNulls = false
             coerceInputValues = true
             namingStrategy = JsonNamingStrategy.SnakeCase

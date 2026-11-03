@@ -40,6 +40,25 @@ class Repository(val preferences: AppPreferences) {
     suspend fun addHours(id: Int, body: HoursAdd) = api().addHours(id, body)
     suspend fun hardware() = api().hardware()
     suspend fun journal() = api().journal()
+    suspend fun categories() = api().categories()
+    suspend fun stores() = api().stores()
+    suspend fun rawgEnabled() = api().metadataStatus().rawg
+    suspend fun searchRawg(q: String) = api().searchMetadata(q)
+
+    /**
+     * Creates the game, then loads its RAWG info if one was picked. A failed RAWG load doesn't undo the game;
+     * the second value is the error message then.
+     */
+    suspend fun addGame(body: ItemCreate, rawgId: Int?): Pair<Item, String?> {
+        val api = api()
+        val item = api.createItem(body)
+        if (rawgId == null) return item to null
+        return try {
+            api.applyMetadata(item.id, ApplyMetadata(rawgId)) to null
+        } catch (e: Exception) {
+            item to "Added, but loading the RAWG info failed: ${errorMessage(e)}"
+        }
+    }
 
     /** Everything the dashboard shows, loaded in parallel. */
     suspend fun dashboard(): Dashboard = coroutineScope {
@@ -81,8 +100,12 @@ private fun serverDetail(e: HttpException): String? = try {
     when (val detail = Api.json.parseToJsonElement(body).jsonObject["detail"]) {
         is JsonPrimitive -> detail.content
         null -> null
-        // FastAPI validation errors: a list of {loc, msg, ...}
-        else -> detail.jsonArray.joinToString("; ") { it.jsonObject["msg"]?.jsonPrimitive?.content ?: "" }
+        // FastAPI validation errors: a list of {loc, msg, ...}, where loc ends with the field name
+        else -> detail.jsonArray.joinToString("; ") { error ->
+            val field = error.jsonObject["loc"]?.jsonArray?.lastOrNull()?.jsonPrimitive?.content
+            val message = error.jsonObject["msg"]?.jsonPrimitive?.content ?: ""
+            if (field != null) "$field: $message" else message
+        }
     }
 } catch (_: Exception) {
     null

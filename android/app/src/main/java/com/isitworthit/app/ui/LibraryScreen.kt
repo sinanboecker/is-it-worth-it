@@ -15,11 +15,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -52,7 +54,7 @@ private val sorts = listOf(
 )
 
 @Composable
-fun LibraryScreen(repository: Repository, padding: PaddingValues, openGame: (Int) -> Unit) {
+fun LibraryScreen(repository: Repository, padding: PaddingValues, openGame: (Int) -> Unit, addGame: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     var status by rememberSaveable { mutableStateOf<GameStatus?>(null) }
     var sort by rememberSaveable { mutableStateOf("name") }
@@ -63,61 +65,69 @@ fun LibraryScreen(repository: Repository, padding: PaddingValues, openGame: (Int
         repository.games(query, status, sort)
     }
 
-    Column(Modifier.padding(padding).fillMaxSize()) {
-        Row(
-            Modifier.padding(start = 16.dp, end = 8.dp, top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text("Search games") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, contentDescription = "Clear") }
-                    }
-                },
-                singleLine = true,
-                modifier = Modifier.weight(1f),
-            )
-            Box {
-                IconButton(onClick = { sortMenu = true }) {
-                    Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
-                }
-                DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
-                    sorts.forEach { (key, label) ->
-                        DropdownMenuItem(
-                            text = { Text(if (key == sort) "✓ $label" else label) },
-                            onClick = { sort = key; sortMenu = false },
-                        )
-                    }
-                }
-            }
-        }
-        Row(
-            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            GameStatus.entries.forEach { s ->
-                FilterChip(
-                    selected = status == s,
-                    onClick = { status = if (status == s) null else s },
-                    label = { Text(s.label) },
+    Box(Modifier.padding(padding).fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            Row(
+                Modifier.padding(start = 16.dp, end = 8.dp, top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Search games") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, contentDescription = "Clear") }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
                 )
+                Box {
+                    IconButton(onClick = { sortMenu = true }) {
+                        Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
+                    }
+                    DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                        sorts.forEach { (key, label) ->
+                            DropdownMenuItem(
+                                text = { Text(if (key == sort) "✓ $label" else label) },
+                                onClick = { sort = key; sortMenu = false },
+                            )
+                        }
+                    }
+                }
             }
-        }
-        LoadableContent(state, onRetry = reload) { games ->
-            if (games.isEmpty()) {
-                Text("No games found.", modifier = Modifier.padding(16.dp))
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                GameStatus.entries.forEach { s ->
+                    FilterChip(
+                        selected = status == s,
+                        onClick = { status = if (status == s) null else s },
+                        label = { Text(s.label) },
+                    )
+                }
             }
-            LazyColumn(contentPadding = PaddingValues(bottom = 16.dp)) {
-                items(games, key = { it.id }) { game ->
-                    GameRow(game, onClick = { openGame(game.id) }, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                    HorizontalDivider()
+            LoadableContent(state, onRetry = reload) { games ->
+                if (games.isEmpty()) {
+                    Text("No games found.", modifier = Modifier.padding(16.dp))
+                }
+                LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) {
+                    items(games, key = { it.id }) { game ->
+                        GameRow(game, onClick = { openGame(game.id) }, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        HorizontalDivider()
+                    }
                 }
             }
         }
+        ExtendedFloatingActionButton(
+            onClick = addGame,
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            text = { Text("Add game") },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+        )
     }
 }
 

@@ -81,7 +81,14 @@ fun AppRoot(repository: Repository) {
                     DashboardScreen(repository, padding, openGame, openNowPlaying = { openTab(Tab.NowPlaying) })
                 }
                 composable(Tab.NowPlaying.route) { NowPlayingScreen(repository, padding, openGame) }
-                composable(Tab.Library.route) { LibraryScreen(repository, padding, openGame) }
+                composable(Tab.Library.route) {
+                    LibraryScreen(repository, padding, openGame, addGame = { nav.navigate("add") })
+                }
+                composable("add") {
+                    AddGameScreen(repository, onClose = { nav.popBackStack() }, onAdded = { id ->
+                        nav.navigate("game/$id") { popUpTo("add") { inclusive = true } }
+                    })
+                }
                 composable(Tab.Journal.route) { JournalScreen(repository, padding, openGame) }
                 composable(Tab.Settings.route) {
                     SettingsScreen(repository, padding, onSaved = {
