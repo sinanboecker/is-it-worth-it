@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SegmentedButton
@@ -39,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.isitworthit.app.data.BundleTotals
 import com.isitworthit.app.data.Dashboard
 import com.isitworthit.app.data.GameStatus
 import com.isitworthit.app.data.ItemSummary
@@ -57,7 +61,13 @@ private enum class YearMetric(val label: String, val value: (YearStats) -> Doubl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(repository: Repository, padding: PaddingValues, openGame: (Int) -> Unit, openNowPlaying: () -> Unit) {
+fun DashboardScreen(
+    repository: Repository,
+    padding: PaddingValues,
+    openGame: (Int) -> Unit,
+    openNowPlaying: () -> Unit,
+    openBundles: () -> Unit,
+) {
     val (state, reload, refreshing) = rememberLoadable { repository.dashboard() }
 
     Box(Modifier.padding(padding).fillMaxSize()) {
@@ -70,6 +80,7 @@ fun DashboardScreen(repository: Repository, padding: PaddingValues, openGame: (I
                 ) {
                     item { Text("Dashboard", style = MaterialTheme.typography.headlineSmall) }
                     item { StatTiles(data, openNowPlaying) }
+                    if (data.bundles.count > 0) item { BundlesLink(data.bundles, openBundles) }
                     if (data.years.isNotEmpty()) item { YearCard(data.years) }
                     if (data.categories.any { it.totals.totalCostCents > 0 }) item { CategoryCard(data) }
                     item { ItemListCard("Almost worth it", data.almostWorthIt, openGame) { "${hours(it.value?.hoursToBreakEven)} left" } }
@@ -203,6 +214,24 @@ private fun ItemListCard(title: String, items: List<ItemSummary>, openGame: (Int
                 Text(item.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(value(item), style = MaterialTheme.typography.bodyMedium)
             }
+        }
+    }
+}
+
+/** The way to the bundles page, which has no tab of its own. */
+@Composable
+private fun BundlesLink(totals: BundleTotals, onClick: () -> Unit) {
+    OutlinedCard(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Bundles", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${totals.count} game bundles · ${money(totals.costCents)} total cost · ${perHour(totals.costPerHourCents)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
         }
     }
 }

@@ -92,6 +92,7 @@ data class Item(
     val summary: String? = null,
     val genres: String? = null,
     val developer: String? = null,
+    val copies: List<Copy> = emptyList(),
 ) {
     val image get() = imagePath ?: coverPath
 }
@@ -215,3 +216,64 @@ data class MetadataStatus(val rawg: Boolean = false)
 
 @Serializable
 data class ApplyMetadata(val rawgId: Int, val rename: Boolean = false)
+
+@Serializable
+data class BundleCopy(
+    val copyId: Int,
+    val itemId: Int,
+    val itemName: String,
+    val kind: String,
+    val buyPriceCents: Int = 0,
+    val sellPriceCents: Int? = null,
+    val sellDate: String? = null,
+    val status: GameStatus? = null,
+    val coverPath: String? = null,
+    val imagePath: String? = null,
+    /** The whole game or device, not only this copy. */
+    val value: ValueRead? = null,
+) {
+    val image get() = imagePath ?: coverPath
+}
+
+@Serializable
+data class Bundle(
+    val id: Int,
+    val name: String,
+    val buyDate: String,
+    val totalPriceCents: Int = 0,
+    val url: String? = null,
+    val otherSalesCents: Int = 0,
+    val store: String? = null,
+    val notes: String? = null,
+    val copies: List<BundleCopy> = emptyList(),
+    /** What the bundle's copies and untracked parts were sold for so far. */
+    val soldCents: Int = 0,
+    /** The bundle as one purchase; hours are those of its games. */
+    val value: ValueRead = ValueRead(),
+) {
+    /** Only games, no hardware (a console bundle is not one); the bundles page lists only these, like the web UI. */
+    val isGameBundle get() = copies.all { it.kind == "game" }
+}
+
+/** Totals over several bundles, as on the web bundles page (frontend/src/lib/bundles.ts). */
+data class BundleTotals(val count: Int, val spentCents: Int, val earnedCents: Int, val hours: Double) {
+    val costCents get() = spentCents - earnedCents
+    val costPerHourCents get() = if (hours > 0) Math.round(costCents / hours).toInt() else null
+
+    companion object {
+        fun of(bundles: List<Bundle>): BundleTotals {
+            // a game in two bundles counts its hours once
+            val gameHours = bundles.flatMap { it.copies }.filter { it.kind == "game" }
+                .associate { it.itemId to (it.value?.hours ?: 0.0) }
+            return BundleTotals(
+                count = bundles.size,
+                spentCents = bundles.sumOf { it.totalPriceCents },
+                earnedCents = bundles.sumOf { it.soldCents },
+                hours = Math.round(gameHours.values.sum() * 100) / 100.0,
+            )
+        }
+    }
+}
+
+@Serializable
+data class Copy(val id: Int, val bundleId: Int? = null)

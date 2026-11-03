@@ -77,8 +77,13 @@ fun AppRoot(repository: Repository) {
         ) { padding ->
             NavHost(nav, startDestination = startRoute, modifier = Modifier) {
                 val openGame = { id: Int -> nav.navigate("game/$id") }
+                val openBundle = { id: Int -> nav.navigate("bundle/$id") }
                 composable(Tab.Dashboard.route) {
-                    DashboardScreen(repository, padding, openGame, openNowPlaying = { openTab(Tab.NowPlaying) })
+                    DashboardScreen(
+                        repository, padding, openGame,
+                        openNowPlaying = { openTab(Tab.NowPlaying) },
+                        openBundles = { nav.navigate("bundles") },
+                    )
                 }
                 composable(Tab.NowPlaying.route) { NowPlayingScreen(repository, padding, openGame) }
                 composable(Tab.Library.route) {
@@ -98,7 +103,13 @@ fun AppRoot(repository: Repository) {
                     })
                 }
                 composable("game/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) {
-                    GameScreen(repository, it.arguments!!.getInt("id"), onBack = { nav.popBackStack() })
+                    GameScreen(repository, it.arguments!!.getInt("id"), onBack = { nav.popBackStack() }, openBundle = openBundle)
+                }
+                composable("bundles") {
+                    BundlesScreen(repository, onBack = { nav.popBackStack() }, openBundle = openBundle)
+                }
+                composable("bundle/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) {
+                    BundleScreen(repository, it.arguments!!.getInt("id"), onBack = { nav.popBackStack() }, openGame = openGame)
                 }
             }
         }

@@ -78,6 +78,12 @@ interface Api {
     @POST("items/{id}/metadata")
     suspend fun applyMetadata(@Path("id") id: Int, @Body body: ApplyMetadata): Item
 
+    @GET("bundles")
+    suspend fun bundles(): List<Bundle>
+
+    @GET("bundles/{id}")
+    suspend fun bundle(@Path("id") id: Int): Bundle
+
     @GET("journal")
     suspend fun journal(): Journal
 

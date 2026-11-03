@@ -13,10 +13,13 @@ A native Android app (Kotlin, Jetpack Compose) for the Is It Worth It? server. I
 - **Add game:** the Library's "Add game" button opens a form for the category, name, status, price, purchase date,
   store and format. Switch off "Bought" to put the game on the wishlist with an optional target price. When the server
   has a RAWG key, the app suggests matches as you type; picking one loads the game's info and cover.
+- **Bundles:** opened from the Bundles card on the dashboard, or from "Open bundle" on the page of a game that came in
+  a bundle. Like the web page, it lists game bundles only (bundles with hardware are left out): money spent and earned,
+  total cost, hours and cost per hour for all of them or one year, and each bundle with its games, their shares and sales.
 - **Journal:** finished games by year and month, with each year's count, hours, average rating and main device.
 - **Dark mode:** Settings → Appearance switches between System, Light and Dark.
 
-Everything else (hardware, extra copies, DLC, bundles, PC parts, camera gear, the full stats page) is still done in the web UI.
+Everything else (hardware, extra copies, DLC, adding or editing bundles, PC parts, camera gear, the full stats page) is still done in the web UI.
 
 ## Requirements
 

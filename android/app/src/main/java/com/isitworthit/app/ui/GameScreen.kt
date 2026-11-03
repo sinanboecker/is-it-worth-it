@@ -1,5 +1,6 @@
 package com.isitworthit.app.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.MoreTime
 import androidx.compose.material3.AssistChip
@@ -36,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,7 +51,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GameScreen(repository: Repository, id: Int, onBack: () -> Unit) {
+fun GameScreen(repository: Repository, id: Int, onBack: () -> Unit, openBundle: (Int) -> Unit) {
     val (state, reload) = rememberLoadable(id) { repository.item(id) }
     // Responses from edits replace the loaded item until the next reload.
     var edited by remember { mutableStateOf<Item?>(null) }
@@ -79,7 +82,7 @@ fun GameScreen(repository: Repository, id: Int, onBack: () -> Unit) {
     ) { padding ->
         Box(Modifier.padding(padding)) {
             LoadableContent(state, onRetry = reload) {
-                GameDetails(item!!, onStatus = { status ->
+                GameDetails(item!!, openBundle, onStatus = { status ->
                     scope.launch {
                         runCatching { repository.setStatus(id, status) }
                             .onSuccess { edited = it }
@@ -105,7 +108,7 @@ fun GameScreen(repository: Repository, id: Int, onBack: () -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun GameDetails(item: Item, onStatus: (GameStatus) -> Unit) {
+private fun GameDetails(item: Item, openBundle: (Int) -> Unit, onStatus: (GameStatus) -> Unit) {
     var statusMenu by remember { mutableStateOf(false) }
     val value = item.value
 
@@ -170,6 +173,16 @@ private fun GameDetails(item: Item, onStatus: (GameStatus) -> Unit) {
             DateRow("Started", item.startedOn)
             DateRow("Last played", item.lastPlayedOn)
             value?.lastFinishedOn?.let { DateRow("Last finished", it) }
+        }
+
+        item.copies.mapNotNull { it.bundleId }.distinct().forEach { bundleId ->
+            OutlinedCard(Modifier.fillMaxWidth().clickable { openBundle(bundleId) }) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Bought in a bundle", Modifier.weight(1f))
+                    Text("Open bundle", color = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
         }
 
         item.summary?.takeIf { it.isNotBlank() }?.let {

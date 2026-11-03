@@ -19,6 +19,7 @@ data class Dashboard(
     val bestValue: List<ItemSummary>,
     val worstValue: List<ItemSummary>,
     val bestSales: List<ItemSummary>,
+    val bundles: BundleTotals,
 )
 
 class NoServerException : Exception("No server set. Add its address in Settings.")
@@ -40,6 +41,8 @@ class Repository(val preferences: AppPreferences) {
     suspend fun addHours(id: Int, body: HoursAdd) = api().addHours(id, body)
     suspend fun hardware() = api().hardware()
     suspend fun journal() = api().journal()
+    suspend fun gameBundles() = api().bundles().filter { it.isGameBundle }
+    suspend fun bundle(id: Int) = api().bundle(id)
     suspend fun categories() = api().categories()
     suspend fun stores() = api().stores()
     suspend fun rawgEnabled() = api().metadataStatus().rawg
@@ -71,9 +74,10 @@ class Repository(val preferences: AppPreferences) {
         val best = async { api.top("cost_per_hour", "asc") }
         val worst = async { api.top("cost_per_hour", "desc") }
         val sales = async { api.top("gain", "desc") }
+        val bundles = async { api.bundles().filter { it.isGameBundle } }
         Dashboard(
             summary.await(), yearly.await(), categories.await(), nowPlaying.await(),
-            almost.await(), best.await(), worst.await(), sales.await(),
+            almost.await(), best.await(), worst.await(), sales.await(), BundleTotals.of(bundles.await()),
         )
     }
 
