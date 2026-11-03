@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A white controller-ish "?" mark on the brand blue. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30c-8.3,0 -15,6.2 -15,14h7c0,-4 3.6,-7 8,-7s8,3 8,7c0,3.2 -2,4.8 -4.7,6.7C53.8,53 50.5,55.5 50.5,61v3h7v-2.4c0,-2.8 1.8,-4.2 4.4,-6.1C65.5,53 69,50.2 69,44c0,-7.8 -6.7,-14 -15,-14zM50.5,70h7v7h-7z" />
+</vector>
