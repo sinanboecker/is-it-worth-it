@@ -6,14 +6,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,9 +32,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.isitworthit.app.BuildConfig
 import com.isitworthit.app.data.Repository
+import com.isitworthit.app.data.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(repository: Repository, padding: PaddingValues, onSaved: () -> Unit) {
     val scope = rememberCoroutineScope()
@@ -35,9 +44,10 @@ fun SettingsScreen(repository: Repository, padding: PaddingValues, onSaved: () -
     var result by rememberSaveable { mutableStateOf<String?>(null) }
     var ok by rememberSaveable { mutableStateOf(false) }
     var busy by rememberSaveable { mutableStateOf(false) }
+    val theme by repository.preferences.theme.collectAsState(initial = ThemeMode.System)
 
     LaunchedEffect(Unit) {
-        if (url.isEmpty()) url = repository.settings.serverUrl.first() ?: ""
+        if (url.isEmpty()) url = repository.preferences.serverUrl.first() ?: ""
     }
 
     fun check(then: () -> Unit = {}) {
@@ -52,7 +62,7 @@ fun SettingsScreen(repository: Repository, padding: PaddingValues, onSaved: () -
     }
 
     Column(
-        Modifier.padding(padding).padding(16.dp).fillMaxWidth(),
+        Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(16.dp).fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Server", style = MaterialTheme.typography.headlineSmall)
@@ -75,7 +85,7 @@ fun SettingsScreen(repository: Repository, padding: PaddingValues, onSaved: () -
             Button(
                 onClick = {
                     // Saved even when unreachable, so the address can be set up away from home.
-                    scope.launch { repository.settings.setServerUrl(url) }
+                    scope.launch { repository.preferences.setServerUrl(url) }
                     check(then = onSaved)
                 },
                 enabled = url.isNotBlank() && !busy,
@@ -83,6 +93,16 @@ fun SettingsScreen(repository: Repository, padding: PaddingValues, onSaved: () -
         }
         result?.let {
             Text(it, color = if (ok) WorthItGreen else MaterialTheme.colorScheme.error)
+        }
+        Text("Appearance", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 24.dp))
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            ThemeMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = theme == mode,
+                    onClick = { scope.launch { repository.preferences.setTheme(mode) } },
+                    shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
+                ) { Text(mode.label) }
+            }
         }
         Text(
             "App version ${BuildConfig.VERSION_NAME}",

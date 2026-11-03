@@ -120,3 +120,64 @@ data class HoursResult(val item: Item, val suggestedStatus: GameStatus? = null)
 
 @Serializable
 data class StatusUpdate(val status: GameStatus)
+
+@Serializable
+data class Totals(
+    val totalCostCents: Int = 0,
+    val gamesCostCents: Int = 0,
+    val dlcCostCents: Int = 0,
+    val hardwareCostCents: Int = 0,
+    val hours: Double = 0.0,
+    val allInCostPerHourCents: Int? = null,
+    val gamesCostPerHourCents: Int? = null,
+    val statusCounts: Map<String, Int> = emptyMap(),
+    val gamesCount: Int = 0,
+    val hardwareCount: Int = 0,
+    val worthItRate: Double? = null,
+    val backlogValueCents: Int = 0,
+)
+
+@Serializable
+data class YearStats(
+    val year: Int,
+    val spentCents: Int = 0,
+    val gamesBought: Int = 0,
+    val hours: Double = 0.0,
+    val costPerHourCents: Int? = null,
+    val gamesFinished: Int = 0,
+)
+
+@Serializable
+data class CategoryTotals(val categoryId: Int, val name: String, val totals: Totals)
+
+@Serializable
+data class JournalEntry(
+    val completionId: Int,
+    val itemId: Int,
+    val name: String,
+    val coverPath: String? = null,
+    val finishedOn: String? = null,
+    val hardwareName: String? = null,
+    val emulated: Boolean = false,
+    val hours: Double = 0.0,
+    val rating: Double? = null,
+    val replay: Boolean = false,
+    val costPerHourCents: Int? = null,
+    val worthIt: Boolean? = null,
+)
+
+@Serializable
+data class JournalMonth(val month: Int, val entries: List<JournalEntry> = emptyList())
+
+@Serializable
+data class JournalYear(
+    val year: Int,
+    val finishedCount: Int = 0,
+    val totalHours: Double = 0.0,
+    val averageRating: Double? = null,
+    val mostUsedDevice: String? = null,
+    val months: List<JournalMonth> = emptyList(),
+)
+
+@Serializable
+data class Journal(val years: List<JournalYear> = emptyList(), val unknownDate: List<JournalEntry> = emptyList())

@@ -65,16 +65,16 @@ fun Cover(path: String?, name: String, width: Dp, modifier: Modifier = Modifier)
         .size(width, width * 4 / 3)
         .clip(RoundedCornerShape(6.dp))
         .background(MaterialTheme.colorScheme.surfaceVariant)
-    if (path != null && server != null) {
-        AsyncImage(
-            model = "$server/api/v1/media/$path",
-            contentDescription = name,
-            contentScale = ContentScale.Crop,
-            modifier = box,
-        )
-    } else {
-        Box(box, contentAlignment = Alignment.Center) {
-            Text(name.take(1).uppercase(), style = MaterialTheme.typography.titleLarge)
+    // The initial stays underneath, so a cover that fails to load still shows something.
+    Box(box, contentAlignment = Alignment.Center) {
+        Text(name.take(1).uppercase(), style = MaterialTheme.typography.titleMedium)
+        if (path != null && server != null) {
+            AsyncImage(
+                model = "$server/api/v1/media/$path",
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
         }
     }
 }

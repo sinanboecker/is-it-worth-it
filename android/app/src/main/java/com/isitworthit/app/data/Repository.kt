@@ -1,5 +1,7 @@
 package com.isitworthit.app.data
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -8,13 +10,24 @@ import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.HttpException
 import java.io.IOException
 
+data class Dashboard(
+    val totals: Totals,
+    val years: List<YearStats>,
+    val categories: List<CategoryTotals>,
+    val nowPlaying: NowPlaying,
+    val almostWorthIt: List<ItemSummary>,
+    val bestValue: List<ItemSummary>,
+    val worstValue: List<ItemSummary>,
+    val bestSales: List<ItemSummary>,
+)
+
 class NoServerException : Exception("No server set. Add its address in Settings.")
 
-class Repository(val settings: ServerSettings) {
+class Repository(val preferences: AppPreferences) {
     private var cached: Pair<String, Api>? = null
 
     private suspend fun api(): Api {
-        val url = settings.serverUrl.first() ?: throw NoServerException()
+        val url = preferences.serverUrl.first() ?: throw NoServerException()
         cached?.let { (cachedUrl, api) -> if (cachedUrl == url) return api }
         return Api.create(url).also { cached = url to it }
     }
@@ -26,6 +39,24 @@ class Repository(val settings: ServerSettings) {
     suspend fun setStatus(id: Int, status: GameStatus) = api().updateStatus(id, StatusUpdate(status))
     suspend fun addHours(id: Int, body: HoursAdd) = api().addHours(id, body)
     suspend fun hardware() = api().hardware()
+    suspend fun journal() = api().journal()
+
+    /** Everything the dashboard shows, loaded in parallel. */
+    suspend fun dashboard(): Dashboard = coroutineScope {
+        val api = api()
+        val summary = async { api.summary() }
+        val yearly = async { api.yearly() }
+        val categories = async { api.categoryTotals() }
+        val nowPlaying = async { api.nowPlaying() }
+        val almost = async { api.top("hours_to_break_even", "asc") }
+        val best = async { api.top("cost_per_hour", "asc") }
+        val worst = async { api.top("cost_per_hour", "desc") }
+        val sales = async { api.top("gain", "desc") }
+        Dashboard(
+            summary.await(), yearly.await(), categories.await(), nowPlaying.await(),
+            almost.await(), best.await(), worst.await(), sales.await(),
+        )
+    }
 
     /** Checks [url] without saving it; returns null on success or an error message. */
     suspend fun testConnection(url: String): String? = try {

@@ -46,6 +46,26 @@ interface Api {
     @GET("hardware")
     suspend fun hardware(): List<ItemSummary>
 
+    @GET("stats/summary")
+    suspend fun summary(): Totals
+
+    @GET("stats/yearly")
+    suspend fun yearly(): List<YearStats>
+
+    @GET("stats/categories")
+    suspend fun categoryTotals(): List<CategoryTotals>
+
+    /** `metric`: cost_per_hour, hours_to_break_even, hours, net_cost or gain. */
+    @GET("stats/top")
+    suspend fun top(
+        @Query("metric") metric: String,
+        @Query("order") order: String,
+        @Query("limit") limit: Int = 5,
+    ): List<ItemSummary>
+
+    @GET("journal")
+    suspend fun journal(): Journal
+
     companion object {
         @OptIn(ExperimentalSerializationApi::class)
         val json = Json {

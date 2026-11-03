@@ -1,3 +1,4 @@
 <resources>
-    <style name="Theme.IsItWorthIt" parent="android:Theme.Material.NoActionBar" />
+    <!-- Only the window background before Compose draws; Compose themes the rest (ui/Theme.kt). -->
+    <style name="Theme.IsItWorthIt" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

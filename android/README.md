@@ -3,12 +3,17 @@
 A native Android app (Kotlin, Jetpack Compose) for the Is It Worth It? server. It talks to the REST API at
 `/api/v1` and covers:
 
+- **Dashboard** (the start page): total spent, hours played, cost per hour, games, backlog and now playing; spending,
+  hours, cost per hour and finished games per year; cost per category; almost worth it, best and worst value, best sales;
+  games by status.
 - **Now playing:** games you're playing, on hold or up next, with progress toward break-even; log hours straight from the list.
 - **Library:** search your games, filter by status and sort by name, last played, hours, cost per hour, rating or purchase date.
 - **Game page:** hours, net cost, cost per hour, break-even, devices and dates. You can also change the status and log hours.
   When logging hours makes the server suggest a new status (for example backlog → playing), the app offers it.
+- **Journal:** finished games by year and month, with each year's count, hours, average rating and main device.
+- **Dark mode:** Settings → Appearance switches between System, Light and Dark.
 
-Everything else (adding games, copies, bundles, PC parts, stats) is still done in the web UI.
+Everything else (adding games, copies, bundles, PC parts, the full stats page) is still done in the web UI.
 
 ## Requirements
 
@@ -79,7 +84,7 @@ and otherwise falls back to the debug key.
 ## Code
 
 - `app/src/main/java/com/isitworthit/app/data/`: the API client (Retrofit + kotlinx.serialization) with models that are
-  subsets of `frontend/openapi.json`, plus the saved server URL (DataStore).
+  subsets of `frontend/openapi.json`, plus the saved settings: server URL and theme (DataStore).
 - `app/src/main/java/com/isitworthit/app/ui/`: the Compose screens.
 
 When the API changes, update `data/Models.kt` and `data/Api.kt` by hand. Unknown JSON fields are ignored, so new

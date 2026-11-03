@@ -2,6 +2,8 @@ package com.isitworthit.app.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -30,24 +32,31 @@ import com.isitworthit.app.data.Repository
 import kotlinx.coroutines.flow.first
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
-    NowPlaying("now", "Now playing", Icons.Default.PlayArrow),
+    Dashboard("dashboard", "Dashboard", Icons.Default.Dashboard),
+    NowPlaying("now", "Playing", Icons.Default.PlayArrow),
     Library("library", "Library", Icons.AutoMirrored.Filled.List),
+    Journal("journal", "Journal", Icons.AutoMirrored.Filled.MenuBook),
     Settings("settings", "Settings", Icons.Default.Settings),
 }
 
 @Composable
 fun AppRoot(repository: Repository) {
-    val serverUrl by repository.settings.serverUrl.collectAsState(initial = null)
+    val serverUrl by repository.preferences.serverUrl.collectAsState(initial = null)
     // Open Settings first until a server address has been saved.
     var start by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
-        start = if (repository.settings.serverUrl.first() == null) Tab.Settings.route else Tab.NowPlaying.route
+        start = if (repository.preferences.serverUrl.first() == null) Tab.Settings.route else Tab.Dashboard.route
     }
     val startRoute = start ?: return
 
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+    fun openTab(tab: Tab) = nav.navigate(tab.route) {
+        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
 
     CompositionLocalProvider(LocalServerUrl provides serverUrl) {
         Scaffold(
@@ -57,15 +66,9 @@ fun AppRoot(repository: Repository) {
                         Tab.entries.forEach { tab ->
                             NavigationBarItem(
                                 selected = currentRoute == tab.route,
-                                onClick = {
-                                    nav.navigate(tab.route) {
-                                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
+                                onClick = { openTab(tab) },
                                 icon = { Icon(tab.icon, contentDescription = null) },
-                                label = { Text(tab.label) },
+                                label = { Text(tab.label, maxLines = 1) },
                             )
                         }
                     }
@@ -74,11 +77,15 @@ fun AppRoot(repository: Repository) {
         ) { padding ->
             NavHost(nav, startDestination = startRoute, modifier = Modifier) {
                 val openGame = { id: Int -> nav.navigate("game/$id") }
+                composable(Tab.Dashboard.route) {
+                    DashboardScreen(repository, padding, openGame, openNowPlaying = { openTab(Tab.NowPlaying) })
+                }
                 composable(Tab.NowPlaying.route) { NowPlayingScreen(repository, padding, openGame) }
                 composable(Tab.Library.route) { LibraryScreen(repository, padding, openGame) }
+                composable(Tab.Journal.route) { JournalScreen(repository, padding, openGame) }
                 composable(Tab.Settings.route) {
                     SettingsScreen(repository, padding, onSaved = {
-                        nav.navigate(Tab.NowPlaying.route) {
+                        nav.navigate(Tab.Dashboard.route) {
                             popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
                         }
                     })
