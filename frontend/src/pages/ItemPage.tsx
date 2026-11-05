@@ -9,6 +9,7 @@ import {
   Menu,
   Modal,
   ScrollArea,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -43,7 +44,7 @@ import { EditBundleModal } from "@/components/Bundles";
 import { AddHoursModal, CopyModal, DlcModal, FinishModal } from "@/components/ItemModals";
 import { MetadataSearchModal, RawgAttribution } from "@/components/MetadataModals";
 import { day, euros, hours, perHour } from "@/lib/format";
-import { CONDITION, FORMAT } from "@/lib/labels";
+import { CONDITION, FORMAT, STATUS } from "@/lib/labels";
 
 const patchItem = (id: number, body: Record<string, unknown>) =>
   unwrap(api.PATCH("/api/v1/items/{item_id}", { params: { path: { item_id: id } }, body }));
@@ -582,6 +583,35 @@ function AboutSection({ game, onChangeMatch }: { game: ItemRead; onChangeMatch: 
   );
 }
 
+/** The same game on other platforms (separate entries, see app/titles.py): switch between them. */
+function PlatformSwitch({ item }: { item: ItemRead }) {
+  const navigate = useNavigate();
+  const categories = useCategories();
+  const order = (categoryId: number) => categories.data?.findIndex((c) => c.id === categoryId) ?? 0;
+  const name = (categoryId: number) => categories.data?.find((c) => c.id === categoryId)?.name ?? "";
+  const entries = [
+    { id: item.id, category_id: item.category_id, category_name: name(item.category_id), status: item.status, hours: item.value?.hours ?? 0 },
+    ...item.other_platforms,
+  ].sort((a, b) => order(a.category_id) - order(b.category_id));
+  return (
+    <SegmentedControl
+      size="xs"
+      aria-label="Platform"
+      data={entries.map((e) => ({
+        value: String(e.id),
+        label: (
+          <span title={e.status ? STATUS[e.status].label : undefined}>
+            {e.category_name}
+            {e.hours > 0 && <Text span size="xs" c="dimmed">{` · ${hours(e.hours)}`}</Text>}
+          </span>
+        ),
+      }))}
+      value={String(item.id)}
+      onChange={(id) => navigate(`/items/${id}`)}
+    />
+  );
+}
+
 function ItemView({ item }: { item: ItemRead }) {
   const navigate = useNavigate();
   const categories = useCategories();
@@ -634,6 +664,7 @@ function ItemView({ item }: { item: ItemRead }) {
           <Cover name={item.name} path={imageOf(item)} width={280} />
           <Stack gap={6}>
             <Title order={2}>{item.name}</Title>
+            {item.other_platforms.length > 0 && <PlatformSwitch item={item} />}
             <Group gap="xs">
               {category && (
                 <Anchor component={Link} to={`/categories/${category.id}`} size="sm">

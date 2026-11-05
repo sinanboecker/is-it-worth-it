@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 from sqlmodel import Session, select
 
-from app import status
+from app import calc, status, titles
 from app.models import Completion, Copy, Dlc, GameStatus, Item, ItemKind, PlayLink
 from app.routers.deps import (
     ITEM_LOAD_OPTIONS,
@@ -41,6 +41,7 @@ from app.schemas import (
     ItemRead,
     ItemSummary,
     ItemUpdate,
+    OtherPlatform,
     PlayLinkIn,
     hours_to_minutes,
     stars_to_half,
@@ -52,7 +53,19 @@ router = APIRouter(tags=["items"])
 
 def read_item(session: Session, item_id: int, settings: AppSettings, today: date) -> ItemRead:
     session.expire_all()
-    return ItemRead.build(load_item(session, item_id), settings.break_even_cph, today)
+    item = load_item(session, item_id)
+    read = ItemRead.build(item, settings.break_even_cph, today)
+    read.other_platforms = [
+        OtherPlatform(
+            id=other.id,
+            category_id=other.category_id,
+            category_name=other.category.name,
+            status=other.status,
+            hours=calc.minutes_to_hours(calc.game_minutes(other)),
+        )
+        for other in titles.same_game(session, item, ITEM_LOAD_OPTIONS)
+    ]
+    return read
 
 
 def _apply_status_error(func, *args, **kwargs):
@@ -177,7 +190,7 @@ def create_item(data: ItemCreate, session: SessionDep, settings: SettingsDep, to
 
 @router.get("/items/{item_id}", response_model=ItemRead)
 def get_item(item_id: int, session: SessionDep, settings: SettingsDep, today: TodayDep):
-    return ItemRead.build(load_item(session, item_id), settings.break_even_cph, today)
+    return read_item(session, item_id, settings, today)
 
 
 @router.patch("/items/{item_id}", response_model=ItemRead)

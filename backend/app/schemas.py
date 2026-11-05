@@ -9,7 +9,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
-from app import calc
+from app import calc, titles
 from app.models import (
     CameraGear,
     CameraGearCategory,
@@ -342,6 +342,8 @@ class ItemSummary(BaseModel):
     image_path: str | None
     target_price_cents: int | None
     release_date: date | None
+    rawg_id: int | None
+    title_key: str | None = Field(description="games with the same key are the same game on other platforms")
     copies_summary: CopiesSummary
     devices: list[PlayLinkRead]
     value: ValueRead | None
@@ -363,6 +365,8 @@ class ItemSummary(BaseModel):
             "image_path": item.image_path,
             "target_price_cents": item.target_price_cents,
             "release_date": item.release_date,
+            "rawg_id": item.rawg_id,
+            "title_key": titles.title_key(item),
             "copies_summary": CopiesSummary(
                 **vars(stats),
                 formats=sorted({c.format for c in item.copies}),
@@ -381,9 +385,18 @@ class ItemSummary(BaseModel):
         return cls(**cls.fields_for(item, global_break_even_cph))
 
 
+class OtherPlatform(BaseModel):
+    """The same game in another category (see app.titles)."""
+
+    id: int
+    category_id: int
+    category_name: str
+    status: GameStatus | None
+    hours: float
+
+
 class ItemRead(ItemSummary):
     notes: str | None
-    rawg_id: int | None
     rawg_slug: str | None
     summary: str | None
     genres: str | None
@@ -397,6 +410,7 @@ class ItemRead(ItemSummary):
     dlcs: list[DlcRead]
     completions: list[CompletionRead]
     played_games: list[PlayLinkRead] = []  # hardware only: games played on this device (hardware_name = game name)
+    other_platforms: list[OtherPlatform] = []  # games only: the same game in other categories
 
     @classmethod
     def build(cls, item: Item, global_break_even_cph: int, today: date | None = None) -> "ItemRead":
@@ -414,7 +428,6 @@ class ItemRead(ItemSummary):
         return cls(
             **cls.fields_for(item, global_break_even_cph),
             notes=item.notes,
-            rawg_id=item.rawg_id,
             rawg_slug=item.rawg_slug,
             summary=item.summary,
             genres=item.genres,

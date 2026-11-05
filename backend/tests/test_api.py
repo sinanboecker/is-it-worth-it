@@ -2,6 +2,10 @@
 
 from datetime import date
 
+from sqlmodel import Session
+
+from app.models import Item
+
 
 def test_health_and_seed(api):
     assert api.get("/health") == {"status": "ok"}
@@ -549,3 +553,38 @@ def test_backup_copies_are_free_digital_and_never_sold(api):
     switch = api.hardware(api.category("Nintendo")["id"])
     url = f"/api/v1/items/{switch['id']}/copies"
     assert api.client.post(url, json={"buy_price_cents": 0, "backup": True}).status_code == 422
+
+
+def test_the_same_game_on_other_platforms(api, engine):
+    ps4, ps5, pc = (
+        api.category("PS4", sort_order=2),
+        api.category("PS5", sort_order=1),
+        api.category("PC", sort_order=3),
+    )
+    old = api.game(ps4["id"], name="Ghost of Tsushima")
+    new = api.game(ps5["id"], name="ghost of tsushima™")  # case and ™ don't matter
+    cut = api.game(pc["id"], name="Ghost of Tsushima Director's Cut")
+    alone = api.game(pc["id"], name="Zelda")
+    api.hardware(pc["id"], name="Ghost of Tsushima")  # hardware is never the same game
+    console = api.hardware(ps5["id"], name="PS5 console")
+    api.post(f"/items/{new['id']}/hours", {"hours": 12, "hardware_id": console["id"]})
+
+    others = api.get(f"/items/{old['id']}")["other_platforms"]
+    assert [(o["id"], o["category_name"], o["hours"], o["status"]) for o in others] == [
+        (new["id"], "PS5", 12, new["status"])
+    ]
+    assert api.get(f"/items/{alone['id']}")["other_platforms"] == []
+
+    # the same RAWG game counts too, whatever the names
+    with Session(engine) as session:
+        for item in (old, cut):
+            session.get(Item, item["id"]).rawg_id = 42
+        session.commit()
+    others = api.get(f"/items/{cut['id']}")["other_platforms"]
+    assert [o["category_name"] for o in others] == ["PS4"]  # PS5's copy has no RAWG id and another name
+    assert [o["category_name"] for o in api.get(f"/items/{old['id']}")["other_platforms"]] == ["PS5", "PC"]  # by order
+
+    listed = {i["id"]: i for i in api.get("/items", params={"q": "tsushima"})}
+    assert listed[old["id"]]["title_key"] == listed[new["id"]]["title_key"] == "ghost of tsushima"
+    assert listed[old["id"]]["rawg_id"] == 42
+    assert [i["title_key"] for i in listed.values() if i["kind"] == "hardware"] == [None]

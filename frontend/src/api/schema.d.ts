@@ -2356,14 +2356,19 @@ export interface components {
             target_price_cents: number | null;
             /** Release Date */
             release_date: string | null;
+            /** Rawg Id */
+            rawg_id: number | null;
+            /**
+             * Title Key
+             * @description games with the same key are the same game on other platforms
+             */
+            title_key: string | null;
             copies_summary: components["schemas"]["CopiesSummary"];
             /** Devices */
             devices: components["schemas"]["PlayLinkRead"][];
             value: components["schemas"]["ValueRead"] | null;
             /** Notes */
             notes: string | null;
-            /** Rawg Id */
-            rawg_id: number | null;
             /** Rawg Slug */
             rawg_slug: string | null;
             /** Summary */
@@ -2399,6 +2404,11 @@ export interface components {
              * @default []
              */
             played_games: components["schemas"]["PlayLinkRead"][];
+            /**
+             * Other Platforms
+             * @default []
+             */
+            other_platforms: components["schemas"]["OtherPlatform"][];
         };
         /** ItemSummary */
         ItemSummary: {
@@ -2426,6 +2436,13 @@ export interface components {
             target_price_cents: number | null;
             /** Release Date */
             release_date: string | null;
+            /** Rawg Id */
+            rawg_id: number | null;
+            /**
+             * Title Key
+             * @description games with the same key are the same game on other platforms
+             */
+            title_key: string | null;
             copies_summary: components["schemas"]["CopiesSummary"];
             /** Devices */
             devices: components["schemas"]["PlayLinkRead"][];
@@ -2564,6 +2581,21 @@ export interface components {
             on_hold: components["schemas"]["NowPlayingCard"][];
             /** Up Next */
             up_next: components["schemas"]["ItemSummary"][];
+        };
+        /**
+         * OtherPlatform
+         * @description The same game in another category (see app.titles).
+         */
+        OtherPlatform: {
+            /** Id */
+            id: number;
+            /** Category Id */
+            category_id: number;
+            /** Category Name */
+            category_name: string;
+            status: components["schemas"]["GameStatus"] | null;
+            /** Hours */
+            hours: number;
         };
         /** PcBuildCreate */
         PcBuildCreate: {

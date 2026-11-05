@@ -391,3 +391,33 @@ test("add a game with a backup copy: free, digital, no buy date, can't be sold",
   await edit.getByLabel("Backup copy").uncheck();
   await expect(edit.getByRole("textbox", { name: "Sold for" })).toBeVisible();
 });
+
+test("the same game on two platforms is one search result with a platform switch", async ({ page, request }) => {
+  const { category, device } = await setup(request);
+  const other = await (await request.post("/api/v1/categories", { data: { name: `PS5 ${category.id}` } })).json();
+  const name = `Tsushima ${category.id}`;
+  const add = async (categoryId: number, gameName: string) =>
+    (
+      await request.post("/api/v1/items", {
+        data: { category_id: categoryId, kind: "game", name: gameName, first_copy: { buy_date: "2024-01-01", buy_price_cents: 4000 } },
+      })
+    ).json();
+  const played = await add(category.id, name);
+  await add(other.id, `${name}™`); // ™ doesn't make it another game
+  await request.post(`/api/v1/items/${played.id}/hours`, { data: { hours: 12, hardware_id: device.id } });
+
+  await page.goto("/dashboard");
+  await page.getByRole("textbox", { name: "Search" }).fill(name);
+  const result = page.getByRole("option", { name: new RegExp(name) });
+  await expect(result).toHaveCount(1);
+  await expect(result).toContainText(`${category.name} · ${other.name}`);
+  await result.click();
+  await expect(page).toHaveURL(new RegExp(`/items/${played.id}$`)); // the one with hours
+
+  const platform = page.getByRole("radiogroup", { name: "Platform" });
+  await expect(platform.getByRole("radio", { name: new RegExp(category.name) })).toBeChecked();
+  await pickSegment(platform, other.name);
+  await expect(page.getByRole("heading", { name: `${name}™` })).toBeVisible();
+  await pickSegment(page.getByRole("radiogroup", { name: "Platform" }), `${category.name} · 12 h`);
+  await expect(page).toHaveURL(new RegExp(`/items/${played.id}$`));
+});

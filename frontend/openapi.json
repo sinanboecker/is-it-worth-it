@@ -7984,6 +7984,29 @@
             ],
             "title": "Release Date"
           },
+          "rawg_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg Id"
+          },
+          "title_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Key",
+            "description": "games with the same key are the same game on other platforms"
+          },
           "copies_summary": {
             "$ref": "#/components/schemas/CopiesSummary"
           },
@@ -8014,17 +8037,6 @@
               }
             ],
             "title": "Notes"
-          },
-          "rawg_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rawg Id"
           },
           "rawg_slug": {
             "anyOf": [
@@ -8142,6 +8154,14 @@
             "type": "array",
             "title": "Played Games",
             "default": []
+          },
+          "other_platforms": {
+            "items": {
+              "$ref": "#/components/schemas/OtherPlatform"
+            },
+            "type": "array",
+            "title": "Other Platforms",
+            "default": []
           }
         },
         "type": "object",
@@ -8159,11 +8179,12 @@
           "image_path",
           "target_price_cents",
           "release_date",
+          "rawg_id",
+          "title_key",
           "copies_summary",
           "devices",
           "value",
           "notes",
-          "rawg_id",
           "rawg_slug",
           "summary",
           "genres",
@@ -8290,6 +8311,29 @@
             ],
             "title": "Release Date"
           },
+          "rawg_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rawg Id"
+          },
+          "title_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Key",
+            "description": "games with the same key are the same game on other platforms"
+          },
           "copies_summary": {
             "$ref": "#/components/schemas/CopiesSummary"
           },
@@ -8326,6 +8370,8 @@
           "image_path",
           "target_price_cents",
           "release_date",
+          "rawg_id",
+          "title_key",
           "copies_summary",
           "devices",
           "value"
@@ -8897,6 +8943,46 @@
           "up_next"
         ],
         "title": "NowPlayingOut"
+      },
+      "OtherPlatform": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "category_id": {
+            "type": "integer",
+            "title": "Category Id"
+          },
+          "category_name": {
+            "type": "string",
+            "title": "Category Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GameStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hours": {
+            "type": "number",
+            "title": "Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_id",
+          "category_name",
+          "status",
+          "hours"
+        ],
+        "title": "OtherPlatform",
+        "description": "The same game in another category (see app.titles)."
       },
       "PcBuildCreate": {
         "properties": {
