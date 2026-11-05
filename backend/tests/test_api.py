@@ -516,3 +516,36 @@ def test_copies_can_be_tagged_as_won_or_traded(api):
     assert (game["copies"][0]["won"], game["copies"][0]["traded"]) == (True, True)
     (listed,) = api.get("/items", params={"q": "Giveaway"})
     assert listed["copies_summary"]["traded"]
+
+
+def test_backup_copies_are_free_digital_and_never_sold(api):
+    pc = api.category("PC")
+    game = api.post(
+        "/items",
+        {"category_id": pc["id"], "kind": "game", "name": "Backed up",
+         "first_copy": {"buy_date": "2024-01-01", "buy_price_cents": 2000, "format": "physical", "condition": "new",
+                        "backup": True}},
+    )  # fmt: skip
+    (copy,) = game["copies"]
+    assert (copy["backup"], copy["buy_price_cents"], copy["buy_date"], copy["format"], copy["condition"]) == (
+        True, 0, None, "digital", None,
+    )  # fmt: skip
+    assert game["copies_summary"]["backup"] and game["status"] == "backlog"
+
+    url = f"/api/v1/items/{game['id']}/copies/{copy['id']}"
+    assert api.client.patch(url, json={"sell_price_cents": 500}).status_code == 422
+    assert api.client.patch(url, json={"buy_price_cents": 500}).json()["copies"][0]["buy_price_cents"] == 0
+    sold = {"buy_price_cents": 0, "backup": True, "sell_price_cents": 100}
+    assert api.client.post(f"/api/v1/items/{game['id']}/copies", json=sold).status_code == 422
+
+    # a real copy that becomes a backup loses its price and date; a backup can stop being one
+    other = api.post(f"/items/{game['id']}/copies", {"buy_date": "2023-01-01", "buy_price_cents": 3000})["copies"]
+    real = next(c for c in other if not c["backup"])
+    changed = api.patch(f"/items/{game['id']}/copies/{real['id']}", {"backup": True})
+    assert all(c["buy_price_cents"] == 0 and c["backup"] for c in changed["copies"])
+    back = api.patch(f"/items/{game['id']}/copies/{real['id']}", {"backup": False, "sell_price_cents": 100})
+    assert next(c for c in back["copies"] if c["id"] == real["id"])["sell_price_cents"] == 100
+
+    switch = api.hardware(api.category("Nintendo")["id"])
+    url = f"/api/v1/items/{switch['id']}/copies"
+    assert api.client.post(url, json={"buy_price_cents": 0, "backup": True}).status_code == 422

@@ -113,6 +113,11 @@ function CopiesSection({ item }: { item: ItemRead }) {
                         traded
                       </Badge>
                     )}
+                    {copy.backup && (
+                      <Badge ml={6} size="sm" variant="light" color="grape" tt="none">
+                        backup
+                      </Badge>
+                    )}
                     {copy.bundle_id && (
                       <Button
                         size="compact-xs"

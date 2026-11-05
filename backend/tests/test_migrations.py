@@ -185,7 +185,7 @@ def test_0011_sold_bundle_keys_become_not_redeemed(engine):
         assert conn.execute(text("SELECT status FROM item WHERE id = 1")).scalar() == "backlog"
 
 
-def test_0012_existing_copies_are_neither_won_nor_traded(engine):
+def test_0012_0014_existing_copies_are_not_won_traded_or_backups(engine):
     command.upgrade(alembic_config(engine), "0011")
     with engine.begin() as conn:
         conn.execute(text("INSERT INTO category (id, name, type, sort_order) VALUES (1, 'PC', 'platform', 0)"))
@@ -197,3 +197,6 @@ def test_0012_existing_copies_are_neither_won_nor_traded(engine):
     command.upgrade(alembic_config(engine), "0012")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT won, traded FROM copy")).one() == (0, 0)
+    command.upgrade(alembic_config(engine), "0014")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT backup FROM copy")).scalar() == 0

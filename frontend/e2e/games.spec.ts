@@ -362,3 +362,32 @@ test("pick a year in a category: games first bought then and their totals", asyn
   await page.getByRole("tab", { name: "Hardware" }).click();
   await expect(page.getByRole("row", { name: new RegExp(device.name) })).toHaveCount(0); // bought in 2022
 });
+
+test("add a game with a backup copy: free, digital, no buy date, can't be sold", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const name = `Backup ${category.id}`;
+  await page.goto(`/categories/${category.id}`);
+  await page.getByRole("button", { name: "Game", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(name);
+  await fillMoney(page, "Buy price", "12");
+  await pickSegment(dialog, "Physical");
+  await dialog.getByLabel("Backup copy").check();
+  await expect(dialog.getByRole("textbox", { name: "Buy price", exact: true })).toHaveValue("0,00 €");
+  await expect(dialog.getByRole("textbox", { name: "Buy price", exact: true })).toBeDisabled();
+  await expect(dialog.getByRole("textbox", { name: "Bought on" })).toHaveValue("");
+  await expect(dialog.getByRole("radio", { name: "Digital", exact: true })).toBeChecked();
+  await dialog.getByRole("button", { name: "Add" }).click();
+  await expect(page.getByText(`${name} added`)).toBeVisible();
+
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await expect(row.getByLabel("Backup copy")).toBeVisible();
+  await row.click();
+  await expect(page.getByRole("cell", { name: /Digital.*backup/ })).toBeVisible();
+  await page.getByRole("button", { name: "Edit copy" }).click();
+  const edit = page.getByRole("dialog");
+  await expect(edit.getByLabel("Backup copy")).toBeChecked();
+  await expect(edit.getByRole("textbox", { name: "Sold for" })).toHaveCount(0); // backups can't be sold
+  await edit.getByLabel("Backup copy").uncheck();
+  await expect(edit.getByRole("textbox", { name: "Sold for" })).toBeVisible();
+});

@@ -101,6 +101,7 @@ class CopyCreate(BaseModel):
     note: str | None = None
     won: bool = False
     traded: bool = False
+    backup: bool = False
 
 
 class CopyUpdate(BaseModel):
@@ -114,6 +115,7 @@ class CopyUpdate(BaseModel):
     note: str | None = None
     won: bool | None = None
     traded: bool | None = None
+    backup: bool | None = None
 
 
 class CopyRead(ApiModel):
@@ -128,6 +130,7 @@ class CopyRead(ApiModel):
     note: str | None
     won: bool
     traded: bool
+    backup: bool
     bundle_id: int | None
     reference_price_cents: int | None
     is_sold: bool
@@ -153,6 +156,7 @@ class CopiesSummary(ApiModel):
     in_bundle: bool
     won: bool = False  # a copy was won (e.g. in a giveaway)
     traded: bool = False  # a copy was got in a trade
+    backup: bool = False  # a copy is a backup copy
 
 
 # --- play links / hours -----------------------------------------------------------------------
@@ -366,6 +370,7 @@ class ItemSummary(BaseModel):
                 in_bundle=any(c.bundle_id for c in item.copies),
                 won=any(c.won for c in item.copies),
                 traded=any(c.traded for c in item.copies),
+                backup=any(c.backup for c in item.copies),
             ),
             "devices": [PlayLinkRead.build(link) for link in item.play_links],
             "value": ValueRead.build(calc.item_value(item, global_break_even_cph)),

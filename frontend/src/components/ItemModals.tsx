@@ -162,6 +162,7 @@ type CopyDraft = {
   note: string | null;
   won: boolean;
   traded: boolean;
+  backup: boolean;
 };
 
 function CopyFields({
@@ -172,6 +173,7 @@ function CopyFields({
   showSale = true,
   priceLabel = "Buy price",
   requireDate = false,
+  allowBackup = false,
 }: {
   draft: CopyDraft;
   set: (patch: Partial<CopyDraft>) => void;
@@ -180,9 +182,18 @@ function CopyFields({
   showSale?: boolean;
   priceLabel?: string;
   requireDate?: boolean;
+  allowBackup?: boolean; // games only, not for bundle copies
 }) {
   // a copy you won or got in a trade cost nothing (a bundle copy's price comes from the bundle)
   const setTag = (tag: "won" | "traded", on: boolean) => set(on && !inBundle ? { [tag]: true, buy_price_cents: 0 } : { [tag]: on });
+  // a backup copy is a free digital copy without a buy date, and it can't be sold
+  const backup = allowBackup && draft.backup; // ignored where a copy can't be one (hardware, bundles)
+  const setBackup = (on: boolean) =>
+    set(
+      on
+        ? { backup: true, buy_price_cents: 0, buy_date: null, format: "digital", condition: null, sell_price_cents: null, sell_date: null }
+        : { backup: false },
+    );
   return (
     <Stack gap="sm">
       {inBundle && (
@@ -197,10 +208,16 @@ function CopyFields({
           value={draft.buy_date}
           onChange={(v) => set({ buy_date: v })}
           required={requireDate}
-          clearable={!requireDate && !inBundle}
-          disabled={inBundle}
+          clearable={!requireDate && !inBundle && !backup}
+          disabled={inBundle || backup}
         />
-        <MoneyInput label={priceLabel} value={draft.buy_price_cents} onChange={(v) => set({ buy_price_cents: v })} required disabled={inBundle} />
+        <MoneyInput
+          label={priceLabel}
+          value={draft.buy_price_cents}
+          onChange={(v) => set({ buy_price_cents: v })}
+          required
+          disabled={inBundle || backup}
+        />
       </Group>
       <StoreInput value={draft.store} onChange={(v) => set({ store: v })} />
       {kind === "game" && (
@@ -208,6 +225,7 @@ function CopyFields({
           data={options(FORMAT)}
           value={draft.format}
           onChange={(v) => set({ format: v as CopyFormat, condition: v === "digital" ? null : draft.condition })}
+          disabled={backup}
         />
       )}
       {(kind === "hardware" || draft.format === "physical") && (
@@ -219,7 +237,7 @@ function CopyFields({
           clearable
         />
       )}
-      {showSale && (
+      {showSale && !backup && (
         <Group grow>
           <MoneyInput
             label="Sold for"
@@ -234,6 +252,14 @@ function CopyFields({
       <Group>
         <Checkbox label="Won (e.g. in a giveaway)" checked={draft.won} onChange={(e) => setTag("won", e.currentTarget.checked)} />
         <Checkbox label="Got it in a trade" checked={draft.traded} onChange={(e) => setTag("traded", e.currentTarget.checked)} />
+        {allowBackup && (
+          <Checkbox
+            label="Backup copy"
+            description="Free, digital, no buy date; can't be sold"
+            checked={backup}
+            onChange={(e) => setBackup(e.currentTarget.checked)}
+          />
+        )}
       </Group>
     </Stack>
   );
@@ -250,6 +276,7 @@ const emptyCopy = (kind: ItemKind): CopyDraft => ({
   note: null,
   won: false,
   traded: false,
+  backup: false,
 });
 
 const copyBody = (d: CopyDraft) => ({ ...d, buy_price_cents: d.buy_price_cents! });
@@ -283,7 +310,7 @@ export function CopyModal({
   return (
     <Modal opened={opened} onClose={onClose} title={copy ? "Edit copy" : `Add a copy – ${item.name}`}>
       <Stack>
-        <CopyFields draft={draft} set={set} kind={item.kind} inBundle={inBundle} />
+        <CopyFields draft={draft} set={set} kind={item.kind} inBundle={inBundle} allowBackup={item.kind === "game" && !inBundle} />
         <Group justify="flex-end">
           <Button onClick={() => mutation.mutate(undefined)} loading={mutation.isPending} disabled={draft.buy_price_cents === null}>
             Save
@@ -475,7 +502,13 @@ export function NewItemModal({
             name: name.trim(),
             status: effectiveKind === "game" ? (hasCopy ? status : "wishlist") : null,
             target_price_cents: !hasCopy ? target : null,
-            first_copy: hasCopy ? copyBody({ ...copy, format: effectiveKind === "hardware" ? "physical" : copy.format }) : null,
+            first_copy: hasCopy
+              ? copyBody({
+                  ...copy,
+                  format: effectiveKind === "hardware" ? "physical" : copy.format,
+                  backup: copy.backup && effectiveKind === "game",
+                })
+              : null,
           },
         }),
       );
@@ -602,6 +635,7 @@ export function NewItemModal({
             showSale={false}
             priceLabel={bundle ? "Total price of the bundle" : "Buy price"}
             requireDate={bundle}
+            allowBackup={effectiveKind === "game" && !bundle}
           />
         )}
         {bundle && (

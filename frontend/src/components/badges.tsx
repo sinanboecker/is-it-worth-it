@@ -1,5 +1,5 @@
 import { Badge, Group, Tooltip } from "@mantine/core";
-import { IconArrowsExchange, IconCloudDownload, IconDisc, IconPackage, IconTrophy } from "@tabler/icons-react";
+import { IconArrowsExchange, IconCloudDownload, IconCopy, IconDisc, IconPackage, IconTrophy } from "@tabler/icons-react";
 import type { GameStatus, ItemSummary, Value } from "@/api/types";
 import { hours, perHour } from "@/lib/format";
 import { STATUS } from "@/lib/labels";
@@ -69,6 +69,11 @@ export function CopyBadges({ item }: { item: ItemSummary }) {
       {c.traded && (
         <Tooltip label="Got in a trade">
           <IconArrowsExchange size={16} aria-label="Got in a trade" />
+        </Tooltip>
+      )}
+      {c.backup && (
+        <Tooltip label="Backup copy">
+          <IconCopy size={16} aria-label="Backup copy" />
         </Tooltip>
       )}
       {c.sold && (
