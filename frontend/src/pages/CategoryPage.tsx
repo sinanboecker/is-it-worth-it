@@ -22,14 +22,14 @@ import { CoverGrid, GAME_COLUMNS, HARDWARE_COLUMNS, ItemTable } from "@/componen
 import { euros, hours, perHour, percent } from "@/lib/format";
 import { STATUS_OPTIONS } from "@/lib/labels";
 
-type Ownership = "all" | "owned" | "sold" | "won" | "traded" | "not_redeemed";
+type Ownership = "all" | "owned" | "sold" | "won" | "traded" | "loaned" | "not_redeemed";
 
 /** Sold bundle keys ("not redeemed") only show up in their own view, not with the other games. */
 function matchesOwnership(i: ItemSummary, ownership: Ownership) {
   if (ownership === "not_redeemed") return i.status === "not_redeemed";
   if (i.status === "not_redeemed") return false;
   const c = i.copies_summary;
-  return { all: true, owned: c.owned, sold: c.sold, won: c.won, traded: c.traded }[ownership];
+  return { all: true, owned: c.owned, sold: c.sold, won: c.won, traded: c.traded, loaned: c.loaned }[ownership];
 }
 
 /** The year an item was first bought in (like the yearly stats); null without a buy date. */
@@ -76,11 +76,11 @@ export function CategoryPage() {
   const [modal, setModal] = useState<"game" | "hardware" | "csv" | "metadata" | null>(null);
   const metadata = useMetadataStatus();
   const activeTab: ItemKind = hardwareOnly ? "hardware" : tab;
-  // "Sold", "Won", "Traded" and "Not redeemed" are only offered when the tab has such items; a choice that's gone
+  // "Sold", "Won", "Traded", "Loaned" and "Not redeemed" are only offered when the tab has such items; a choice that's gone
   // falls back to "All"
   const tabItems = (items.data ?? []).filter((i) => i.kind === activeTab);
   const offered = new Set<Ownership>(["all", "owned"]);
-  for (const option of ["sold", "won", "traded", "not_redeemed"] as const) {
+  for (const option of ["sold", "won", "traded", "loaned", "not_redeemed"] as const) {
     if (tabItems.some((i) => matchesOwnership(i, option))) offered.add(option);
   }
   const ownership: Ownership = offered.has(chosenOwnership) || !items.data ? chosenOwnership : "all";
@@ -150,6 +150,7 @@ export function CategoryPage() {
             { value: "sold", label: "Sold" },
             { value: "won", label: "Won" },
             { value: "traded", label: "Traded" },
+            { value: "loaned", label: "Loaned" },
             { value: "not_redeemed", label: "Not redeemed" },
           ].filter((o) => offered.has(o.value as Ownership))}
           value={ownership}

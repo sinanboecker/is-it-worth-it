@@ -1754,6 +1754,11 @@ export interface components {
              * @default false
              */
             backup: boolean;
+            /**
+             * Loaned
+             * @default false
+             */
+            loaned: boolean;
         };
         /**
          * CopyCondition
@@ -1792,6 +1797,11 @@ export interface components {
              * @default false
              */
             backup: boolean;
+            /**
+             * Loaned
+             * @default false
+             */
+            loaned: boolean;
         };
         /**
          * CopyFormat
@@ -1822,6 +1832,8 @@ export interface components {
             traded: boolean;
             /** Backup */
             backup: boolean;
+            /** Loaned */
+            loaned: boolean;
             /** Bundle Id */
             bundle_id: number | null;
             /** Reference Price Cents */
@@ -1856,6 +1868,8 @@ export interface components {
             traded?: boolean | null;
             /** Backup */
             backup?: boolean | null;
+            /** Loaned */
+            loaned?: boolean | null;
         };
         /** CsvCommit */
         CsvCommit: {

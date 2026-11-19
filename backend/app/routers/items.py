@@ -268,7 +268,7 @@ def update_copy(
     item = load_item(session, item_id)
     copy = _load_copy(item, copy_id)
     changes = data.model_dump(exclude_unset=True)
-    for tag in ("won", "traded", "backup"):
+    for tag in ("won", "traded", "backup", "loaned"):
         if tag in changes and changes[tag] is None:
             del changes[tag]  # not a value to store: the tag stays as it is
     if copy.bundle_id is not None:

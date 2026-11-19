@@ -454,3 +454,31 @@ test("a favorite on two platforms is one favorite with the hours of both", async
   await pickSegment(page, "Grid");
   await expect(page.getByRole("link", { name: new RegExp(name) })).toHaveCount(1);
 });
+
+test("add a game with a loaned copy: like a backup copy, but physical or digital", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const name = `Borrowed ${category.id}`;
+  await page.goto(`/categories/${category.id}`);
+  await expect(page.getByRole("radio", { name: "Loaned", exact: true })).toHaveCount(0); // nothing loaned yet
+  await page.getByRole("button", { name: "Game", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill(name);
+  await fillMoney(page, "Buy price", "12");
+  await dialog.getByLabel("Backup copy").check();
+  await dialog.getByLabel("Loaned copy").check();
+  await expect(dialog.getByLabel("Backup copy")).not.toBeChecked(); // one or the other
+  await pickSegment(dialog, "Physical"); // unlike a backup copy
+  await expect(dialog.getByRole("textbox", { name: "Buy price", exact: true })).toHaveValue("0,00 €");
+  await expect(dialog.getByRole("textbox", { name: "Buy price", exact: true })).toBeDisabled();
+  await expect(dialog.getByRole("textbox", { name: "Bought on" })).toHaveValue("");
+  await dialog.getByRole("button", { name: "Add" }).click();
+  await expect(page.getByText(`${name} added`)).toBeVisible();
+
+  await pickSegment(page, "Loaned");
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await expect(row.getByLabel("Loaned copy")).toBeVisible();
+  await row.click();
+  await expect(page.getByRole("cell", { name: /Physical.*loaned/ })).toBeVisible();
+  await page.getByRole("button", { name: "Edit copy" }).click();
+  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Sold for" })).toHaveCount(0);
+});

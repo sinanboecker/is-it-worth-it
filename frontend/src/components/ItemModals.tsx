@@ -163,6 +163,7 @@ type CopyDraft = {
   won: boolean;
   traded: boolean;
   backup: boolean;
+  loaned: boolean;
 };
 
 function CopyFields({
@@ -174,6 +175,7 @@ function CopyFields({
   priceLabel = "Buy price",
   requireDate = false,
   allowBackup = false,
+  allowLoan = false,
 }: {
   draft: CopyDraft;
   set: (patch: Partial<CopyDraft>) => void;
@@ -183,6 +185,7 @@ function CopyFields({
   priceLabel?: string;
   requireDate?: boolean;
   allowBackup?: boolean; // games only, not for bundle copies
+  allowLoan?: boolean; // games only, not for bundle copies
 }) {
   // a copy you won or got in a trade cost nothing (a bundle copy's price comes from the bundle)
   const setTag = (tag: "won" | "traded", on: boolean) => set(on && !inBundle ? { [tag]: true, buy_price_cents: 0 } : { [tag]: on });
@@ -191,9 +194,14 @@ function CopyFields({
   const setBackup = (on: boolean) =>
     set(
       on
-        ? { backup: true, buy_price_cents: 0, buy_date: null, format: "digital", condition: null, sell_price_cents: null, sell_date: null }
+        ? { backup: true, loaned: false, buy_price_cents: 0, buy_date: null, format: "digital", condition: null, sell_price_cents: null, sell_date: null }
         : { backup: false },
     );
+  // a loaned (borrowed) copy is like a backup copy, but physical or digital
+  const loaned = allowLoan && draft.loaned;
+  const setLoaned = (on: boolean) =>
+    set(on ? { loaned: true, backup: false, buy_price_cents: 0, buy_date: null, sell_price_cents: null, sell_date: null } : { loaned: false });
+  const free = backup || loaned; // price and buy date are fixed
   return (
     <Stack gap="sm">
       {inBundle && (
@@ -208,15 +216,15 @@ function CopyFields({
           value={draft.buy_date}
           onChange={(v) => set({ buy_date: v })}
           required={requireDate}
-          clearable={!requireDate && !inBundle && !backup}
-          disabled={inBundle || backup}
+          clearable={!requireDate && !inBundle && !free}
+          disabled={inBundle || free}
         />
         <MoneyInput
           label={priceLabel}
           value={draft.buy_price_cents}
           onChange={(v) => set({ buy_price_cents: v })}
           required
-          disabled={inBundle || backup}
+          disabled={inBundle || free}
         />
       </Group>
       <StoreInput value={draft.store} onChange={(v) => set({ store: v })} />
@@ -237,7 +245,7 @@ function CopyFields({
           clearable
         />
       )}
-      {showSale && !backup && (
+      {showSale && !free && (
         <Group grow>
           <MoneyInput
             label="Sold for"
@@ -260,6 +268,14 @@ function CopyFields({
             onChange={(e) => setBackup(e.currentTarget.checked)}
           />
         )}
+        {allowLoan && (
+          <Checkbox
+            label="Loaned copy"
+            description="Borrowed: free, no buy date; can't be sold"
+            checked={loaned}
+            onChange={(e) => setLoaned(e.currentTarget.checked)}
+          />
+        )}
       </Group>
     </Stack>
   );
@@ -277,6 +293,7 @@ const emptyCopy = (kind: ItemKind): CopyDraft => ({
   won: false,
   traded: false,
   backup: false,
+  loaned: false,
 });
 
 const copyBody = (d: CopyDraft) => ({ ...d, buy_price_cents: d.buy_price_cents! });
@@ -310,7 +327,14 @@ export function CopyModal({
   return (
     <Modal opened={opened} onClose={onClose} title={copy ? "Edit copy" : `Add a copy – ${item.name}`}>
       <Stack>
-        <CopyFields draft={draft} set={set} kind={item.kind} inBundle={inBundle} allowBackup={item.kind === "game" && !inBundle} />
+        <CopyFields
+          draft={draft}
+          set={set}
+          kind={item.kind}
+          inBundle={inBundle}
+          allowBackup={item.kind === "game" && !inBundle}
+          allowLoan={item.kind === "game" && !inBundle}
+        />
         <Group justify="flex-end">
           <Button onClick={() => mutation.mutate(undefined)} loading={mutation.isPending} disabled={draft.buy_price_cents === null}>
             Save
@@ -636,6 +660,7 @@ export function NewItemModal({
             priceLabel={bundle ? "Total price of the bundle" : "Buy price"}
             requireDate={bundle}
             allowBackup={effectiveKind === "game" && !bundle}
+            allowLoan={effectiveKind === "game" && !bundle}
           />
         )}
         {bundle && (

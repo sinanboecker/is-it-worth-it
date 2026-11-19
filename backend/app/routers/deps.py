@@ -98,9 +98,18 @@ def check_game_category(category: Category, kind: ItemKind) -> None:
 def check_copy(item: Item, copy: Copy) -> None:
     """Validate a copy after create/update and fill implied values."""
     if item.kind is ItemKind.hardware:
-        if copy.backup:
-            raise invalid("only games have backup copies")
+        if copy.backup or copy.loaned:
+            raise invalid("only games have backup or loaned copies")
         copy.format = CopyFormat.physical
+    if copy.loaned:
+        # a loaned (borrowed) copy is like a backup copy (free, no buy date, can't be sold) but physical or digital
+        if copy.backup:
+            raise invalid("a copy can't be both loaned and a backup")
+        if copy.bundle_id is not None or copy.bundle is not None:
+            raise invalid("a bundle copy can't be loaned")
+        if copy.sell_price_cents is not None or copy.sell_date is not None:
+            raise invalid("a loaned copy can't be sold")
+        copy.buy_price_cents, copy.buy_date = 0, None
     if copy.backup:
         # a backup copy is a free digital copy with no buy date, and it can't be sold
         if copy.bundle_id is not None or copy.bundle is not None:

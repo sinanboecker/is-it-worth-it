@@ -588,3 +588,28 @@ def test_the_same_game_on_other_platforms(api, engine):
     assert listed[old["id"]]["title_key"] == listed[new["id"]]["title_key"] == "ghost of tsushima"
     assert listed[old["id"]]["rawg_id"] == 42
     assert [i["title_key"] for i in listed.values() if i["kind"] == "hardware"] == [None]
+
+
+def test_loaned_copies_are_like_backups_but_physical_or_digital(api):
+    nintendo = api.category("Nintendo")
+    game = api.post(
+        "/items",
+        {"category_id": nintendo["id"], "kind": "game", "name": "Borrowed",
+         "first_copy": {"buy_date": "2024-01-01", "buy_price_cents": 2000, "format": "physical", "condition": "used",
+                        "loaned": True}},
+    )  # fmt: skip
+    (copy,) = game["copies"]
+    assert (copy["loaned"], copy["buy_price_cents"], copy["buy_date"]) == (True, 0, None)
+    assert (copy["format"], copy["condition"]) == ("physical", "used")  # unlike a backup copy
+    summary = game["copies_summary"]
+    assert (summary["loaned"], summary["owned"], summary["first_bought_on"]) == (True, True, None)
+    assert game["status"] == "backlog"
+
+    url = f"/api/v1/items/{game['id']}/copies/{copy['id']}"
+    assert api.client.patch(url, json={"sell_price_cents": 500}).status_code == 422
+    assert api.client.patch(url, json={"backup": True}).status_code == 422
+    assert api.client.patch(url, json={"buy_date": "2024-02-02"}).json()["copies"][0]["buy_date"] is None
+
+    switch = api.post("/items", {"category_id": nintendo["id"], "kind": "hardware", "name": "Borrowed Switch"})
+    lent = {"buy_price_cents": 0, "loaned": True}
+    assert api.client.post(f"/api/v1/items/{switch['id']}/copies", json=lent).status_code == 422

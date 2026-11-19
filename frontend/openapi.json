@@ -6100,6 +6100,11 @@
             "type": "boolean",
             "title": "Backup",
             "default": false
+          },
+          "loaned": {
+            "type": "boolean",
+            "title": "Loaned",
+            "default": false
           }
         },
         "type": "object",
@@ -6219,6 +6224,11 @@
             "type": "boolean",
             "title": "Backup",
             "default": false
+          },
+          "loaned": {
+            "type": "boolean",
+            "title": "Loaned",
+            "default": false
           }
         },
         "type": "object",
@@ -6327,6 +6337,10 @@
             "type": "boolean",
             "title": "Backup"
           },
+          "loaned": {
+            "type": "boolean",
+            "title": "Loaned"
+          },
           "bundle_id": {
             "anyOf": [
               {
@@ -6380,6 +6394,7 @@
           "won",
           "traded",
           "backup",
+          "loaned",
           "bundle_id",
           "reference_price_cents",
           "is_sold",
@@ -6511,6 +6526,17 @@
               }
             ],
             "title": "Backup"
+          },
+          "loaned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loaned"
           }
         },
         "type": "object",

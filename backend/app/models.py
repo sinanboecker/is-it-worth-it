@@ -193,6 +193,7 @@ class Copy(SQLModel, table=True):
     note: str | None = None
     won: bool = False  # e.g. in a giveaway
     traded: bool = False  # got in a trade
+    loaned: bool = False  # borrowed: like a backup copy (free, not bought, never sold), but physical or digital
     backup: bool = False  # a free backup copy (e.g. a digital copy that came with the game): costs nothing, never sold
     bundle_id: int | None = Field(default=None, foreign_key="bundle.id", index=True, ondelete="CASCADE")
     reference_price_cents: int | None = None
