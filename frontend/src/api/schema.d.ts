@@ -866,7 +866,8 @@ export interface paths {
         put?: never;
         /**
          * Fetch Missing
-         * @description Match games without metadata: confident matches are applied, the rest is returned for review.
+         * @description Match games without metadata: confident matches are applied, the rest is returned for review. Games matched
+         *     before RAWG names were stored get RAWG's name (to find them on other platforms, see app/titles.py).
          */
         post: operations["fetch_missing_api_v1_metadata_fetch_missing_post"];
         delete?: never;
@@ -1995,6 +1996,12 @@ export interface components {
             review: components["schemas"]["ReviewItem"][];
             /** Remaining */
             remaining: number;
+            /**
+             * Names Filled
+             * @description games matched before RAWG names were stored that got theirs
+             * @default 0
+             */
+            names_filled: number;
         };
         /** FinishImportPreview */
         FinishImportPreview: {
@@ -2363,6 +2370,11 @@ export interface components {
              * @description games with the same key are the same game on other platforms
              */
             title_key: string | null;
+            /**
+             * Rawg Title Key
+             * @description the same for the game's name on RAWG; matches title_key too
+             */
+            rawg_title_key: string | null;
             copies_summary: components["schemas"]["CopiesSummary"];
             /** Devices */
             devices: components["schemas"]["PlayLinkRead"][];
@@ -2443,6 +2455,11 @@ export interface components {
              * @description games with the same key are the same game on other platforms
              */
             title_key: string | null;
+            /**
+             * Rawg Title Key
+             * @description the same for the game's name on RAWG; matches title_key too
+             */
+            rawg_title_key: string | null;
             copies_summary: components["schemas"]["CopiesSummary"];
             /** Devices */
             devices: components["schemas"]["PlayLinkRead"][];

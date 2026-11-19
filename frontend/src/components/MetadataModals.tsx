@@ -223,7 +223,7 @@ export function FetchMissingModal({ categoryId, onClose }: { categoryId?: number
         );
         skip.push(...result.review.map((r) => r.item_id));
         setApplied((n) => n + result.applied.length);
-        setProcessed((n) => n + result.applied.length + result.review.length);
+        setProcessed((n) => n + result.applied.length + result.review.length + result.names_filled);
         setReview((r) => [...r, ...result.review]);
         setRemaining(result.remaining);
         if (result.remaining === 0) break;
@@ -253,7 +253,8 @@ export function FetchMissingModal({ categoryId, onClose }: { categoryId?: number
           <>
             <Text size="sm">
               Looks up every game without info on RAWG. Clear matches are applied automatically; for the others you pick
-              the right game (or skip it).
+              the right game (or skip it). Games matched before version 0.2.17 also get RAWG's name for them, so the same
+              game on other platforms is found by it.
             </Text>
             {!running && !done && (
               <Group>

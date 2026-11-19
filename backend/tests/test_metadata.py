@@ -3,8 +3,10 @@
 import httpx
 import pytest
 from PIL import Image
+from sqlmodel import Session
 
 from app import cache, config, http, rawg
+from app.models import Item
 from tests.fake_services import IMAGES, RAWG, STEAM, FakeServices, png
 
 
@@ -218,3 +220,37 @@ def test_lists_include_the_release_date(api, fake):
     api.post(f"/items/{hades['id']}/metadata", {"rawg_id": 2})
     (listed,) = api.get("/items", params={"q": "Hades"})
     assert listed["release_date"] == "2020-09-17"
+
+
+def test_a_game_matched_on_rawg_is_found_on_other_platforms_by_rawgs_name(api, fake, engine):
+    """The Mafia case: one platform's entry is matched on RAWG (with its own, different name), the other isn't."""
+    pc, ps5 = api.category("PC"), api.category("PS5")
+    plain = api.game(pc["id"], name="The Witcher 3 - Wild Hunt")
+    matched = api.game(ps5["id"], name="Witcher 3 GOTY (PS5)")
+    assert api.get(f"/items/{plain['id']}")["other_platforms"] == []
+
+    api.post(f"/items/{matched['id']}/metadata", {"rawg_id": 3})  # its own name is kept
+    assert [o["id"] for o in api.get(f"/items/{plain['id']}")["other_platforms"]] == [matched["id"]]
+    assert [o["id"] for o in api.get(f"/items/{matched['id']}")["other_platforms"]] == [plain["id"]]
+    listed = {i["id"]: i for i in api.get("/items", params={"q": "witcher"})}
+    assert listed[matched["id"]]["rawg_title_key"] == listed[plain["id"]]["title_key"] == "the witcher 3 wild hunt"
+
+    cleared = api.delete(f"/items/{matched['id']}/metadata")  # unlinked from RAWG: RAWG's name goes too
+    assert cleared["other_platforms"] == []
+
+
+def test_fetch_missing_fills_in_rawg_names_of_games_matched_earlier(api, fake, engine):
+    pc = api.category("PC")
+    old = api.game(pc["id"], name="Hades (old match)")
+    gone = api.game(pc["id"], name="Phantoms (old match)")
+    with Session(engine) as session:  # matched before RAWG names were stored
+        for item_id, rawg_id in ((old["id"], 2), (gone["id"], 7)):
+            session.get(Item, item_id).rawg_id = rawg_id
+        session.commit()
+
+    result = api.post("/metadata/fetch-missing", {"limit": 8})
+    assert (result["names_filled"], result["applied"], result["review"], result["remaining"]) == (2, [], [], 0)
+    listed = {i["id"]: i for i in api.get("/items")}
+    assert listed[old["id"]]["rawg_title_key"] == "hades"
+    assert listed[gone["id"]]["rawg_title_key"] is None  # gone from RAWG: not looked up again
+    assert api.post("/metadata/fetch-missing", {"limit": 8})["names_filled"] == 0

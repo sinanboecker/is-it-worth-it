@@ -126,3 +126,23 @@ test("fetch missing info goes on when RAWG's best match is gone", async ({ page,
   await dialog.getByRole("button", { name: "Skip" }).click();
   await expect(dialog.getByText("Done. 1 games matched automatically.")).toBeVisible();
 });
+
+test("a game matched on RAWG is found on another platform by RAWG's name", async ({ page, request }) => {
+  const pc = await category(request, "PC");
+  const ps5 = await category(request, "PS5");
+  const add = async (categoryId: number, name: string) =>
+    (
+      await request.post("/api/v1/items", {
+        data: { category_id: categoryId, kind: "game", name, first_copy: { buy_date: "2024-01-01", buy_price_cents: 3000 } },
+      })
+    ).json();
+  const plain = await add(pc.id, `The Witcher 3 - Wild Hunt`);
+  const matched = await add(ps5.id, `Witcher GOTY ${ps5.id}`);
+  await request.post(`/api/v1/items/${matched.id}/metadata`, { data: { rawg_id: 3, rename: false } });
+
+  await page.goto(`/items/${plain.id}`);
+  const platform = page.getByRole("radiogroup", { name: "Platform" });
+  await expect(platform.getByRole("radio", { name: new RegExp(ps5.name) })).toHaveCount(1);
+  await page.getByRole("textbox", { name: "Search" }).fill("witcher");
+  await expect(page.getByRole("option", { name: new RegExp(`${pc.name}.*${ps5.name}|${ps5.name}.*${pc.name}`) })).toHaveCount(1);
+});

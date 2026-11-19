@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from app import media, rawg, steam_store
@@ -71,6 +72,7 @@ def apply_metadata(session: Session, game: Item, rawg_id: int, rename: bool = Fa
         game.cover_path = cover
     game.rawg_id = info.rawg_id
     game.rawg_slug = info.slug
+    game.rawg_name = info.name or None
     game.summary = info.description
     game.release_date = info.released
     game.genres = info.genres
@@ -99,7 +101,7 @@ def clear_metadata(item_id: int, session: SessionDep, settings: SettingsDep, tod
     """Unlink from RAWG (wrong match): removes RAWG data and image. Steam app ID and own image stay."""
     game = load_game(session, item_id)
     media.delete(game.cover_path)
-    game.cover_path = game.rawg_id = game.rawg_slug = None
+    game.cover_path = game.rawg_id = game.rawg_slug = game.rawg_name = None
     game.summary = game.release_date = game.genres = game.developer = None
     session.commit()
     return read_item(session, item_id, settings, today)
@@ -131,20 +133,31 @@ class FetchMissingResult(BaseModel):
     applied: list[AppliedMatch]
     review: list[ReviewItem]
     remaining: int
+    names_filled: int = Field(0, description="games matched before RAWG names were stored that got theirs")
 
 
 @router.post("/metadata/fetch-missing", response_model=FetchMissingResult)
 def fetch_missing(data: FetchMissing, session: SessionDep):
-    """Match games without metadata: confident matches are applied, the rest is returned for review."""
+    """Match games without metadata: confident matches are applied, the rest is returned for review. Games matched
+    before RAWG names were stored get RAWG's name (to find them on other platforms, see app/titles.py)."""
     if not rawg.configured():
         raise HTTPException(status_code=503, detail="RAWG is not set up: add RAWG_API_KEY to the server's environment")
-    query = select(Item).where(Item.kind == ItemKind.game, Item.rawg_id.is_(None)).order_by(Item.id)
+    query = (
+        select(Item)
+        .where(Item.kind == ItemKind.game, or_(Item.rawg_id.is_(None), Item.rawg_name.is_(None)))
+        .order_by(Item.id)
+    )
     if data.category_id is not None:
         query = query.where(Item.category_id == data.category_id)
     todo = [g for g in session.exec(query) if g.id not in data.skip]
 
     result = FetchMissingResult(applied=[], review=[], remaining=max(0, len(todo) - data.limit))
     for game in todo[: data.limit]:
+        if game.rawg_id is not None:
+            _fill_rawg_name(game)
+            session.commit()
+            result.names_filled += 1
+            continue
         candidates = _rawg_call(rawg.search, game.name)
         match = rawg.best_match(game.name, candidates)
         if match is None:
@@ -165,6 +178,17 @@ def fetch_missing(data: FetchMissing, session: SessionDep):
         session.commit()
         result.applied.append(AppliedMatch(item_id=game.id, name=game.name, rawg_name=match.name))
     return result
+
+
+def _fill_rawg_name(game: Item) -> None:
+    """RAWG's name for a game matched before it was stored; "" when RAWG has none (or the game is gone), so it isn't
+    looked up again."""
+    try:
+        game.rawg_name = _rawg_call(rawg.details, game.rawg_id).name
+    except HTTPException as e:
+        if e.status_code != 404:
+            raise
+        game.rawg_name = ""
 
 
 # --- images -----------------------------------------------------------------------------------

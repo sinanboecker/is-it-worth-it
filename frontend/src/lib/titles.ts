@@ -1,12 +1,20 @@
 import type { ItemSummary } from "@/api/types";
 
-/** Items that are the same game on several platforms: same `title_key` (the name, loosely compared) or the same
- * RAWG game. Hardware is never grouped. Groups keep the order of their first item. */
+/** Items that are the same game on several platforms: a name in common (`title_key`, the name loosely compared, or
+ * `rawg_title_key`, RAWG's name for it) or the same RAWG game. Hardware is never grouped. Groups keep the order of
+ * their first item. */
 export function groupSameGames(items: ItemSummary[]): ItemSummary[][] {
   const groups: ItemSummary[][] = [];
   const byKey = new Map<string, ItemSummary[]>();
   for (const item of items) {
-    const keys = item.kind === "game" ? [`name:${item.title_key}`, ...(item.rawg_id ? [`rawg:${item.rawg_id}`] : [])] : [];
+    const keys =
+      item.kind === "game"
+        ? [
+            `name:${item.title_key}`,
+            ...(item.rawg_title_key ? [`name:${item.rawg_title_key}`] : []),
+            ...(item.rawg_id ? [`rawg:${item.rawg_id}`] : []),
+          ]
+        : [];
     // the groups this item joins (it can link two groups: one by name, one by RAWG id)
     const found = [...new Set(keys.map((k) => byKey.get(k)).filter((g) => g !== undefined))];
     let group = found[0];

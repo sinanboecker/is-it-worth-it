@@ -113,6 +113,7 @@ class Item(SQLModel, table=True):
     # metadata (games), filled from RAWG (rawg.io)
     rawg_id: int | None = None
     rawg_slug: str | None = None
+    rawg_name: str | None = None  # RAWG's name for the game (its own may differ), to find it on other platforms
     summary: str | None = None
     release_date: date | None = None
     genres: str | None = None

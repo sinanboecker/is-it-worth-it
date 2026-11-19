@@ -1,11 +1,15 @@
 import type { ItemSummary } from "@/api/types";
 import { combineGroup, groupSameGames, mainEntry } from "./titles";
 
-const item = (id: number, fields: { key?: string | null; rawg?: number | null; kind?: "game" | "hardware"; hours?: number; bought?: string }) =>
+const item = (
+  id: number,
+  fields: { key?: string | null; rawgKey?: string; rawg?: number | null; kind?: "game" | "hardware"; hours?: number; bought?: string },
+) =>
   ({
     id,
     kind: fields.kind ?? "game",
     title_key: fields.kind === "hardware" ? null : (fields.key ?? `game ${id}`),
+    rawg_title_key: fields.rawgKey ?? null,
     rawg_id: fields.rawg ?? null,
     value: { hours: fields.hours ?? 0 },
     copies_summary: { first_bought_on: fields.bought ?? null },
@@ -23,6 +27,11 @@ test("games with the same name or RAWG game are grouped; hardware never", () => 
     item(6, { kind: "hardware" }),
   ];
   expect(ids(groupSameGames(items))).toEqual([[1, 3, 4], [2], [5], [6]]);
+});
+
+test("a game matched on RAWG joins an unmatched one by RAWG's name", () => {
+  const items = [item(1, { key: "mafia the old country" }), item(2, { key: "mafia ps5", rawgKey: "mafia the old country", rawg: 3 })];
+  expect(ids(groupSameGames(items))).toEqual([[1, 2]]);
 });
 
 test("an item can join two groups into one", () => {

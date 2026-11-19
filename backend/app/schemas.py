@@ -344,6 +344,7 @@ class ItemSummary(BaseModel):
     release_date: date | None
     rawg_id: int | None
     title_key: str | None = Field(description="games with the same key are the same game on other platforms")
+    rawg_title_key: str | None = Field(description="the same for the game's name on RAWG; matches title_key too")
     copies_summary: CopiesSummary
     devices: list[PlayLinkRead]
     value: ValueRead | None
@@ -367,6 +368,7 @@ class ItemSummary(BaseModel):
             "release_date": item.release_date,
             "rawg_id": item.rawg_id,
             "title_key": titles.title_key(item),
+            "rawg_title_key": titles.rawg_title_key(item),
             "copies_summary": CopiesSummary(
                 **vars(stats),
                 formats=sorted({c.format for c in item.copies}),
