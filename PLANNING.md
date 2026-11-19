@@ -713,9 +713,9 @@ is_it_worth_it/
    journal + heatmap, wishlist/backlog, dashboard, stats.
    Added later: Dashboard as start page (`/dashboard`), header search bar + quick-add button, "+ new category" in the sidebar.
 5. ✅ **Metadata + DLC lists:** RAWG search + apply (incl. Steam ID from store links, DLC names), RAWG attribution, cover caching, bulk "fetch missing" job, image upload; Steam Store DLC list with prices + cache.
-6. **Network guard + Docker:** ✅ `ALLOWED_NETWORKS` (loopback always allowed for the healthcheck), ✅ Dockerfile, ✅ compose, ✅ Unraid template, ✅ `deploy.sh`, ✅ GitHub Actions CI + release tags → ghcr.io image;
-   ✅ repo on GitHub, releases **v0.1.0–v0.1.2** (image public on ghcr.io). Still to do on your side: install on Unraid from the template,
-   test over WireGuard.
+6. ✅ **Network guard + Docker:** ✅ `ALLOWED_NETWORKS` (loopback always allowed for the healthcheck), ✅ Dockerfile, ✅ compose, ✅ Unraid template, ✅ `deploy.sh`, ✅ GitHub Actions CI + release tags → ghcr.io image;
+   ✅ repo on GitHub, releases **v0.1.0–v0.1.2** (image public on ghcr.io), ✅ installed on Unraid from the template,
+   ✅ tested from the phone over WireGuard (and blocked without it).
    *(From here on, the app is usable day-to-day and replaces the spreadsheet.)*
 7. **gg.deals wishlist prices:** verify API fields with your key, linking (Steam ID / pasted URL), daily price sync, snapshots, official + keyshop display,
    gg.deals link, target price/deal badge, "Bought it" prefill.
