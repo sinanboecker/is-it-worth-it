@@ -421,3 +421,36 @@ test("the same game on two platforms is one search result with a platform switch
   await pickSegment(page.getByRole("radiogroup", { name: "Platform" }), `${category.name} · 12 h`);
   await expect(page).toHaveURL(new RegExp(`/items/${played.id}$`));
 });
+
+test("a favorite on two platforms is one favorite with the hours of both", async ({ page, request }) => {
+  const { category, device } = await setup(request);
+  const other = await (await request.post("/api/v1/categories", { data: { name: `PC ${category.id}` } })).json();
+  const pcDevice = await (
+    await request.post("/api/v1/items", {
+      data: { category_id: other.id, kind: "hardware", name: `Rig ${other.id}`, first_copy: { buy_date: "2022-01-01", buy_price_cents: 0 } },
+    })
+  ).json();
+  const name = `Mafia ${category.id}`;
+  for (const [categoryId, hardwareId, played] of [
+    [category.id, device.id, 10],
+    [other.id, pcDevice.id, 30],
+  ]) {
+    const game = await (
+      await request.post("/api/v1/items", {
+        data: { category_id: categoryId, kind: "game", name, first_copy: { buy_date: "2024-01-01", buy_price_cents: 4000 } },
+      })
+    ).json();
+    await request.patch(`/api/v1/items/${game.id}`, { data: { favorite: true } });
+    await request.post(`/api/v1/items/${game.id}/hours`, { data: { hours: played, hardware_id: hardwareId } });
+  }
+
+  await page.goto("/favorites");
+  await pickSegment(page, "List");
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText(`${category.name} · ${other.name}`);
+  await expect(row).toContainText("40 h");
+  await expect(row).toContainText("2,00 €/h"); // 80 € / 40 h
+  await pickSegment(page, "Grid");
+  await expect(page.getByRole("link", { name: new RegExp(name) })).toHaveCount(1);
+});

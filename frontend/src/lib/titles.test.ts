@@ -1,5 +1,5 @@
 import type { ItemSummary } from "@/api/types";
-import { groupSameGames, mainEntry } from "./titles";
+import { combineGroup, groupSameGames, mainEntry } from "./titles";
 
 const item = (id: number, fields: { key?: string | null; rawg?: number | null; kind?: "game" | "hardware"; hours?: number; bought?: string }) =>
   ({
@@ -36,4 +36,17 @@ test("the main entry is the most played, else the newest", () => {
   expect(mainEntry([item(1, { hours: 2 }), item(2, { hours: 10 })]).id).toBe(2);
   expect(mainEntry([item(1, { bought: "2020-01-01" }), item(2, { bought: "2024-01-01" })]).id).toBe(2);
   expect(mainEntry([item(1, {}), item(2, {})]).id).toBe(1);
+});
+
+test("a combined game adds up hours, cost and finishes of its platforms", () => {
+  const withValue = (id: number, hours: number, net: number, finished: number) =>
+    ({
+      ...item(id, { key: "ghost", hours }),
+      value: { hours, net_cost_cents: net, dlc_cost_cents: 0, total_paid_cents: net, times_finished: finished, last_finished_on: null, threshold_cph: 300 },
+    }) as unknown as ItemSummary;
+  const combined = combineGroup([withValue(1, 10, 6000, 1), withValue(2, 30, 2000, 0)]);
+  expect(combined.id).toBe(2); // the most played one
+  expect(combined.value).toMatchObject({ hours: 40, net_cost_cents: 8000, times_finished: 1, cost_per_hour_cents: 200, worth_it: true });
+  const single = withValue(3, 1, 9000, 0);
+  expect(combineGroup([single])).toBe(single);
 });

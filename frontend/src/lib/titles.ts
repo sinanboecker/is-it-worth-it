@@ -34,3 +34,30 @@ export function mainEntry(group: ItemSummary[]): ItemSummary {
     return h > bh || (h === bh && b > bb) ? i : best;
   });
 }
+
+/** One game on several platforms as one entry: the main entry (see `mainEntry`) with the hours, cost and finishes of
+ * all platforms added up; cost per hour and "worth it" are worked out again from those (like app/calc.py does). */
+export function combineGroup(group: ItemSummary[]): ItemSummary {
+  const main = mainEntry(group);
+  const values = group.map((i) => i.value).filter((v) => v !== null && v !== undefined);
+  if (group.length === 1 || !main.value || values.length < 2) return main;
+  const sum = (pick: (v: (typeof values)[number]) => number) => values.reduce((total, v) => total + pick(v), 0);
+  const hoursTotal = Math.round(sum((v) => v.hours) * 100) / 100;
+  const netCost = sum((v) => v.net_cost_cents);
+  const threshold = main.value.threshold_cph;
+  return {
+    ...main,
+    value: {
+      ...main.value,
+      hours: hoursTotal,
+      net_cost_cents: netCost,
+      dlc_cost_cents: sum((v) => v.dlc_cost_cents),
+      total_paid_cents: sum((v) => v.total_paid_cents),
+      times_finished: sum((v) => v.times_finished),
+      last_finished_on: values.map((v) => v.last_finished_on).reduce((a, b) => ((b ?? "") > (a ?? "") ? b : a), null),
+      cost_per_hour_cents: hoursTotal > 0 ? Math.round(netCost / hoursTotal) : null,
+      worth_it: netCost <= 0 || (hoursTotal > 0 && netCost <= threshold * hoursTotal),
+      hours_to_break_even: netCost <= 0 ? 0 : Math.round(Math.max(0, netCost / threshold - hoursTotal) * 10) / 10,
+    },
+  };
+}
