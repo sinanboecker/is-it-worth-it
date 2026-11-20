@@ -146,3 +146,23 @@ test("a game matched on RAWG is found on another platform by RAWG's name", async
   await page.getByRole("textbox", { name: "Search" }).fill("witcher");
   await expect(page.getByRole("option", { name: new RegExp(`${pc.name}.*${ps5.name}|${ps5.name}.*${pc.name}`) })).toHaveCount(1);
 });
+
+test("a game page links to Steam, and a wishlist game also to gg.deals", async ({ page, request }) => {
+  const pc = await category(request, "PC");
+  const add = async (data: object) =>
+    (await request.post("/api/v1/items", { data: { category_id: pc.id, kind: "game", ...data } })).json();
+  const owned = await add({ name: `Hades owned ${pc.id}`, first_copy: { buy_date: "2024-01-01", buy_price_cents: 2000 } });
+  await request.post(`/api/v1/items/${owned.id}/metadata`, { data: { rawg_id: 2, rename: false } }); // Steam app 1145360
+  const wished = await add({ name: `Mafia wished ${pc.id}` });
+
+  await page.goto(`/items/${owned.id}`);
+  await expect(page.getByRole("link", { name: "Steam" })).toHaveAttribute("href", "https://store.steampowered.com/app/1145360/");
+  await expect(page.getByRole("link", { name: "gg.deals" })).toHaveCount(0); // not on the wishlist
+
+  await page.goto(`/items/${wished.id}`);
+  await expect(page.getByRole("link", { name: "Steam" })).toHaveCount(0); // no Steam app ID
+  await expect(page.getByRole("link", { name: "gg.deals" })).toHaveAttribute(
+    "href",
+    `https://gg.deals/games/?title=${encodeURIComponent(wished.name)}`,
+  );
+});

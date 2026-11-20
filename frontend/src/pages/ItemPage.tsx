@@ -22,6 +22,7 @@ import {
 import {
   IconCheck,
   IconDots,
+  IconExternalLink,
   IconEdit,
   IconPackage,
   IconPhoto,
@@ -45,6 +46,7 @@ import { AddHoursModal, CopyModal, DlcModal, FinishModal } from "@/components/It
 import { MetadataSearchModal, RawgAttribution } from "@/components/MetadataModals";
 import { day, euros, hours, perHour } from "@/lib/format";
 import { CONDITION, FORMAT, STATUS } from "@/lib/labels";
+import { ggDealsUrl, steamUrl } from "@/lib/links";
 
 const patchItem = (id: number, body: Record<string, unknown>) =>
   unwrap(api.PATCH("/api/v1/items/{item_id}", { params: { path: { item_id: id } }, body }));
@@ -588,6 +590,26 @@ function AboutSection({ game, onChangeMatch }: { game: ItemRead; onChangeMatch: 
   );
 }
 
+/** Links to the game on Steam (when its Steam app ID is known) and, for wishlist games, its prices on gg.deals. */
+function StoreLinks({ item, wishlist }: { item: ItemRead; wishlist: boolean }) {
+  const steam = steamUrl(item.steam_app_id);
+  if (!steam && !wishlist) return null;
+  const link = (href: string, label: string) => (
+    <Anchor href={href} target="_blank" rel="noreferrer" size="sm">
+      <Group gap={4} wrap="nowrap">
+        {label}
+        <IconExternalLink size={14} />
+      </Group>
+    </Anchor>
+  );
+  return (
+    <Group gap="md">
+      {steam && link(steam, "Steam")}
+      {wishlist && link(ggDealsUrl(item), "gg.deals")}
+    </Group>
+  );
+}
+
 /** The same game on other platforms (separate entries, see app/titles.py): switch between them. */
 function PlatformSwitch({ item }: { item: ItemRead }) {
   const navigate = useNavigate();
@@ -680,6 +702,7 @@ function ItemView({ item }: { item: ItemRead }) {
               <WorthItBadge value={item.value} />
               <CopyBadges item={item} />
             </Group>
+            {isGame && <StoreLinks item={item} wishlist={wishlist} />}
             {isGame && (
               <Group gap={6}>
                 {!wishlist && <Stars value={item.rating} onChange={(r) => setRating.mutate(r)} size="md" />}
