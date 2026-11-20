@@ -97,27 +97,10 @@ def check_game_category(category: Category, kind: ItemKind) -> None:
 
 def check_copy(item: Item, copy: Copy) -> None:
     """Validate a copy after create/update and fill implied values."""
+    if copy.backup or copy.loaned:
+        _check_free_copy(item, copy)
     if item.kind is ItemKind.hardware:
-        if copy.backup or copy.loaned:
-            raise invalid("only games have backup or loaned copies")
         copy.format = CopyFormat.physical
-    if copy.loaned:
-        # a loaned (borrowed) copy is like a backup copy (free, no buy date, can't be sold) but physical or digital
-        if copy.backup:
-            raise invalid("a copy can't be both loaned and a backup")
-        if copy.bundle_id is not None or copy.bundle is not None:
-            raise invalid("a bundle copy can't be loaned")
-        if copy.sell_price_cents is not None or copy.sell_date is not None:
-            raise invalid("a loaned copy can't be sold")
-        copy.buy_price_cents, copy.buy_date = 0, None
-    if copy.backup:
-        # a backup copy is a free digital copy with no buy date, and it can't be sold
-        if copy.bundle_id is not None or copy.bundle is not None:
-            raise invalid("a bundle copy can't be a backup copy")
-        if copy.sell_price_cents is not None or copy.sell_date is not None:
-            raise invalid("a backup copy can't be sold")
-        copy.buy_price_cents, copy.buy_date = 0, None
-        copy.format, copy.condition = CopyFormat.digital, None
     if copy.condition is not None and copy.format is not CopyFormat.physical:
         raise invalid("condition is only for physical copies")
     if copy.sell_price_cents is None:
@@ -125,6 +108,23 @@ def check_copy(item: Item, copy: Copy) -> None:
             raise invalid("a sell date needs a sell price")
     elif copy.sell_date is None:
         copy.sell_date = date.today()
+
+
+def _check_free_copy(item: Item, copy: Copy) -> None:
+    """Backup and loaned (borrowed) copies of a game cost nothing, aren't bought (no buy date) and can't be sold; a
+    backup copy is also always digital."""
+    kind = "backup" if copy.backup else "loaned"
+    if copy.backup and copy.loaned:
+        raise invalid("a copy can't be both loaned and a backup")
+    if item.kind is not ItemKind.game:
+        raise invalid(f"only games have {kind} copies")
+    if copy.bundle_id is not None or copy.bundle is not None:
+        raise invalid(f"a bundle copy can't be a {kind} copy")
+    if copy.sell_price_cents is not None or copy.sell_date is not None:
+        raise invalid(f"a {kind} copy can't be sold")
+    copy.buy_price_cents, copy.buy_date = 0, None
+    if copy.backup:
+        copy.format, copy.condition = CopyFormat.digital, None
 
 
 def default_emulated(hardware: Item) -> bool:

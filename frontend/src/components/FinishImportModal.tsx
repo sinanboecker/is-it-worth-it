@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { api, unwrap, upload } from "@/api/client";
 import { useApiMutation, useCategories, useItems, usePreviewRequest } from "@/api/queries";
 import type { FinishImportPreview, FinishRow } from "@/api/types";
+import { categoryLookup } from "@/lib/categories";
 import { day } from "@/lib/format";
 
 const ACTION: Record<FinishRow["action"], { label: string; color: string }> = {
@@ -42,9 +43,9 @@ export function FinishImportModal({ onClose }: { onClose: () => void }) {
   const [show, setShow] = useState<"all" | "look">("look");
 
   const gameOptions = useMemo(() => {
-    const names = new Map(categories.data?.map((c) => [c.id, c.name]));
+    const { name } = categoryLookup(categories.data);
     return (games.data ?? [])
-      .map((g) => ({ value: String(g.id), label: `${g.name} (${names.get(g.category_id) ?? "?"})` }))
+      .map((g) => ({ value: String(g.id), label: `${g.name} (${name(g.category_id) || "?"})` }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [games.data, categories.data]);
 

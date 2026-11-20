@@ -2,28 +2,23 @@ import { Button, SegmentedControl, Stack, Text } from "@mantine/core";
 import { IconLayoutGrid, IconList, IconPlus } from "@tabler/icons-react";
 import { useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";
-import { useCategories, useItems } from "@/api/queries";
-import type { Category, ItemSummary } from "@/api/types";
+import { useItems } from "@/api/queries";
+import type { ItemSummary } from "@/api/types";
 import { PageHeader, QueryView, ViewLabel } from "@/components/common";
 import { NewItemModal } from "@/components/ItemModals";
 import { CoverGrid, ItemTable, type Column } from "@/components/ItemList";
+import { useCategoryLookup, type CategoryLookup } from "@/lib/categories";
 import { combineGroup, groupSameGames } from "@/lib/titles";
 
 /** The category of each item; `platforms` lists all categories of a game shown once for several platforms. */
-function categoryColumn(categories: Category[] | undefined, platforms?: Map<number, number[]>): Column {
-  const names = new Map(categories?.map((c) => [c.id, c.name]));
-  const order = new Map(categories?.map((c, index) => [c.id, index]));
-  const label = (i: ItemSummary) =>
-    (platforms?.get(i.id) ?? [i.category_id])
-      .toSorted((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
-      .map((id) => names.get(id) ?? "")
-      .join(" · ");
+function categoryColumn(categories: CategoryLookup, platforms?: Map<number, number[]>): Column {
+  const label = (i: ItemSummary) => categories.names(platforms?.get(i.id) ?? [i.category_id]);
   return { key: "category", label: "Category", render: label, sort: label };
 }
 
 export function WishlistPage() {
   const items = useItems({ status: "wishlist" });
-  const categories = useCategories();
+  const categories = useCategoryLookup();
   const [adding, setAdding] = useState(false);
   return (
     <Stack>
@@ -37,7 +32,7 @@ export function WishlistPage() {
       </Text>
       <QueryView query={items}>
         {(data) => (
-          <ItemTable items={data} columns={["name", categoryColumn(categories.data), "target"]} empty="Your wishlist is empty." />
+          <ItemTable items={data} columns={["name", categoryColumn(categories), "target"]} empty="Your wishlist is empty." />
         )}
       </QueryView>
       {adding && <NewItemModal opened wishlist onClose={() => setAdding(false)} />}
@@ -47,7 +42,7 @@ export function WishlistPage() {
 
 export function FavoritesPage() {
   const items = useItems({ favorite: true });
-  const categories = useCategories();
+  const categories = useCategoryLookup();
   // grid or list, remembered in the browser
   const [view, setView] = useLocalStorage<"grid" | "table">({ key: "favorites-view", defaultValue: "grid", getInitialValueInEffect: false });
   return (
@@ -73,7 +68,7 @@ export function FavoritesPage() {
           ) : (
             <ItemTable
               items={games}
-              columns={["name", categoryColumn(categories.data, platforms), "released", "status", "rating", "hours", "cph", "finished"]}
+              columns={["name", categoryColumn(categories, platforms), "released", "status", "rating", "hours", "cph", "finished"]}
               initialSort="name"
               empty="No favorites yet. Click the heart next to a game's stars."
             />
@@ -86,7 +81,7 @@ export function FavoritesPage() {
 
 export function BacklogPage() {
   const items = useItems({ status: "backlog", sort: "first_bought" });
-  const categories = useCategories();
+  const categories = useCategoryLookup();
   return (
     <Stack>
       <PageHeader title="Backlog" />
@@ -97,7 +92,7 @@ export function BacklogPage() {
         {(data) => (
           <ItemTable
             items={data}
-            columns={["name", categoryColumn(categories.data), "bought", "cost", "worth", "copies"]}
+            columns={["name", categoryColumn(categories), "bought", "cost", "worth", "copies"]}
             initialSort="bought"
             empty="Nothing in your backlog 🎉"
           />

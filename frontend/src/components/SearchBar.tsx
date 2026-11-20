@@ -3,7 +3,8 @@ import { useDebouncedValue, useHotkeys } from "@mantine/hooks";
 import { IconSearch } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCategories, useItems } from "@/api/queries";
+import { useItems } from "@/api/queries";
+import { useCategoryLookup } from "@/lib/categories";
 import { STATUS } from "@/lib/labels";
 import { groupSameGames, mainEntry } from "@/lib/titles";
 
@@ -17,11 +18,9 @@ export function SearchBar() {
   const [search, setSearch] = useState("");
   const [debounced] = useDebouncedValue(search.trim(), 200);
   const items = useItems({ q: debounced }, debounced.length > 0);
-  const categories = useCategories();
+  const categories = useCategoryLookup();
   useHotkeys([["mod+K", () => input.current?.focus()]]);
 
-  const categoryName = (id: number) => categories.data?.find((c) => c.id === id)?.name ?? "";
-  const categoryOrder = (id: number) => categories.data?.findIndex((c) => c.id === id) ?? 0;
   const groups = debounced ? groupSameGames(items.data ?? []).slice(0, MAX_RESULTS) : [];
   const results = groups.map((group) => ({ item: mainEntry(group), group }));
   const byId = new Map(results.map((r) => [String(r.item.id), r]));
@@ -54,7 +53,6 @@ export function SearchBar() {
       renderOption={({ option }) => {
         const { item, group = [] } = byId.get(option.value) ?? {};
         const detail = item?.kind === "hardware" ? "Hardware" : item?.status ? STATUS[item.status].label : "";
-        const platforms = [...group].sort((a, b) => categoryOrder(a.category_id) - categoryOrder(b.category_id));
         return (
           <Group justify="space-between" wrap="nowrap" w="100%" gap="sm">
             <Text size="sm" truncate style={{ flex: 1, minWidth: 0 }}>
@@ -62,8 +60,8 @@ export function SearchBar() {
             </Text>
             <Text size="xs" c="dimmed" truncate maw="45%" style={{ flexShrink: 0 }}>
               {group.length > 1
-                ? platforms.map((i) => categoryName(i.category_id)).join(" · ")
-                : [item && categoryName(item.category_id), detail].filter(Boolean).join(" · ")}
+                ? categories.names(group.map((i) => i.category_id))
+                : [item && categories.name(item.category_id), detail].filter(Boolean).join(" · ")}
             </Text>
           </Group>
         );

@@ -82,6 +82,9 @@ export function Figure({ label, value, hint }: { label: string; value: string; h
   );
 }
 
+/** Props of a dialog that is shown while `opened`. */
+export type ModalProps = { opened: boolean; onClose: () => void };
+
 /** Asks before something is deleted (or replaced); the confirm button is red. */
 export function confirmDelete(title: string, text: string | null, onConfirm: () => void, confirm = "Delete") {
   modals.openConfirmModal({

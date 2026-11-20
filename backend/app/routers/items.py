@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query
 from sqlmodel import Session, select
 
 from app import calc, status, titles
-from app.models import Completion, Copy, Dlc, GameStatus, Item, ItemKind, PlayLink
+from app.models import COPY_TAGS, Completion, Copy, Dlc, GameStatus, Item, ItemKind, PlayLink
 from app.routers.deps import (
     ITEM_LOAD_OPTIONS,
     SessionDep,
@@ -268,7 +268,7 @@ def update_copy(
     item = load_item(session, item_id)
     copy = _load_copy(item, copy_id)
     changes = data.model_dump(exclude_unset=True)
-    for tag in ("won", "traded", "backup", "loaned"):
+    for tag in COPY_TAGS:
         if tag in changes and changes[tag] is None:
             del changes[tag]  # not a value to store: the tag stays as it is
     if copy.bundle_id is not None:

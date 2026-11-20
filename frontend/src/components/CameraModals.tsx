@@ -1,16 +1,15 @@
 /** Dialog for camera gear: bodies, lenses, adapters and other gear. */
-import { Autocomplete, Button, Group, Modal, Select, Stack, Textarea, TextInput } from "@mantine/core";
+import { Autocomplete, Button, Group, Modal, Stack, Textarea, TextInput } from "@mantine/core";
 import { IconAperture, IconCamera, IconCirclesRelation, IconDots, IconTrash } from "@tabler/icons-react";
-import { createElement, useState, type ComponentType } from "react";
+import { useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation, useCameraGear } from "@/api/queries";
 import type { CameraGear, CameraGearCategory } from "@/api/types";
 import { todayIso } from "@/lib/format";
-import { CAMERA_GEAR_CATEGORY } from "@/lib/labels";
 import { confirmDelete } from "./common";
-import { DateField, MoneyInput } from "./inputs";
+import { DateField, IconSelect, MoneyInput, type IconComponent } from "./inputs";
 
-export const CAMERA_GEAR_ICON: Record<CameraGearCategory, ComponentType<{ size?: number | string }>> = {
+export const CAMERA_GEAR_ICON: Record<CameraGearCategory, IconComponent> = {
   body: IconCamera,
   lens: IconAperture,
   adapter: IconCirclesRelation,
@@ -68,22 +67,7 @@ export function CameraGearModal({
       <Stack>
         <Group grow align="flex-start">
           <TextInput label="Name" placeholder="e.g. X-T5" value={name} onChange={(e) => setName(e.currentTarget.value)} required data-autofocus />
-          <Select
-            label="Category"
-            placeholder="Choose one"
-            data={Object.keys(CAMERA_GEAR_CATEGORY).map((v) => ({ value: v, label: SINGULAR[v as CameraGearCategory] }))}
-            value={category}
-            onChange={(v) => v && setCategory(v as CameraGearCategory)}
-            renderOption={({ option }) => (
-              <Group gap="xs">
-                {createElement(CAMERA_GEAR_ICON[option.value as CameraGearCategory], { size: 16 })}
-                {option.label}
-              </Group>
-            )}
-            leftSection={category ? createElement(CAMERA_GEAR_ICON[category], { size: 16 }) : undefined}
-            allowDeselect={false}
-            required
-          />
+          <IconSelect label="Category" labels={SINGULAR} icons={CAMERA_GEAR_ICON} value={category} onChange={setCategory} />
         </Group>
         <Autocomplete label="Manufacturer" placeholder="e.g. Fujifilm" data={manufacturers} value={manufacturer} onChange={setManufacturer} />
         <Group grow align="flex-start">

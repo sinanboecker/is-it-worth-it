@@ -12,16 +12,16 @@ import {
   IconStack2,
   IconTrash,
 } from "@tabler/icons-react";
-import { createElement, useState, type ComponentType } from "react";
+import { useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation, usePcBuilds } from "@/api/queries";
 import type { PcBuild, PcPart, PcPartCategory } from "@/api/types";
 import { todayIso } from "@/lib/format";
 import { PC_PART_CATEGORY } from "@/lib/labels";
 import { confirmDelete } from "./common";
-import { DateField, DeviceSelect, MoneyInput } from "./inputs";
+import { DateField, DeviceSelect, IconSelect, MoneyInput, type IconComponent } from "./inputs";
 
-export const PC_PART_ICON: Record<PcPartCategory, ComponentType<{ size?: number | string }>> = {
+export const PC_PART_ICON: Record<PcPartCategory, IconComponent> = {
   cpu: IconCpu,
   gpu: IconDeviceDesktop,
   mainboard: IconLayoutBoardSplit,
@@ -51,27 +51,7 @@ export function PartCategorySelect({
   onChange: (category: PcPartCategory) => void;
   label?: string;
 }) {
-  return (
-    <Select
-      label={label}
-      placeholder="Choose one"
-      data={Object.entries(PC_PART_CATEGORY).map(([v, l]) => ({ value: v, label: l }))}
-      value={value}
-      onChange={(v) => v && onChange(v as PcPartCategory)}
-      renderOption={({ option }) => {
-        const Icon = PC_PART_ICON[option.value as PcPartCategory];
-        return (
-          <Group gap="xs">
-            <Icon size={16} />
-            {option.label}
-          </Group>
-        );
-      }}
-      leftSection={value ? createElement(PC_PART_ICON[value], { size: 16 }) : undefined}
-      allowDeselect={false}
-      required
-    />
-  );
+  return <IconSelect label={label} labels={PC_PART_CATEGORY} icons={PC_PART_ICON} value={value} onChange={onChange} />;
 }
 
 /** New or edit a build: name, linked device (its game hours), notes. */

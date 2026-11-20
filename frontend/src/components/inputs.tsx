@@ -1,6 +1,7 @@
 import { ActionIcon, Autocomplete, Group, NumberInput, Rating, Select, Text, Tooltip, type NumberInputProps } from "@mantine/core";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
 import { DateInput, type DateInputProps } from "@mantine/dates";
+import { createElement, type ComponentType } from "react";
 import { useCategories, useHardware, useStores } from "@/api/queries";
 import { fromCents, parseTypedDate, toCents } from "@/lib/format";
 import { STATUS_OPTIONS } from "@/lib/labels";
@@ -218,5 +219,42 @@ export function FavoriteHeart({
         {value ? <IconHeartFilled size={iconSize} /> : <IconHeart size={iconSize} />}
       </ActionIcon>
     </Tooltip>
+  );
+}
+
+export type IconComponent = ComponentType<{ size?: number | string }>;
+
+/** A required choice from a fixed set, each with an icon (e.g. the category of a PC part or of camera gear). */
+export function IconSelect<T extends string>({
+  label,
+  labels,
+  icons,
+  value,
+  onChange,
+}: {
+  label: string;
+  labels: Record<T, string>;
+  icons: Record<T, IconComponent>;
+  value: T | null;
+  onChange: (value: T) => void;
+}) {
+  const icon = (v: string) => createElement(icons[v as T], { size: 16 });
+  return (
+    <Select
+      label={label}
+      placeholder="Choose one"
+      data={(Object.keys(labels) as T[]).map((v) => ({ value: v, label: labels[v] }))}
+      value={value}
+      onChange={(v) => v && onChange(v as T)}
+      renderOption={({ option }) => (
+        <Group gap="xs">
+          {icon(option.value)}
+          {option.label}
+        </Group>
+      )}
+      leftSection={value ? icon(value) : undefined}
+      allowDeselect={false}
+      required
+    />
   );
 }

@@ -11,6 +11,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 
 from app import calc, titles
 from app.models import (
+    COPY_TAGS,
     CameraGear,
     CameraGearCategory,
     CategoryIcon,
@@ -378,10 +379,7 @@ class ItemSummary(BaseModel):
                 formats=sorted({c.format for c in item.copies}),
                 stores=sorted({c.store for c in item.copies if c.store}),
                 in_bundle=any(c.bundle_id for c in item.copies),
-                won=any(c.won for c in item.copies),
-                traded=any(c.traded for c in item.copies),
-                backup=any(c.backup for c in item.copies),
-                loaned=any(c.loaned for c in item.copies),
+                **{tag: any(getattr(c, tag) for c in item.copies) for tag in COPY_TAGS},
             ),
             "devices": [PlayLinkRead.build(link) for link in item.play_links],
             "value": ValueRead.build(calc.item_value(item, global_break_even_cph)),

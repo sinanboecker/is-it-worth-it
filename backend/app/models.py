@@ -180,6 +180,10 @@ class Bundle(SQLModel, table=True):
     )
 
 
+# yes/no tags of a copy; an item's copies summary says for each whether any copy has it
+COPY_TAGS = ("won", "traded", "backup", "loaned")
+
+
 class Copy(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     item_id: int = Field(foreign_key="item.id", index=True, ondelete="CASCADE")
