@@ -29,6 +29,7 @@ from app.models import (
     PcPurchase,
     PcSale,
     PlayLink,
+    PlaySession,
     Setting,
 )
 
@@ -44,6 +45,7 @@ TABLES: list[tuple[str, type[SQLModel]]] = [
     ("items", Item),
     ("copies", Copy),
     ("play_links", PlayLink),
+    ("play_sessions", PlaySession),
     ("dlcs", Dlc),
     ("completions", Completion),
     ("pc_builds", PcBuild),

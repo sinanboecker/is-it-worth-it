@@ -23,7 +23,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { api, unwrap } from "@/api/client";
 import { useApiMutation, useCategories } from "@/api/queries";
-import type { CompletionRead, CopyRead, DlcRead, ItemRead, PlayLinkIn } from "@/api/types";
+import type { CompletionRead, CopyRead, DlcRead, ItemRead, PlayLinkIn, PlaySession } from "@/api/types";
 import { confirmDelete, Empty, StatTile } from "@/components/common";
 import { DateField, DeviceSelect, HoursInput, MoneyInput } from "@/components/inputs";
 import { EditBundleModal } from "@/components/Bundles";
@@ -275,6 +275,94 @@ function AddDeviceRow({ onAdd, exclude }: { onAdd: (id: number) => void; exclude
 
 // --- DLC --------------------------------------------------------------------------------------
 
+// --- play sessions ----------------------------------------------------------------------------
+
+function SessionModal({ game, play, onClose }: { game: ItemRead; play: PlaySession; onClose: () => void }) {
+  const [playedOn, setPlayedOn] = useState<string | null>(play.played_on);
+  const [device, setDevice] = useState<number | null>(play.hardware_id);
+  const [amount, setAmount] = useState(play.hours);
+  const save = useApiMutation(
+    () =>
+      unwrap(
+        api.PATCH("/api/v1/sessions/{session_id}", {
+          params: { path: { session_id: play.id } },
+          body: { played_on: playedOn, hardware_id: device, hours: amount },
+        }),
+      ),
+    { success: "Session saved", onSuccess: onClose },
+  );
+  return (
+    <Modal opened onClose={onClose} title={`Edit session – ${game.name}`}>
+      <Stack>
+        <DateField label="Played on" value={playedOn} onChange={setPlayedOn} required />
+        <DeviceSelect value={device} onChange={setDevice} required clearable={false} />
+        <HoursInput label="Hours played" value={amount} onChange={setAmount} required />
+        <Text size="xs" c="dimmed">
+          The device's total hours change with the session.
+        </Text>
+        <Group justify="flex-end">
+          <Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={!playedOn || !device || amount <= 0}>
+            Save
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
+/** When the game was played (optional: each "+ hours" logs a session); hours without one are listed below. */
+export function SessionsSection({ game }: { game: ItemRead }) {
+  const [editing, setEditing] = useState<PlaySession | null>(null);
+  const remove = useApiMutation(
+    (play: PlaySession) => unwrap(api.DELETE("/api/v1/sessions/{session_id}", { params: { path: { session_id: play.id } } })),
+    { success: "Session deleted" },
+  );
+  return (
+    <Section title={`Sessions · ${game.sessions.length}`}>
+      <ScrollArea.Autosize mah={320}>
+        <Table>
+          <Table.Tbody>
+            {game.sessions.map((play) => (
+              <Table.Tr key={play.id}>
+                <Table.Td>{day(play.played_on)}</Table.Td>
+                <Table.Td>{play.hardware_name}</Table.Td>
+                <Table.Td ta="right">{hours(play.hours)}</Table.Td>
+                <Table.Td>
+                  <Group gap={4} justify="flex-end" wrap="nowrap">
+                    <ActionIcon variant="subtle" onClick={() => setEditing(play)} aria-label={`Edit session of ${day(play.played_on)}`}>
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={() =>
+                        confirmDelete(
+                          `Delete the session of ${day(play.played_on)}?`,
+                          `Its ${hours(play.hours)} are taken off ${play.hardware_name}'s total.`,
+                          () => remove.mutate(play),
+                        )
+                      }
+                      aria-label={`Delete session of ${day(play.played_on)}`}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </ScrollArea.Autosize>
+      {game.unlogged_hours > 0 && (
+        <Text size="xs" c="dimmed" mt="xs">
+          {hours(game.unlogged_hours)} without a session (logged before, or set in Devices &amp; hours)
+        </Text>
+      )}
+      {editing && <SessionModal game={game} play={editing} onClose={() => setEditing(null)} />}
+    </Section>
+  );
+}
+
 export function DlcSection({ game }: { game: ItemRead }) {
   const [editing, setEditing] = useState<DlcRead | "new" | null>(null);
   const remove = useApiMutation(
@@ -493,7 +581,11 @@ export function ValueTiles({ item }: { item: ItemRead }) {
       <StatTile label="Net cost" value={euros(v.net_cost_cents)} hint={item.copies_summary.copies_received_cents ? `${euros(item.copies_summary.copies_received_cents)} back from sales` : undefined} />
       <StatTile label="Hours" value={hours(v.hours)} />
       <StatTile label="Cost per hour" value={perHour(v.cost_per_hour_cents)} hint={`break-even ${perHour(v.threshold_cph)}`} />
-      <StatTile label="Worth it?" value={v.worth_it ? "Yes ✔" : `${hours(v.hours_to_break_even)} left`} />
+      <StatTile
+        label="Worth it?"
+        value={v.worth_it ? "Yes ✔" : `${hours(v.hours_to_break_even)} left`}
+        hint={item.worth_it_since ? `since ${day(item.worth_it_since)}` : item.worth_it_before_logging ? "before sessions were logged" : undefined}
+      />
       {item.kind === "game" ? (
         <StatTile label="Finished" value={`${v.times_finished}×`} hint={v.last_finished_on ? `last ${day(v.last_finished_on)}` : undefined} />
       ) : (

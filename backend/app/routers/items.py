@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query
 from sqlmodel import Session, select
 
 from app import calc, status, titles
-from app.models import COPY_TAGS, Completion, Copy, Dlc, GameStatus, Item, ItemKind, PlayLink
+from app.models import COPY_TAGS, Completion, Copy, Dlc, GameStatus, Item, ItemKind, PlayLink, PlaySession
 from app.routers.deps import (
     ITEM_LOAD_OPTIONS,
     SessionDep,
@@ -43,6 +43,7 @@ from app.schemas import (
     ItemUpdate,
     OtherPlatform,
     PlayLinkIn,
+    PlaySessionUpdate,
     hours_to_minutes,
     stars_to_half,
 )
@@ -314,6 +315,8 @@ def set_play_links(item_id: int, links: list[PlayLinkIn], session: SessionDep, s
         link.minutes = hours_to_minutes(data.hours)
         new_links.append(link)
     game.play_links = new_links
+    # a device taken off the game takes its sessions along; otherwise totals set here leave sessions alone
+    game.sessions = [play for play in game.sessions if play.hardware_id in ids]
     session.commit()
     return read_item(session, item_id, settings, today)
 
@@ -336,11 +339,66 @@ def add_hours(item_id: int, data: HoursAdd, session: SessionDep, settings: Setti
     else:
         raise invalid("no device linked to this game; choose a device")
 
-    link.minutes += hours_to_minutes(data.hours)
+    minutes = hours_to_minutes(data.hours)
+    link.minutes += minutes
     link.last_played_at = datetime.now(UTC)
+    if data.log_session:
+        game.sessions.append(
+            PlaySession(hardware_id=link.hardware_id, played_on=data.played_on or today, minutes=minutes)
+        )
     suggestion = status.hours_added(game, data.played_on or today)
     session.commit()
     return HoursResult(item=read_item(session, item_id, settings, today), suggested_status=suggestion)
+
+
+# --- play sessions ----------------------------------------------------------------------------
+# A session's minutes are part of its device's total, so changing or deleting a session changes that total too.
+
+
+def _load_play_session(session: Session, session_id: int) -> PlaySession:
+    play = session.get(PlaySession, session_id)
+    if play is None:
+        raise not_found("play session")
+    return play
+
+
+def _move_minutes(session: Session, game: Item, hardware_id: int, minutes: int) -> None:
+    """Add minutes to (or, negative, take them off) the game's total on a device; the device is linked if needed."""
+    link = next((link for link in game.play_links if link.hardware_id == hardware_id), None)
+    if link is None:
+        hardware = load_hardware(session, hardware_id)
+        link = PlayLink(hardware_id=hardware.id, emulated=default_emulated(hardware))
+        game.play_links.append(link)
+    link.minutes = max(0, link.minutes + minutes)
+
+
+@router.patch("/sessions/{session_id}", response_model=ItemRead)
+def update_play_session(
+    session_id: int, data: PlaySessionUpdate, session: SessionDep, settings: SettingsDep, today: TodayDep
+):
+    play = _load_play_session(session, session_id)
+    game = load_game(session, play.game_id)
+    if data.hardware_id is not None:
+        load_hardware(session, data.hardware_id)
+    hardware_id = data.hardware_id or play.hardware_id
+    minutes = play.minutes if data.hours is None else hours_to_minutes(data.hours)
+    _move_minutes(session, game, play.hardware_id, -play.minutes)
+    _move_minutes(session, game, hardware_id, minutes)
+    play.hardware_id, play.minutes = hardware_id, minutes
+    if data.played_on is not None:
+        play.played_on = data.played_on
+    session.commit()
+    return read_item(session, game.id, settings, today)
+
+
+@router.delete("/sessions/{session_id}", response_model=ItemRead)
+def delete_play_session(session_id: int, session: SessionDep, settings: SettingsDep, today: TodayDep):
+    play = _load_play_session(session, session_id)
+    game = load_game(session, play.game_id)
+    _move_minutes(session, game, play.hardware_id, -play.minutes)
+    session.delete(play)
+    session.commit()
+    return read_item(session, game.id, settings, today)
 
 
 # --- DLC --------------------------------------------------------------------------------------

@@ -6,10 +6,12 @@ All functions take already-loaded items (with copies, links, DLC, completions) a
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
+
+from sqlmodel import Session, select
 
 from app import calc
-from app.models import CopyFormat, GameStatus, Item, ItemKind
+from app.models import CopyFormat, GameStatus, Item, ItemKind, PlaySession
 
 NO_STORE = "(no store)"
 
@@ -282,3 +284,54 @@ def by_category(items: Iterable[Item]) -> dict[int, list[Item]]:
     for item in items:
         grouped[item.category_id].append(item)
     return grouped
+
+
+# --- play sessions -----------------------------------------------------------------------------
+# Only hours logged as play sessions have a date; hours without one aren't in these figures.
+
+
+def _sessions(session: Session, category_id: int | None = None, start: date | None = None, end: date | None = None):
+    query = select(PlaySession.played_on, PlaySession.minutes)
+    if category_id is not None:
+        query = query.join(Item, Item.id == PlaySession.game_id).where(Item.category_id == category_id)
+    if start is not None:
+        query = query.where(PlaySession.played_on >= start)
+    if end is not None:
+        query = query.where(PlaySession.played_on <= end)
+    return session.exec(query).all()
+
+
+@dataclass
+class Played:
+    week_minutes: int  # since Monday
+    month_minutes: int
+    year_minutes: int
+    any_sessions: bool
+
+
+def played(session: Session, today: date) -> Played:
+    rows = _sessions(session, start=min(today.replace(month=1, day=1), today - timedelta(days=today.weekday())))
+
+    def since(start: date) -> int:
+        return sum(minutes for played_on, minutes in rows if start <= played_on <= today)
+
+    return Played(
+        week_minutes=since(today - timedelta(days=today.weekday())),
+        month_minutes=since(today.replace(day=1)),
+        year_minutes=since(today.replace(month=1, day=1)),
+        any_sessions=session.exec(select(PlaySession.id).limit(1)).first() is not None,
+    )
+
+
+def played_minutes_by_year(session: Session, category_id: int | None = None) -> dict[int, int]:
+    years: Counter[int] = Counter()
+    for played_on, minutes in _sessions(session, category_id):
+        years[played_on.year] += minutes
+    return dict(years)
+
+
+def played_minutes_by_day(session: Session, year: int) -> dict[date, int]:
+    days: Counter[date] = Counter()
+    for played_on, minutes in _sessions(session, start=date(year, 1, 1), end=date(year, 12, 31)):
+        days[played_on] += minutes
+    return dict(sorted(days.items()))

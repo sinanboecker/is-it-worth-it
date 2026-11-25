@@ -95,6 +95,31 @@ def game_minutes(game: Item) -> int:
     return sum(link.minutes for link in game.play_links)
 
 
+@dataclass
+class WorthItSince:
+    on: date | None  # the session that made the game worth it
+    before_logging: bool  # its hours without a session already did
+
+
+def worth_it_since(game: Item, global_break_even_cph: int) -> WorthItSince:
+    """When a game became worth it, from its play sessions: its hours without a session count first (played before
+    logging), then the sessions by date. Uses today's net cost (incl. DLC and sales), not the cost at that time.
+    Nothing to say without sessions, for a game that cost nothing, or one that isn't worth it yet."""
+    if game.kind is not ItemKind.game or not game.sessions:
+        return WorthItSince(None, False)
+    value = game_value(game, global_break_even_cph)
+    if value is None or value.net_cost_cents <= 0 or not value.worth_it:
+        return WorthItSince(None, False)
+    minutes = max(0, game_minutes(game) - sum(s.minutes for s in game.sessions))
+    if is_worth_it(value.net_cost_cents, minutes, value.threshold_cph):
+        return WorthItSince(None, True)
+    for session in sorted(game.sessions, key=lambda s: (s.played_on, s.id or 0)):
+        minutes += session.minutes
+        if is_worth_it(value.net_cost_cents, minutes, value.threshold_cph):
+            return WorthItSince(session.played_on, False)
+    return WorthItSince(None, False)  # only when the totals were lowered below the sessions' hours
+
+
 def game_value(game: Item, global_break_even_cph: int) -> Value | None:
     """None for wishlist games (nothing bought yet)."""
     if game.status is GameStatus.wishlist:
@@ -238,13 +263,17 @@ class YearRow:
     worth_it_rate: float | None = None
     abandoned_count: int = 0
     abandoned_cost_cents: int = 0
+    played_minutes: int = 0  # play sessions in the year (only hours logged as sessions)
 
     @property
     def hours(self) -> float:
         return minutes_to_hours(self.minutes)
 
 
-def yearly_stats(items: Iterable[Item], global_break_even_cph: int) -> list[YearRow]:
+def yearly_stats(
+    items: Iterable[Item], global_break_even_cph: int, played_minutes: dict[int, int] | None = None
+) -> list[YearRow]:
+    """`played_minutes`: minutes of play sessions per calendar year (see stats.played_minutes_by_year)."""
     rows: dict[int, YearRow] = {}
     worth_it: Counter[int] = Counter()
     ratings: dict[int, list[int]] = defaultdict(list)
@@ -285,6 +314,9 @@ def yearly_stats(items: Iterable[Item], global_break_even_cph: int) -> list[Year
         if game.status is GameStatus.abandoned:
             r.abandoned_count += 1
             r.abandoned_cost_cents += value.net_cost_cents
+
+    for year, minutes in (played_minutes or {}).items():
+        row(year).played_minutes = minutes
 
     for r in rows.values():
         r.cost_per_hour_cents = cost_per_hour(r.net_cost_of_year_games_cents, r.minutes)

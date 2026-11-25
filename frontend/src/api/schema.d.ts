@@ -148,6 +148,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Play Session */
+        delete: operations["delete_play_session_api_v1_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Play Session */
+        patch: operations["update_play_session_api_v1_sessions__session_id__patch"];
+        trace?: never;
+    };
     "/api/v1/items/{item_id}/dlc": {
         parameters: {
             query?: never;
@@ -616,9 +634,50 @@ export interface paths {
         };
         /**
          * Yearly
-         * @description Per-year figures: games + DLC only, everything attributed to the buy year.
+         * @description Per-year figures: games + DLC only, everything attributed to the buy year, except `hours_played` (play
+         *     sessions in the year).
          */
         get: operations["yearly_api_v1_stats_yearly_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stats/played": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Played
+         * @description Hours played this week (since Monday), month and year, from play sessions.
+         */
+        get: operations["played_api_v1_stats_played_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stats/played-days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Played Days
+         * @description Hours of play sessions per day of a year (days without any left out).
+         */
+        get: operations["played_days_api_v1_stats_played_days_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2178,6 +2237,12 @@ export interface components {
             hardware_id?: number | null;
             /** Played On */
             played_on?: string | null;
+            /**
+             * Log Session
+             * @description also log the hours as a play session on `played_on` (or today)
+             * @default true
+             */
+            log_session: boolean;
         };
         /** HoursResult */
         HoursResult: {
@@ -2435,6 +2500,28 @@ export interface components {
              * @default []
              */
             other_platforms: components["schemas"]["OtherPlatform"][];
+            /**
+             * Sessions
+             * @default []
+             */
+            sessions: components["schemas"]["PlaySessionRead"][];
+            /**
+             * Unlogged Hours
+             * @description hours without a play session (logged before, or set directly)
+             * @default 0
+             */
+            unlogged_hours: number;
+            /**
+             * Worth It Since
+             * @description the session's date that made the game worth it
+             */
+            worth_it_since?: string | null;
+            /**
+             * Worth It Before Logging
+             * @description its hours without a session already made it worth it
+             * @default false
+             */
+            worth_it_before_logging: boolean;
         };
         /** ItemSummary */
         ItemSummary: {
@@ -2954,6 +3041,55 @@ export interface components {
             /** Last Played At */
             last_played_at: string | null;
         };
+        /** PlaySessionRead */
+        PlaySessionRead: {
+            /** Id */
+            id: number;
+            /**
+             * Played On
+             * Format: date
+             */
+            played_on: string;
+            /** Hardware Id */
+            hardware_id: number;
+            /** Hardware Name */
+            hardware_name: string;
+            /** Hours */
+            hours: number;
+        };
+        /** PlaySessionUpdate */
+        PlaySessionUpdate: {
+            /** Played On */
+            played_on?: string | null;
+            /** Hours */
+            hours?: number | null;
+            /** Hardware Id */
+            hardware_id?: number | null;
+        };
+        /** PlayedDayOut */
+        PlayedDayOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Hours */
+            hours: number;
+        };
+        /** PlayedOut */
+        PlayedOut: {
+            /** Week Hours */
+            week_hours: number;
+            /** Month Hours */
+            month_hours: number;
+            /** Year Hours */
+            year_hours: number;
+            /**
+             * Any Sessions
+             * @description false until the first play session: the figures mean nothing yet
+             */
+            any_sessions: boolean;
+        };
         /** RatingsOut */
         RatingsOut: {
             /** Distribution */
@@ -3139,6 +3275,11 @@ export interface components {
             abandoned_count: number;
             /** Abandoned Cost Cents */
             abandoned_cost_cents: number;
+            /**
+             * Hours Played
+             * @description hours of play sessions in the year (only hours logged as sessions)
+             */
+            hours_played: number;
         };
     };
     responses: never;
@@ -3663,6 +3804,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HoursResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_play_session_api_v1_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_play_session_api_v1_sessions__session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaySessionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemRead"];
                 };
             };
             /** @description Validation Error */
@@ -4685,6 +4892,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["YearOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    played_api_v1_stats_played_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayedOut"];
+                };
+            };
+        };
+    };
+    played_days_api_v1_stats_played_days_get: {
+        parameters: {
+            query: {
+                year: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayedDayOut"][];
                 };
             };
             /** @description Validation Error */

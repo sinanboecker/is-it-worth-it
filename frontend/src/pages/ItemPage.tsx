@@ -47,6 +47,7 @@ import {
   NotesSection,
   patchItem,
   PlayedGames,
+  SessionsSection,
   ValueTiles,
   WishlistSection,
 } from "./ItemSections";
@@ -249,6 +250,7 @@ function ItemView({ item }: { item: ItemRead }) {
           {isGame && <CompletionsSection game={item} onFinish={() => setModal("finish")} />}
           {!isGame && <PlayedGames item={item} />}
           {isGame && <DlcSection game={item} />}
+          {isGame && item.sessions.length > 0 && <SessionsSection game={item} />}
         </SimpleGrid>
       )}
       {!wishlist && <CopiesSection item={item} />}

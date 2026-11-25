@@ -1,10 +1,11 @@
 """Statistics, journal and Now Playing (PLANNING.md §3, §4, §8)."""
 
 from dataclasses import asdict
+from datetime import date
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app import calc, journal, stats
@@ -68,6 +69,7 @@ class YearOut(BaseModel):
     worth_it_rate: float | None
     abandoned_count: int
     abandoned_cost_cents: int
+    hours_played: float = Field(description="hours of play sessions in the year (only hours logged as sessions)")
 
 
 @router.get("/stats/summary", response_model=Totals)
@@ -96,9 +98,52 @@ def categories(session: SessionDep, settings: SettingsDep):
 
 @router.get("/stats/yearly", response_model=list[YearOut])
 def yearly(session: SessionDep, settings: SettingsDep, category_id: CategoryParam = None):
-    """Per-year figures: games + DLC only, everything attributed to the buy year."""
-    rows = calc.yearly_stats(load_items(session, category_id), settings.break_even_cph)
-    return [YearOut(hours=r.hours, **{k: v for k, v in asdict(r).items() if k != "minutes"}) for r in rows]
+    """Per-year figures: games + DLC only, everything attributed to the buy year, except `hours_played` (play
+    sessions in the year)."""
+    played = stats.played_minutes_by_year(session, category_id)
+    rows = calc.yearly_stats(load_items(session, category_id), settings.break_even_cph, played)
+    return [
+        YearOut(
+            hours=r.hours,
+            hours_played=calc.minutes_to_hours(r.played_minutes),
+            **{k: v for k, v in asdict(r).items() if k not in ("minutes", "played_minutes")},
+        )
+        for r in rows
+    ]
+
+
+class PlayedOut(BaseModel):
+    week_hours: float
+    month_hours: float
+    year_hours: float
+    any_sessions: bool = Field(description="false until the first play session: the figures mean nothing yet")
+
+
+@router.get("/stats/played", response_model=PlayedOut)
+def played(session: SessionDep, today: TodayDep):
+    """Hours played this week (since Monday), month and year, from play sessions."""
+    p = stats.played(session, today)
+    hours = calc.minutes_to_hours
+    return PlayedOut(
+        week_hours=hours(p.week_minutes),
+        month_hours=hours(p.month_minutes),
+        year_hours=hours(p.year_minutes),
+        any_sessions=p.any_sessions,
+    )
+
+
+class PlayedDayOut(BaseModel):
+    day: date
+    hours: float
+
+
+@router.get("/stats/played-days", response_model=list[PlayedDayOut])
+def played_days(session: SessionDep, year: int):
+    """Hours of play sessions per day of a year (days without any left out)."""
+    return [
+        PlayedDayOut(day=d, hours=calc.minutes_to_hours(m))
+        for d, m in stats.played_minutes_by_day(session, year).items()
+    ]
 
 
 # --- top lists & hardware ---------------------------------------------------------------------

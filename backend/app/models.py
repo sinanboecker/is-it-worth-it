@@ -144,6 +144,14 @@ class Item(SQLModel, table=True):
         back_populates="hardware",
         sa_relationship_kwargs={"foreign_keys": "PlayLink.hardware_id"},
     )
+    sessions: list["PlaySession"] = Relationship(
+        back_populates="game",
+        sa_relationship_kwargs={
+            "foreign_keys": "PlaySession.game_id",
+            "cascade": "all, delete-orphan",
+            "order_by": "PlaySession.played_on",
+        },
+    )
     dlcs: list["Dlc"] = Relationship(
         back_populates="game",
         sa_relationship_kwargs={"cascade": "all, delete-orphan", "order_by": "Dlc.buy_date"},
@@ -225,6 +233,21 @@ class PlayLink(SQLModel, table=True):
         back_populates="device_links",
         sa_relationship_kwargs={"foreign_keys": "PlayLink.hardware_id"},
     )
+
+
+class PlaySession(SQLModel, table=True):
+    """When hours were played (optional): each "+ hours" logs one, and its minutes are part of the device's total
+    (`PlayLink.minutes`), which stays the source of hours. Hours without a session are allowed (e.g. from before
+    sessions were logged, or set directly)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    game_id: int = Field(foreign_key="item.id", index=True, ondelete="CASCADE")
+    hardware_id: int = Field(foreign_key="item.id", ondelete="CASCADE")
+    played_on: date = Field(index=True)
+    minutes: int
+
+    game: Item = Relationship(back_populates="sessions", sa_relationship_kwargs={"foreign_keys": "PlaySession.game_id"})
+    hardware: Item = Relationship(sa_relationship_kwargs={"foreign_keys": "PlaySession.hardware_id"})
 
 
 class Dlc(SQLModel, table=True):

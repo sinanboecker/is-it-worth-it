@@ -2,7 +2,7 @@ import { BarChart, LineChart } from "@mantine/charts";
 import { Anchor, Card, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useCategoryTotals, useNowPlaying, useSummary, useTop, useYearly } from "@/api/queries";
+import { useCategoryTotals, useNowPlaying, usePlayed, useSummary, useTop, useYearly } from "@/api/queries";
 import type { ItemSummary } from "@/api/types";
 import { Cover, Empty, imageOf, PageHeader, QueryView, StatTile } from "@/components/common";
 import { euros, hours, perHour, percent } from "@/lib/format";
@@ -60,6 +60,7 @@ export function DashboardPage() {
   const categories = useCategoryTotals();
   const yearly = useYearly();
   const nowPlaying = useNowPlaying();
+  const played = usePlayed();
   const best = useTop({ metric: "cost_per_hour", order: "asc", limit: 5 });
   const worst = useTop({ metric: "cost_per_hour", order: "desc", limit: 5 });
   const almost = useTop({ metric: "hours_to_break_even", order: "asc", limit: 5 });
@@ -72,7 +73,11 @@ export function DashboardPage() {
         {(t) => (
           <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }}>
             <StatTile label="Total spent" value={euros(t.total_cost_cents)} hint={`incl. ${euros(t.hardware_cost_cents)} hardware`} />
-            <StatTile label="Hours played" value={hours(t.hours)} />
+            <StatTile
+              label="Hours played"
+              value={hours(t.hours)}
+              hint={played.data?.any_sessions ? `this week ${hours(played.data.week_hours)} · month ${hours(played.data.month_hours)}` : undefined}
+            />
             <StatTile label="All-in €/h" value={perHour(t.all_in_cost_per_hour_cents)} hint={`games only ${perHour(t.games_cost_per_hour_cents)}`} />
             <StatTile label="Games" value={t.games_count} hint={`worth it: ${percent(t.worth_it_rate)}`} />
             <StatTile

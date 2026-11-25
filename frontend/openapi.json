@@ -947,6 +947,98 @@
         }
       }
     },
+    "/api/v1/sessions/{session_id}": {
+      "patch": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Update Play Session",
+        "operationId": "update_play_session_api_v1_sessions__session_id__patch",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaySessionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "items"
+        ],
+        "summary": "Delete Play Session",
+        "operationId": "delete_play_session_api_v1_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/items/{item_id}/dlc": {
       "get": {
         "tags": [
@@ -2360,7 +2452,7 @@
           "stats"
         ],
         "summary": "Yearly",
-        "description": "Per-year figures: games + DLC only, everything attributed to the buy year.",
+        "description": "Per-year figures: games + DLC only, everything attributed to the buy year, except `hours_played` (play\nsessions in the year).",
         "operationId": "yearly_api_v1_stats_yearly_get",
         "parameters": [
           {
@@ -2391,6 +2483,75 @@
                     "$ref": "#/components/schemas/YearOut"
                   },
                   "title": "Response Yearly Api V1 Stats Yearly Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/played": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Played",
+        "description": "Hours played this week (since Monday), month and year, from play sessions.",
+        "operationId": "played_api_v1_stats_played_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayedOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/played-days": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Played Days",
+        "description": "Hours of play sessions per day of a year (days without any left out).",
+        "operationId": "played_days_api_v1_stats_played_days_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlayedDayOut"
+                  },
+                  "title": "Response Played Days Api V1 Stats Played Days Get"
                 }
               }
             }
@@ -7443,6 +7604,12 @@
               }
             ],
             "title": "Played On"
+          },
+          "log_session": {
+            "type": "boolean",
+            "title": "Log Session",
+            "description": "also log the hours as a play session on `played_on` (or today)",
+            "default": true
           }
         },
         "type": "object",
@@ -8206,6 +8373,39 @@
             "type": "array",
             "title": "Other Platforms",
             "default": []
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/PlaySessionRead"
+            },
+            "type": "array",
+            "title": "Sessions",
+            "default": []
+          },
+          "unlogged_hours": {
+            "type": "number",
+            "title": "Unlogged Hours",
+            "description": "hours without a play session (logged before, or set directly)",
+            "default": 0
+          },
+          "worth_it_since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worth It Since",
+            "description": "the session's date that made the game worth it"
+          },
+          "worth_it_before_logging": {
+            "type": "boolean",
+            "title": "Worth It Before Logging",
+            "description": "its hours without a session already made it worth it",
+            "default": false
           }
         },
         "type": "object",
@@ -10060,6 +10260,129 @@
         ],
         "title": "PlayLinkRead"
       },
+      "PlaySessionRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "played_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Played On"
+          },
+          "hardware_id": {
+            "type": "integer",
+            "title": "Hardware Id"
+          },
+          "hardware_name": {
+            "type": "string",
+            "title": "Hardware Name"
+          },
+          "hours": {
+            "type": "number",
+            "title": "Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "played_on",
+          "hardware_id",
+          "hardware_name",
+          "hours"
+        ],
+        "title": "PlaySessionRead"
+      },
+      "PlaySessionUpdate": {
+        "properties": {
+          "played_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Played On"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "hardware_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Id"
+          }
+        },
+        "type": "object",
+        "title": "PlaySessionUpdate"
+      },
+      "PlayedDayOut": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "hours": {
+            "type": "number",
+            "title": "Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "hours"
+        ],
+        "title": "PlayedDayOut"
+      },
+      "PlayedOut": {
+        "properties": {
+          "week_hours": {
+            "type": "number",
+            "title": "Week Hours"
+          },
+          "month_hours": {
+            "type": "number",
+            "title": "Month Hours"
+          },
+          "year_hours": {
+            "type": "number",
+            "title": "Year Hours"
+          },
+          "any_sessions": {
+            "type": "boolean",
+            "title": "Any Sessions",
+            "description": "false until the first play session: the figures mean nothing yet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_hours",
+          "month_hours",
+          "year_hours",
+          "any_sessions"
+        ],
+        "title": "PlayedOut"
+      },
       "RatingsOut": {
         "properties": {
           "distribution": {
@@ -10632,6 +10955,11 @@
           "abandoned_cost_cents": {
             "type": "integer",
             "title": "Abandoned Cost Cents"
+          },
+          "hours_played": {
+            "type": "number",
+            "title": "Hours Played",
+            "description": "hours of play sessions in the year (only hours logged as sessions)"
           }
         },
         "type": "object",
@@ -10647,7 +10975,8 @@
           "average_rating",
           "worth_it_rate",
           "abandoned_count",
-          "abandoned_cost_cents"
+          "abandoned_cost_cents",
+          "hours_played"
         ],
         "title": "YearOut"
       }

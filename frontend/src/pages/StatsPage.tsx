@@ -14,6 +14,7 @@ import {
   useYearly,
 } from "@/api/queries";
 import { Empty, PageHeader, QueryView } from "@/components/common";
+import { PlayedCalendar } from "@/components/PlayedCalendar";
 import { euros, hours, perHour, percent } from "@/lib/format";
 import { FORMAT } from "@/lib/labels";
 
@@ -86,11 +87,14 @@ export function StatsPage() {
         />
       </PageHeader>
 
-      <Section title="Per year" hint="Games and DLC only, everything counted in the year it was bought (sell prices too).">
+      <Section
+        title="Per year"
+        hint="Games and DLC only, everything counted in the year it was bought (sell prices too). “Played” counts the hours logged as play sessions in that year."
+      >
         <QueryView query={yearly}>
           {(rows) => (
             <SimpleTable
-              head={["Year", "Spent", "of which DLC", "Games bought", "Hours", "€/h", "Finished", "Ø rating", "Worth it", "Abandoned"]}
+              head={["Year", "Spent", "of which DLC", "Games bought", "Hours", "€/h", "Played", "Finished", "Ø rating", "Worth it", "Abandoned"]}
               rows={[...rows].reverse().map((r) => [
                 <b key="y">{r.year}</b>,
                 euros(r.spent_cents),
@@ -98,6 +102,7 @@ export function StatsPage() {
                 r.games_bought,
                 hours(r.hours),
                 perHour(r.cost_per_hour_cents),
+                r.hours_played ? hours(r.hours_played) : "–",
                 r.games_finished,
                 r.average_rating?.toLocaleString("de-DE") ?? "–",
                 percent(r.worth_it_rate),
@@ -107,6 +112,12 @@ export function StatsPage() {
           )}
         </QueryView>
       </Section>
+
+      {!category && yearly.data?.some((r) => r.hours_played > 0) && (
+        <Section title="Hours per day" hint="From play sessions; hours without a session have no date.">
+          <PlayedCalendar years={yearly.data.filter((r) => r.hours_played > 0).map((r) => r.year).reverse()} />
+        </Section>
+      )}
 
       {!category && (
         <Section title="Categories" hint="Lifetime totals including hardware.">

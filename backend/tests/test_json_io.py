@@ -75,6 +75,7 @@ def test_round_trip(api, data_dir):
     assert len(first["tables"]["copies"]) == 4  # console, game, 2 bundle games
     assert [len(first["tables"][t]) for t in ("pc_builds", "pc_purchases", "pc_sales", "pc_parts")] == [1, 1, 1, 3]
     assert len(first["tables"]["camera_gear"]) == 1
+    assert len(first["tables"]["play_sessions"]) == 1  # the hours added in fill()
     builds_before, parts_before = api.get("/pc/builds"), api.get("/pc/parts")
     camera_before = api.get("/camera/gear")
 

@@ -482,3 +482,46 @@ test("add a game with a loaned copy: like a backup copy, but physical or digital
   await page.getByRole("button", { name: "Edit copy" }).click();
   await expect(page.getByRole("dialog").getByRole("textbox", { name: "Sold for" })).toHaveCount(0);
 });
+
+test("hours become play sessions unless unticked; sessions can be edited and deleted", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const game = await (
+    await request.post("/api/v1/items", {
+      data: { category_id: category.id, kind: "game", name: `Logged game ${category.id}`, first_copy: { buy_date: "2024-01-01", buy_price_cents: 3000 } },
+    })
+  ).json();
+  const addHours = async (amount: string, log = true) => {
+    await page.getByRole("button", { name: "Hours", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Hours played").fill(amount);
+    if (!log) await dialog.getByLabel("Log as a session").uncheck();
+    await dialog.getByRole("button", { name: "Add" }).click();
+    await page.getByRole("button", { name: "No" }).click(); // keep the status
+  };
+
+  await page.goto(`/items/${game.id}`);
+  await expect(page.getByRole("heading", { name: /^Sessions ·/ })).toHaveCount(0); // none yet: no section
+  await addHours("4", false);
+  await expect(page.getByRole("heading", { name: /^Sessions ·/ })).toHaveCount(0); // just the total, as before
+  await addHours("2");
+  const sessions = page.locator(".mantine-Card-root", { hasText: "Sessions · 1" });
+  await expect(sessions).toContainText("2 h");
+  await expect(sessions).toContainText("4 h without a session");
+  const devices = page.locator(".mantine-Card-root").filter({ has: page.getByRole("heading", { name: "Devices & hours" }) });
+  await expect(devices).toContainText("6 h");
+
+  await sessions.getByRole("button", { name: /^Edit session/ }).click();
+  await page.getByRole("dialog").getByLabel("Hours played").fill("5");
+  await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Session saved")).toBeVisible();
+  await expect(devices).toContainText("9 h"); // the device's total follows the session
+
+  await sessions.getByRole("button", { name: /^Delete session/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByRole("heading", { name: /^Sessions ·/ })).toHaveCount(0);
+  await expect(devices).toContainText("4 h");
+
+  await addHours("1,5");
+  await page.goto("/now-playing");
+  await expect(page.getByText(/Played this week \d/)).toBeVisible();
+});

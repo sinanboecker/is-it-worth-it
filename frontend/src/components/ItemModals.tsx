@@ -53,6 +53,7 @@ export function AddHoursModal({ game, opened, onClose }: ModalProps & { game: It
   const [device, setDevice] = useState<number | null>(lastUsedDevice(game));
   const [amount, setAmount] = useState(1);
   const [playedOn, setPlayedOn] = useState<string | null>(todayIso());
+  const [logSession, setLogSession] = useState(true); // unticked: only add to the device's total, as before sessions
   const switchStatus = useApiMutation((status: GameStatus) => setStatus(game.id, status), {
     success: "Status changed",
   });
@@ -61,7 +62,7 @@ export function AddHoursModal({ game, opened, onClose }: ModalProps & { game: It
       unwrap(
         api.POST("/api/v1/items/{item_id}/hours", {
           params: { path: { item_id: game.id } },
-          body: { hours: amount, hardware_id: device, played_on: playedOn },
+          body: { hours: amount, hardware_id: device, played_on: playedOn, log_session: logSession },
         }),
       ),
     {
@@ -85,6 +86,12 @@ export function AddHoursModal({ game, opened, onClose }: ModalProps & { game: It
         <HoursInput label="Hours played" value={amount} onChange={setAmount} data-autofocus required />
         <DeviceSelect value={device} onChange={setDevice} required clearable={false} />
         <DateField label="Played on" value={playedOn} onChange={setPlayedOn} />
+        <Checkbox
+          label="Log as a session"
+          description="Keeps the date, for hours per week and year. Unticked, the hours only go into the total."
+          checked={logSession}
+          onChange={(e) => setLogSession(e.currentTarget.checked)}
+        />
         <Group justify="flex-end">
           <Button onClick={() => mutation.mutate(undefined)} loading={mutation.isPending} disabled={!device || amount <= 0}>
             Add

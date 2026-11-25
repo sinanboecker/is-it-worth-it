@@ -21,6 +21,7 @@ export type CopyFormat = S["CopyFormat"];
 export type CopyCondition = S["CopyCondition"];
 export type PlayLinkRead = S["PlayLinkRead"];
 export type PlayLinkIn = S["PlayLinkIn"];
+export type PlaySession = S["PlaySessionRead"];
 export type DlcRead = S["DlcRead"];
 export type DlcCreate = S["DlcCreate"];
 export type CompletionRead = S["CompletionRead"];

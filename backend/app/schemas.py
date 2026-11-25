@@ -191,10 +191,25 @@ class PlayLinkRead(BaseModel):
         )
 
 
+class PlaySessionRead(BaseModel):
+    id: int
+    played_on: date
+    hardware_id: int
+    hardware_name: str
+    hours: float
+
+
+class PlaySessionUpdate(BaseModel):
+    played_on: date | None = None
+    hours: float | None = Field(None, gt=0)
+    hardware_id: int | None = None
+
+
 class HoursAdd(BaseModel):
     hours: float = Field(gt=0)
     hardware_id: int | None = None  # None = device used last for this game
     played_on: date | None = None
+    log_session: bool = Field(True, description="also log the hours as a play session on `played_on` (or today)")
 
 
 # --- DLC --------------------------------------------------------------------------------------
@@ -416,6 +431,10 @@ class ItemRead(ItemSummary):
     completions: list[CompletionRead]
     played_games: list[PlayLinkRead] = []  # hardware only: games played on this device (hardware_name = game name)
     other_platforms: list[OtherPlatform] = []  # games only: the same game in other categories
+    sessions: list[PlaySessionRead] = []  # games only, newest first
+    unlogged_hours: float = Field(0, description="hours without a play session (logged before, or set directly)")
+    worth_it_since: date | None = Field(None, description="the session's date that made the game worth it")
+    worth_it_before_logging: bool = Field(False, description="its hours without a session already made it worth it")
 
     @classmethod
     def build(cls, item: Item, global_break_even_cph: int, today: date | None = None) -> "ItemRead":
@@ -430,8 +449,24 @@ class ItemRead(ItemSummary):
             )
             for link in item.device_links
         ]
+        sessions = item.sessions if item.kind is ItemKind.game else []
+        device_names = {link.hardware_id: link.hardware.name for link in item.play_links}
+        since = calc.worth_it_since(item, global_break_even_cph)
         return cls(
             **cls.fields_for(item, global_break_even_cph),
+            sessions=[
+                PlaySessionRead(
+                    id=s.id,
+                    played_on=s.played_on,
+                    hardware_id=s.hardware_id,
+                    hardware_name=device_names.get(s.hardware_id) or s.hardware.name,
+                    hours=calc.minutes_to_hours(s.minutes),
+                )
+                for s in sorted(sessions, key=lambda s: (s.played_on, s.id), reverse=True)
+            ],
+            unlogged_hours=calc.minutes_to_hours(max(0, calc.game_minutes(item) - sum(s.minutes for s in sessions))),
+            worth_it_since=since.on,
+            worth_it_before_logging=since.before_logging,
             notes=item.notes,
             rawg_slug=item.rawg_slug,
             summary=item.summary,

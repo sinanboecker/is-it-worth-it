@@ -4,7 +4,7 @@ import { IconCheck, IconPlayerPause, IconPlayerPlay, IconPlus, IconX } from "@ta
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api, unwrap } from "@/api/client";
-import { useApiMutation, useNowPlaying } from "@/api/queries";
+import { useApiMutation, useNowPlaying, usePlayed } from "@/api/queries";
 import type { GameStatus, ItemSummary, NowPlayingCard } from "@/api/types";
 import { Cover, Empty, imageOf, PageHeader, QueryView } from "@/components/common";
 import { Stars } from "@/components/inputs";
@@ -122,6 +122,7 @@ function UpNextCard({ game }: { game: ItemSummary }) {
 
 export function NowPlayingPage() {
   const query = useNowPlaying();
+  const played = usePlayed();
   const [onHoldOpen, { toggle }] = useDisclosure(true);
   return (
     <QueryView query={query}>
@@ -129,6 +130,12 @@ export function NowPlayingPage() {
         <Stack gap="xl">
           <div>
             <PageHeader title="Now Playing" />
+            {played.data?.any_sessions && (
+              <Text size="sm" c="dimmed" mt={-8} mb="sm">
+                Played this week {hours(played.data.week_hours)} · this month {hours(played.data.month_hours)} · this year{" "}
+                {hours(played.data.year_hours)}
+              </Text>
+            )}
             {data.playing.length ? (
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
                 {data.playing.map((card) => (

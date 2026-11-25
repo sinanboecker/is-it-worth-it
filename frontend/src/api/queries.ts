@@ -54,6 +54,15 @@ export const useCategoryTotals = () =>
     queryFn: () => unwrap(api.GET("/api/v1/stats/categories")),
   });
 
+/** Hours played this week, month and year, from play sessions. */
+export const usePlayed = () => useQuery({ queryKey: ["stats", "played"], queryFn: () => unwrap(api.GET("/api/v1/stats/played")) });
+
+export const usePlayedDays = (year: number) =>
+  useQuery({
+    queryKey: ["stats", "played-days", year],
+    queryFn: () => unwrap(api.GET("/api/v1/stats/played-days", { params: { query: { year } } })),
+  });
+
 export const useYearly = (category?: number) =>
   useQuery({
     queryKey: ["stats", "yearly", category],
