@@ -146,6 +146,7 @@ def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep, setti
     changes = data.model_dump(exclude_unset=True)
     reference_prices = changes.pop("reference_prices", None) or {}
     manual_shares = changes.pop("manual_shares", None)
+    changes.pop("new_entries", None)
     if "other_sales_cents" in changes and changes["other_sales_cents"] is None:
         changes["other_sales_cents"] = 0
 
@@ -164,6 +165,8 @@ def update_bundle(bundle_id: int, data: BundleUpdate, session: SessionDep, setti
         bundle.sell_date = bundle.sell_total_cents = None
         for copy in bundle.copies:
             copy.sell_price_cents = copy.sell_date = None
+    for entry in data.new_entries:  # a new copy's manual share is its entry's buy price (see below)
+        _add_entry(session, bundle, entry)
 
     manual = None
     if manual_shares is not None:

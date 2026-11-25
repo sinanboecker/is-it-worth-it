@@ -5325,6 +5325,15 @@
               }
             ],
             "title": "Manual Shares"
+          },
+          "new_entries": {
+            "items": {
+              "$ref": "#/components/schemas/BundleEntryIn"
+            },
+            "type": "array",
+            "title": "New Entries",
+            "description": "games or devices to add to the bundle",
+            "default": []
           }
         },
         "type": "object",

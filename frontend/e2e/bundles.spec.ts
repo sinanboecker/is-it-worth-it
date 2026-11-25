@@ -206,3 +206,28 @@ test("sold bundle keys are not redeemed and have their own view on the category 
   await expect(page.getByRole("row", { name: new RegExp(sold) })).toContainText("Not redeemed");
   await expect(page.getByRole("row", { name: new RegExp(kept) })).toHaveCount(0);
 });
+
+test("add a game to an existing bundle when editing it", async ({ page, request }) => {
+  const { category } = await setup(request);
+  const bundleName = `Humble ${category.id}`;
+  await request.post("/api/v1/bundles", {
+    data: {
+      name: bundleName,
+      buy_date: "2025-03-01",
+      total_price_cents: 1000,
+      split_mode: "equal",
+      entries: [{ new_item: { category_id: category.id, kind: "game", name: `First ${category.id}` }, format: "digital" }],
+    },
+  });
+
+  await page.goto("/bundles");
+  const card = page.locator(".mantine-Card-root", { hasText: bundleName });
+  await card.getByRole("button", { name: "Edit" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Add game" }).click();
+  await dialog.getByRole("textbox", { name: "New: name" }).fill(`Second ${category.id}`); // in the first platform category
+  await expect(dialog.getByText("5,00 €")).toHaveCount(2); // 10 € shared equally by the two games
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Bundle saved")).toBeVisible();
+  await expect(card.getByRole("link", { name: `Second ${category.id}` })).toBeVisible();
+});

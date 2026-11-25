@@ -392,7 +392,24 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
   const [soldAsBundle, setSoldAsBundle] = useState(bundle.sold_as_bundle);
   const [sellTotal, setSellTotal] = useState(bundle.sell_total_cents);
   const [sellDate, setSellDate] = useState(bundle.sell_date ?? todayIso());
-  const preview = useSplitPreview(costToSplit(total, otherSales), mode, references, manual);
+  // games added here; they're saved with the bundle and share its price from then on
+  const categories = useCategories();
+  const [entries, setEntries] = useState<BundleEntryDraft[]>([]);
+  const gamesOnly = bundle.copies.every((c) => c.kind === "game");
+  const addEntry = () => {
+    const last = entries.at(-1);
+    const platform = categories.data?.find((c) => c.type === "platform")?.id ?? null;
+    setEntries([...entries, emptyEntry(last?.newCategory ?? platform, last?.format ?? "digital")]);
+  };
+  const updateEntry = (key: number, patch: Partial<BundleEntryDraft>) =>
+    setEntries((es) => es.map((e) => (e.key === key ? { ...e, ...patch } : e)));
+  const preview = useSplitPreview(
+    costToSplit(total, otherSales),
+    mode,
+    [...references, ...entries.map((e) => e.reference)],
+    [...manual, ...entries.map((e) => e.manual)],
+  );
+  const copyCount = bundle.copies.length + entries.length;
   const save = useApiMutation(
     () =>
       unwrap(
@@ -410,6 +427,7 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
             sold_as_bundle: soldAsBundle,
             sell_total_cents: soldAsBundle ? sellTotal : null,
             sell_date: soldAsBundle ? sellDate : null,
+            new_entries: entries.map((e) => entryBody(e, mode)),
           },
         }),
       ),
@@ -451,12 +469,28 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
           ))}
         </Table.Tbody>
       </Table>
+      {entries.map((entry, index) => (
+        <BundleEntryCard
+          key={entry.key}
+          entry={entry}
+          mode={mode}
+          share={preview.data?.shares_cents[bundle.copies.length + index]}
+          onChange={(patch) => updateEntry(entry.key, patch)}
+          onRemove={() => setEntries((es) => es.filter((e) => e.key !== entry.key))}
+          gamesOnly={gamesOnly}
+        />
+      ))}
+      <Group>
+        <Button variant="light" size="xs" leftSection={<IconPlus size={14} />} onClick={addEntry}>
+          {gamesOnly ? "Add game" : "Add game or device"}
+        </Button>
+      </Group>
       {preview.isError && (
         <Text c="red" size="sm">
           {preview.error.message}
         </Text>
       )}
-      {bundle.copies.length > 0 && (
+      {copyCount > 0 && (
         <Checkbox label="Sold as a whole" checked={soldAsBundle} onChange={(e) => setSoldAsBundle(e.currentTarget.checked)} />
       )}
       {soldAsBundle && (
@@ -486,7 +520,12 @@ function EditBundleForm({ bundle, onClose }: { bundle: Bundle; onClose: () => vo
           onClick={() => save.mutate(undefined)}
           loading={save.isPending}
           disabled={
-            !name.trim() || !validUrl(url) || total === null || (bundle.copies.length > 0 && !preview.isSuccess) || (soldAsBundle && sellTotal === null)
+            !name.trim() ||
+            !validUrl(url) ||
+            total === null ||
+            !entries.every(entryComplete) ||
+            (copyCount > 0 && !preview.isSuccess) ||
+            (soldAsBundle && sellTotal === null)
           }
         >
           Save

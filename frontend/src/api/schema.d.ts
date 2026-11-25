@@ -1560,6 +1560,12 @@ export interface components {
             manual_shares?: {
                 [key: string]: number;
             } | null;
+            /**
+             * New Entries
+             * @description games or devices to add to the bundle
+             * @default []
+             */
+            new_entries: components["schemas"]["BundleEntryIn"][];
         };
         /**
          * CameraGearCategory

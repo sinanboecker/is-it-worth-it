@@ -368,6 +368,60 @@ def test_bundle_entries_and_delete(api):
     assert api.get("/bundles") == []
 
 
+def test_games_can_be_added_when_editing_a_bundle(api):
+    pc = api.category("PC")
+    existing = api.game(pc["id"], name="Already mine", price=None)  # a wishlist game
+    bundle = api.post(
+        "/bundles",
+        {
+            "name": "B",
+            "buy_date": "2025-01-01",
+            "total_price_cents": 1200,
+            "split_mode": "proportional",
+            "entries": [
+                {"new_item": {"category_id": pc["id"], "kind": "game", "name": "A"}, "reference_price_cents": 1000}
+            ],
+        },
+    )
+    bundle = api.patch(
+        f"/bundles/{bundle['id']}",
+        {
+            "total_price_cents": 1500,
+            "new_entries": [
+                {"new_item": {"category_id": pc["id"], "kind": "game", "name": "New"}, "reference_price_cents": 1000},
+                {"item_id": existing["id"], "reference_price_cents": 3000, "format": "digital"},
+            ],
+        },
+    )
+    assert [(c["item_name"], c["buy_price_cents"]) for c in bundle["copies"]] == [
+        ("A", 300),
+        ("New", 300),
+        ("Already mine", 900),
+    ]  # 15 € split by standalone prices 10 : 10 : 30
+    assert api.get(f"/items/{existing['id']}")["status"] == "backlog"  # bought now
+
+    manual = api.patch(
+        f"/bundles/{bundle['id']}",
+        {
+            "split_mode": "manual",
+            "manual_shares": {c["copy_id"]: 500 for c in bundle["copies"]},
+            "new_entries": [{"new_item": {"category_id": pc["id"], "kind": "game", "name": "D"}}],
+        },
+    )
+    assert (
+        api.client.patch(  # in manual mode the shares must add up: the new game's share is still 0
+            f"/api/v1/bundles/{bundle['id']}",
+            json={
+                "new_entries": [
+                    {"new_item": {"category_id": pc["id"], "kind": "game", "name": "E"}, "buy_price_cents": 100}
+                ]
+            },
+        ).status_code
+        == 422
+    )
+    assert [c["buy_price_cents"] for c in manual["copies"]] == [500, 500, 500, 0]
+
+
 def test_bundle_without_games(api):
     """E.g. all games of the bundle were sold: only the price and the money from the sales."""
     bundle = api.post(

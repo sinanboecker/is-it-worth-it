@@ -543,6 +543,7 @@ class BundleUpdate(BaseModel):
     notes: str | None = None
     reference_prices: dict[int, Cents] | None = None  # copy_id → standalone value
     manual_shares: dict[int, Cents] | None = None  # copy_id → buy price (split mode "manual")
+    new_entries: list[BundleEntryIn] = Field([], description="games or devices to add to the bundle")
 
 
 class BundleCopyRead(BaseModel):
